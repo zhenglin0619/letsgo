@@ -13,8 +13,8 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-8 py-4"
-      style={{ background: 'rgba(251,251,250,0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(232,230,225,0.6)' }}>
+    <header className="fixed top-0 inset-x-0 z-[9999] flex items-center justify-between px-8 py-4"
+      style={{ background: 'rgba(251,251,250,0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(180,175,168,0.6)' }}>
       <Link href="/" className="serif text-xl font-semibold tracking-tight text-[#1A1A1A]">
         Taste<span className="text-[#C87A53]">&</span>Terrain
       </Link>
@@ -24,17 +24,12 @@ export default function Navbar() {
           return (
             <Link key={href} href={href}
               className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${active ? 'text-[#C87A53]' : 'text-[#8A8A8A] hover:text-[#1A1A1A]'}`}>
-              <Icon size={14} />
+              <Icon size={15} />
               {label}
             </Link>
           );
         })}
       </nav>
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#C87A53] to-[#A85E3A] flex items-center justify-center text-white text-xs font-semibold">
-          Z
-        </div>
-      </div>
     </header>
   );
 }

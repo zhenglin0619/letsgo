@@ -132,11 +132,13 @@ export const mockTrips: Trip[] = [
 ];
 
 export const globalStats = {
-  trips: 14,
-  hotels: 32,
+  trips: 3,
+  countriesVisited: 1,
+  citiesVisited: 5,
+  hotels: 5,
+  nights: 12,
   restaurants: 58,
   michelinStarsVisited: 6,
-  countriesVisited: 23,
 };
 
 export const mapPins = [
