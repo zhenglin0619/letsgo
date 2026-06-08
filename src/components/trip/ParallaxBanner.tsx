@@ -24,7 +24,10 @@ export default function ParallaxBanner({ trip }: Props) {
     <div className="relative h-[70vh] overflow-hidden">
       {/* Parallax image layer */}
       <div ref={imgRef} className="absolute inset-0 scale-110" style={{ willChange: 'transform' }}>
-        <img src={trip.coverPhoto} alt={trip.title} className="w-full h-full object-cover" />
+        {trip.coverPhoto
+          ? <img src={trip.coverPhoto} alt={trip.title} className="w-full h-full object-cover" />
+          : <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/40 via-[#D4CFC6] to-[#4A5343]/30" />
+        }
       </div>
 
       {/* Gradient overlay */}

@@ -1,7 +1,7 @@
 'use client';
 import { useState, use } from 'react';
 import { notFound } from 'next/navigation';
-import { mockTrips } from '@/store/data';
+import { useTrips } from '@/store/tripsContext';
 import ParallaxBanner from '@/components/trip/ParallaxBanner';
 import TripMap from '@/components/trip/TripMap';
 import HotelCard from '@/components/trip/HotelCard';
@@ -12,7 +12,8 @@ import { BedDouble, Utensils } from 'lucide-react';
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const trip = mockTrips.find(t => t.id === id);
+  const { trips } = useTrips();
+  const trip = trips.find(t => t.id === id);
   if (!trip) notFound();
 
   const [tab, setTab] = useState<'stays' | 'eats'>('eats');

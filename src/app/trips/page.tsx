@@ -1,7 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { mockTrips } from '@/store/data';
+import { useTrips } from '@/store/tripsContext';
 import { Calendar, MapPin, Hotel, Utensils, ArrowRight } from 'lucide-react';
 
 function formatRange(start: string, end: string) {
@@ -13,6 +13,7 @@ function formatRange(start: string, end: string) {
 }
 
 export default function TripsPage() {
+  const { trips: mockTrips } = useTrips();
   return (
     <main className="pt-24 pb-24 px-8 max-w-7xl mx-auto">
       <motion.div
@@ -38,11 +39,10 @@ export default function TripsPage() {
               <div className="bento-card overflow-hidden">
                 {/* Cover */}
                 <div className="relative h-56 overflow-hidden">
-                  <img
-                    src={trip.coverPhoto}
-                    alt={trip.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
+                  {trip.coverPhoto
+                    ? <img src={trip.coverPhoto} alt={trip.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    : <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/30 via-[#E8E4DC] to-[#4A5343]/20" />
+                  }
                   <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
                   {/* Tags */}
                   <div className="absolute top-3 left-3 flex flex-wrap gap-1">

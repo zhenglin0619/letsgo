@@ -9,7 +9,7 @@ const WorldMapLeaflet = dynamic(() => import('./WorldMapLeaflet'), {
 
 export default function WorldMap() {
   return (
-    <div className="bento-card overflow-hidden" style={{ background: '#fff' }}>
+    <div className="bento-card overflow-hidden" style={{ background: '#fff', isolation: 'isolate' }}>
       {/* Header */}
       <div className="px-5 py-3 flex items-center justify-between border-b border-[#F0ECE6]">
         <h2 className="serif text-xl font-semibold text-[#1A1A1A]">World Footprint</h2>
