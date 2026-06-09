@@ -40,7 +40,6 @@ export interface HotelLog {
 export interface Trip {
   id: string;
   title: string;
-  subtitle: string;
   coverPhoto: string;
   startDate: string;
   endDate: string;
@@ -49,5 +48,4 @@ export interface Trip {
   photos?: string[];
   hotels: HotelLog[];
   diningLogs: DiningLog[];
-  tags: string[];
 }

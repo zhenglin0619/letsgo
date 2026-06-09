@@ -247,43 +247,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining }: Pro
                       </div>
                     </div>
 
-                    {/* Row 2: Country | City | Address */}
-                    <div className="grid grid-cols-4 gap-3 items-end">
-                      <div>
-                        <label className={LABEL}>Country</label>
-                        <input type="text" placeholder="e.g. Japan" value={form.country}
-                          onChange={e => set('country', e.target.value)} className={INPUT} />
-                      </div>
-                      <div>
-                        <label className={LABEL}>City</label>
-                        <input type="text" placeholder="e.g. Tokyo" value={form.city}
-                          onChange={e => set('city', e.target.value)} className={INPUT} />
-                      </div>
-                      <div className="col-span-2">
-                        <label className={LABEL}>Address</label>
-                        <AddressSearchBox
-                          value={form.address}
-                          onChange={v => { if (!isSelectingRef.current) setGeocoded(null); set('address', v); }}
-                          onLocate={handleLocate}
-                          onClear={() => setGeocoded(null)}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Mini-map preview — shown after address is located */}
-                    {geocoded && geocoded.lat !== 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 140 }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="overflow-hidden"
-                      >
-                        <InlineMapPreview lat={geocoded.lat} lng={geocoded.lng} />
-                      </motion.div>
-                    )}
-
-                    {/* Row 3: Rating | Expense | Michelin Stars | Add to Trip */}
+                    {/* Row 2: Rating | Expense | Michelin Stars | Add to Trip */}
                     <div className="grid grid-cols-8 gap-3 items-end">
                       <div className="col-span-2">
                         <label className={LABEL}>Rating <span className="normal-case font-normal text-[#C0BAB2]">(0–10)</span></label>
@@ -328,6 +292,42 @@ export default function AddRestaurantModal({ open, onClose, initialDining }: Pro
                         </select>
                       </div>
                     </div>
+
+                    {/* Row 3: Country | City | Address */}
+                    <div className="grid grid-cols-4 gap-3 items-end">
+                      <div>
+                        <label className={LABEL}>Country</label>
+                        <input type="text" placeholder="e.g. Japan" value={form.country}
+                          onChange={e => set('country', e.target.value)} className={INPUT} />
+                      </div>
+                      <div>
+                        <label className={LABEL}>City</label>
+                        <input type="text" placeholder="e.g. Tokyo" value={form.city}
+                          onChange={e => set('city', e.target.value)} className={INPUT} />
+                      </div>
+                      <div className="col-span-2">
+                        <label className={LABEL}>Address</label>
+                        <AddressSearchBox
+                          value={form.address}
+                          onChange={v => { if (!isSelectingRef.current) setGeocoded(null); set('address', v); }}
+                          onLocate={handleLocate}
+                          onClear={() => setGeocoded(null)}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Mini-map preview — shown after address is located */}
+                    {geocoded && geocoded.lat !== 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 140 }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden"
+                      >
+                        <InlineMapPreview lat={geocoded.lat} lng={geocoded.lng} />
+                      </motion.div>
+                    )}
 
                   </div>
                 )}

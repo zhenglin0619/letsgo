@@ -4,12 +4,10 @@ export const mockTrips: Trip[] = [
   {
     id: 'tokyo-2025',
     title: 'Summer in Tokyo',
-    subtitle: 'Neon lights, silent temples, perfect ramen',
     coverPhoto: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1600&q=85',
     startDate: '2025-07-04',
     endDate: '2025-07-18',
     countries: ['Japan'],
-    tags: ['Asia', 'City', 'Foodie'],
     hotels: [
       {
         id: 'aman-tokyo',
@@ -75,12 +73,10 @@ export const mockTrips: Trip[] = [
   {
     id: 'amalfi-2025',
     title: 'Amalfi Coast',
-    subtitle: 'Cliffside villages, limoncello sunsets',
     coverPhoto: 'https://images.unsplash.com/photo-1533587851505-d119e13fa0d7?w=1600&q=85',
     startDate: '2025-10-01',
     endDate: '2025-10-10',
     countries: ['Italy'],
-    tags: ['Europe', 'Coastal', 'Romantic'],
     hotels: [
       {
         id: 'belmond-caruso',
@@ -120,38 +116,11 @@ export const mockTrips: Trip[] = [
   {
     id: 'kyoto-2024',
     title: 'Autumn Kyoto',
-    subtitle: 'Maples burning red, moss temples, matcha everything',
     coverPhoto: 'https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=1600&q=85',
     startDate: '2024-11-10',
     endDate: '2024-11-18',
     countries: ['Japan'],
-    tags: ['Asia', 'Culture', 'Zen'],
     hotels: [],
     diningLogs: [],
   },
-];
-
-export const globalStats = {
-  trips: 3,
-  countriesVisited: 1,
-  citiesVisited: 5,
-  hotels: 5,
-  nights: 12,
-  restaurants: 58,
-  michelinStarsVisited: 6,
-};
-
-export const mapPins = [
-  { lat: 35.6762, lng: 139.6503, type: 'dining', label: 'Tokyo Dining' },
-  { lat: 35.6762, lng: 139.6503, type: 'hotel', label: 'Aman Tokyo' },
-  { lat: 40.8518, lng: 14.2681, type: 'hotel', label: 'Belmond Caruso' },
-  { lat: 40.8518, lng: 14.2681, type: 'dining', label: 'Da Adolfo' },
-  { lat: 35.0116, lng: 135.7681, type: 'hotel', label: 'Kyoto Stay' },
-  { lat: 48.8566, lng: 2.3522, type: 'dining', label: 'Paris Dining' },
-  { lat: 41.9028, lng: 12.4964, type: 'dining', label: 'Rome Dining' },
-  { lat: 1.3521, lng: 103.8198, type: 'hotel', label: 'Singapore Hotel' },
-  { lat: 22.3193, lng: 114.1694, type: 'dining', label: 'Hong Kong Dining' },
-  { lat: 40.7128, lng: -74.0060, type: 'hotel', label: 'NYC Hotel' },
-  { lat: 42.3438, lng: -71.0961, type: 'dining', label: '30 Peterborough St, Boston' },
-  { lat: -33.8688, lng: 151.2093, type: 'dining', label: 'Sydney Dining' },
 ];

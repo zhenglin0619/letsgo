@@ -72,27 +72,58 @@ export default function WorldMapLeaflet({ pins }: Props) {
     mapRef.current = map;
     setMapReady(true);
 
+    // ── Smooth zoom via lerp ──────────────────────────────────────────────────
+    let targetZoom = map.getZoom();
+    let rafId: number | null = null;
+
+    const scheduleZoomFrame = () => {
+      if (rafId !== null) return;
+      const step = () => {
+        const current = map.getZoom();
+        const diff = targetZoom - current;
+        if (Math.abs(diff) < 0.004) {
+          map.setZoom(targetZoom, { animate: false });
+          rafId = null;
+          return;
+        }
+        // Lerp 12 % of remaining distance per frame → natural ease-out
+        map.setZoom(current + diff * 0.12, { animate: false });
+        rafId = requestAnimationFrame(step);
+      };
+      rafId = requestAnimationFrame(step);
+    };
+
+    // Ctrl + wheel (trackpad pinch on Chrome/Firefox, mouse wheel + ctrl)
     const handleWheel = (e: WheelEvent) => {
       if (!e.ctrlKey) return;
       e.preventDefault();
       const raw = e.deltaMode === 1 ? e.deltaY * 20 :
                   e.deltaMode === 2 ? e.deltaY * 300 : e.deltaY;
-      map.setZoom(map.getZoom() - raw * 0.05, { animate: false });
+      targetZoom = Math.max(1, Math.min(18, targetZoom - raw * 0.018));
+      scheduleZoomFrame();
     };
     container.addEventListener('wheel', handleWheel, { passive: false });
 
+    // Gesture events (Safari trackpad / Magic Mouse pinch)
     let gestureStartZoom = map.getZoom();
-    const handleGestureStart = (e: Event) => { e.preventDefault(); gestureStartZoom = map.getZoom(); };
+    const handleGestureStart = (e: Event) => {
+      e.preventDefault();
+      gestureStartZoom = targetZoom; // use target so start is consistent
+    };
     const handleGestureChange = (e: Event) => {
       e.preventDefault();
       const scale = (e as unknown as { scale: number }).scale;
-      if (scale > 0) map.setZoom(gestureStartZoom + Math.log2(scale), { animate: false });
+      if (scale > 0) {
+        targetZoom = Math.max(1, Math.min(18, gestureStartZoom + Math.log2(scale)));
+        scheduleZoomFrame();
+      }
     };
     const handleGestureEnd = (e: Event) => { e.preventDefault(); };
     container.addEventListener('gesturestart', handleGestureStart, { passive: false });
     container.addEventListener('gesturechange', handleGestureChange, { passive: false });
     container.addEventListener('gestureend', handleGestureEnd, { passive: false });
 
+    // Pointer-pair pinch (two-finger touch)
     const ptrs = new Map<number, { x: number; y: number }>();
     let pinchStartDist = 0;
     let pinchStartZoom = 2;
@@ -102,7 +133,7 @@ export default function WorldMapLeaflet({ pins }: Props) {
       if (ptrs.size === 2) {
         const [a, b] = Array.from(ptrs.values());
         pinchStartDist = Math.hypot(b.x - a.x, b.y - a.y);
-        pinchStartZoom = map.getZoom();
+        pinchStartZoom = targetZoom;
       }
     };
     const handlePtrMove = (e: PointerEvent) => {
@@ -111,7 +142,8 @@ export default function WorldMapLeaflet({ pins }: Props) {
       if (ptrs.size === 2 && pinchStartDist > 0) {
         const [a, b] = Array.from(ptrs.values());
         const dist = Math.hypot(b.x - a.x, b.y - a.y);
-        map.setZoom(pinchStartZoom + Math.log2(dist / pinchStartDist), { animate: false });
+        targetZoom = Math.max(1, Math.min(18, pinchStartZoom + Math.log2(dist / pinchStartDist)));
+        scheduleZoomFrame();
       }
     };
     const handlePtrUp = (e: PointerEvent) => {
@@ -124,6 +156,7 @@ export default function WorldMapLeaflet({ pins }: Props) {
     container.addEventListener('pointercancel', handlePtrUp);
 
     return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
       container.removeEventListener('wheel', handleWheel);
       container.removeEventListener('gesturestart', handleGestureStart);
       container.removeEventListener('gesturechange', handleGestureChange);

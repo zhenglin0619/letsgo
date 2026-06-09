@@ -12,8 +12,8 @@ function formatDate(d: string) {
 }
 
 export default function HotelsPage() {
-  const { trips: mockTrips } = useTrips();
-  const allHotels = mockTrips.flatMap(trip =>
+  const { trips } = useTrips();
+  const allHotels = trips.flatMap(trip =>
     trip.hotels.map(hotel => ({ ...hotel, tripTitle: trip.title, tripId: trip.id }))
   );
 

@@ -72,13 +72,11 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
       addTrip({
         id,
         title:      form.title.trim(),
-        subtitle:   '',
         coverPhoto: coverPreview,
         startDate:  form.startDate,
         endDate:    form.endDate,
         countries:  [form.country.trim()],
         city:       form.city.trim(),
-        tags:       [],
         hotels:     [],
         diningLogs: [],
       });
