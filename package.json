@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@mapbox/search-js-core": "^1.5.1",
+    "@mapbox/search-js-react": "^1.5.1",
     "@radix-ui/react-dialog": "^1.1.16",
     "@radix-ui/react-slider": "^1.4.0",
     "@radix-ui/react-tabs": "^1.1.14",

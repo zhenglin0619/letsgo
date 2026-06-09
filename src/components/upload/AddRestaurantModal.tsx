@@ -1,10 +1,18 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle, ImagePlus, MapPin, Loader2 } from 'lucide-react';
+import { X, CheckCircle, ImagePlus } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
 import { DiningLog } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
+import type { LocatedPlace } from '@/components/ui/AddressSearchBox';
+
+const AddressSearchBox = dynamic(() => import('@/components/ui/AddressSearchBox'), {
+  ssr: false,
+  loading: () => <input className="w-full text-sm border border-[#E8E6E1] rounded-xl px-3 py-2 text-[#C0BAB2]" placeholder="Search address or place name…" disabled />,
+});
+const InlineMapPreview = dynamic(() => import('@/components/ui/InlineMapPreview'), { ssr: false });
 
 interface Props {
   open: boolean;
@@ -35,24 +43,6 @@ const emptyForm = {
   tripId: '',
 };
 
-async function geocodeAddress(query: string): Promise<{ lat: number; lng: number; city: string; country: string } | null> {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=1`,
-      { headers: { 'User-Agent': 'TasteAndTerrain/1.0' } }
-    );
-    const data = await res.json();
-    if (!data[0]) return null;
-    const item = data[0];
-    const addr = item.address ?? {};
-    return {
-      lat: parseFloat(item.lat),
-      lng: parseFloat(item.lon),
-      city: addr.city || addr.town || addr.village || addr.suburb || '',
-      country: addr.country || '',
-    };
-  } catch { return null; }
-}
 
 export default function AddRestaurantModal({ open, onClose, initialDining }: Props) {
   const { trips, updateTrip, addStandaloneRestaurant, updateStandaloneRestaurant, deleteStandaloneRestaurant } = useTrips();
@@ -60,9 +50,9 @@ export default function AddRestaurantModal({ open, onClose, initialDining }: Pro
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState('');
   const [step, setStep] = useState<'form' | 'done'>('form');
-  const [geocoding, setGeocoding] = useState(false);
   const [geocoded, setGeocoded] = useState<{ lat: number; lng: number; city: string; country: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const isSelectingRef = useRef(false);
 
   useEffect(() => {
     if (!open) { setForm(emptyForm); setCoverPreview(''); setStep('form'); setGeocoded(null); return; }
@@ -105,26 +95,14 @@ export default function AddRestaurantModal({ open, onClose, initialDining }: Pro
     e.target.value = '';
   }
 
-  async function handleGeocode() {
-    const query = [form.address, form.city, form.country].filter(Boolean).join(', ');
-    if (!query.trim()) return;
-    setGeocoding(true);
-    const result = await geocodeAddress(query);
-    setGeocoding(false);
-    if (result) {
-      setGeocoded(result);
-      if (!form.city && result.city) set('city', result.city);
-      if (!form.country && result.country) set('country', result.country);
-    }
+  function handleLocate(place: LocatedPlace) {
+    isSelectingRef.current = true;
+    setGeocoded({ lat: place.lat, lng: place.lng, city: place.city, country: place.country });
+    set('address', place.address);
+    if (!form.city  && place.city)    set('city',    place.city);
+    if (!form.country && place.country) set('country', place.country);
+    setTimeout(() => { isSelectingRef.current = false; }, 50);
   }
-
-  // Auto-geocode when address is typed (debounced 700 ms)
-  useEffect(() => {
-    if (!form.address.trim()) return;
-    const timer = setTimeout(() => { handleGeocode(); }, 700);
-    return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.address]);
 
   const isValid = form.restaurantName.trim() && form.date;
 
@@ -282,33 +260,28 @@ export default function AddRestaurantModal({ open, onClose, initialDining }: Pro
                           onChange={e => set('city', e.target.value)} className={INPUT} />
                       </div>
                       <div className="col-span-2">
-                        <div className="flex items-center justify-between mb-1">
-                          <label className={LABEL} style={{ marginBottom: 0 }}>Address</label>
-                          {geocoded && (
-                            <span className="text-[11px] text-[#4A5343] flex items-center gap-0.5 pr-1">
-                              <MapPin size={9} /> {geocoded.lat.toFixed(4)}, {geocoded.lng.toFixed(4)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex gap-1.5">
-                          <input
-                            type="text"
-                            placeholder="Street address"
-                            value={form.address}
-                            onChange={e => { set('address', e.target.value); setGeocoded(null); }}
-                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleGeocode(); } }}
-                            className={`${INPUT} flex-1`}
-                          />
-                          <button
-                            onClick={handleGeocode}
-                            disabled={geocoding || (!form.address.trim() && !form.city.trim())}
-                            className="flex items-center gap-1 px-2.5 py-2 rounded-xl border border-[#E8E6E1] text-sm text-[#8A8A8A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors disabled:opacity-40"
-                          >
-                            {geocoding ? <Loader2 size={13} className="animate-spin" /> : <MapPin size={13} />}
-                          </button>
-                        </div>
+                        <label className={LABEL}>Address</label>
+                        <AddressSearchBox
+                          value={form.address}
+                          onChange={v => { if (!isSelectingRef.current) setGeocoded(null); set('address', v); }}
+                          onLocate={handleLocate}
+                          onClear={() => setGeocoded(null)}
+                        />
                       </div>
                     </div>
+
+                    {/* Mini-map preview — shown after address is located */}
+                    {geocoded && geocoded.lat !== 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 140 }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden"
+                      >
+                        <InlineMapPreview lat={geocoded.lat} lng={geocoded.lng} />
+                      </motion.div>
+                    )}
 
                     {/* Row 3: Rating | Expense | Michelin Stars | Add to Trip */}
                     <div className="grid grid-cols-8 gap-3 items-end">
