@@ -5,7 +5,7 @@ import { DiningLog, Dish } from '@/types';
 import StarRating from '@/components/ui/StarRating';
 import MichelinBadge from '@/components/ui/MichelinBadge';
 import DishRow from './DishRow';
-import { X, MapPin, GripVertical, Trash2, Plus, Check, ImagePlus } from 'lucide-react';
+import { X, MapPin, GripVertical, Trash2, Plus, Check, ImagePlus, Pencil } from 'lucide-react';
 
 const CATEGORIES: Dish['category'][] = ['Appetizer', 'Mains', 'Dessert', 'Drinks', 'Snack'];
 const emptyDishForm = { name: '', category: 'Mains' as Dish['category'], rating: '', notes: '', photo: '' };
@@ -15,6 +15,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onUpdateLog?: (updated: DiningLog) => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 // ── Draggable edit row ────────────────────────────────────────────────────────
@@ -120,10 +122,12 @@ function DishEditRow({
 }
 
 // ── Main drawer ───────────────────────────────────────────────────────────────
-export default function DiningDrawer({ log, open, onClose, onUpdateLog }: Props) {
+export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, onDelete }: Props) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const addFileRef = useRef<HTMLInputElement>(null);
-  const [editMode, setEditMode]       = useState(false);
+  const [editMode, setEditMode]           = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [savedToast, setSavedToast]       = useState(false);
   const [localDishes, setLocalDishes] = useState<Dish[]>([]);
   const [addForm, setAddForm]         = useState(emptyDishForm);
 
@@ -136,7 +140,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog }: Props)
     e.target.value = '';
   }
 
-  useEffect(() => { if (!open) { setEditMode(false); setAddForm(emptyDishForm); } }, [open]);
+  useEffect(() => { if (!open) { setEditMode(false); setAddForm(emptyDishForm); setConfirmDelete(false); setSavedToast(false); } }, [open]);
   useEffect(() => { setEditMode(false); setAddForm(emptyDishForm); }, [log?.id]);
 
   useEffect(() => {
@@ -160,6 +164,8 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog }: Props)
   function handleDone() {
     if (log && onUpdateLog) onUpdateLog({ ...log, dishes: localDishes });
     setEditMode(false);
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 2000);
   }
 
   function handleCancel() {
@@ -221,7 +227,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog }: Props)
 
             <div className="flex-1 overflow-y-auto">
               {/* Cover photo */}
-              <div className="h-52 overflow-hidden">
+              <div className="h-52 overflow-hidden relative">
                 {log.photos[0] ? (
                   <img src={log.photos[0]} alt={log.restaurantName} className="w-full h-full object-cover" />
                 ) : (
@@ -230,6 +236,40 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog }: Props)
                       <p className="serif text-lg font-semibold text-[#1A1A1A]/60">{log.restaurantName}</p>
                       <p className="text-xs text-[#8A8A8A]">{log.cuisine}</p>
                     </div>
+                  </div>
+                )}
+                {/* Edit / Delete buttons */}
+                {(onEdit || onDelete) && (
+                  <div className="absolute top-3 right-3 flex gap-1.5">
+                    {onEdit && (
+                      <button
+                        onClick={() => { onEdit(); onClose(); }}
+                        className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors flex items-center justify-center"
+                      >
+                        <Pencil size={13} className="text-white" />
+                      </button>
+                    )}
+                    {onDelete && !confirmDelete && (
+                      <button
+                        onClick={() => setConfirmDelete(true)}
+                        className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors flex items-center justify-center"
+                      >
+                        <Trash2 size={13} className="text-white" />
+                      </button>
+                    )}
+                    {onDelete && confirmDelete && (
+                      <div className="flex items-center gap-1 bg-white rounded-xl shadow-lg border border-[#E8E6E1] px-2 py-1">
+                        <span className="text-xs text-[#1A1A1A] font-medium">Delete?</span>
+                        <button
+                          onClick={() => { onDelete(); onClose(); }}
+                          className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 px-2 py-0.5 rounded-lg transition-colors"
+                        >Yes</button>
+                        <button
+                          onClick={() => setConfirmDelete(false)}
+                          className="text-xs font-medium text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors"
+                        >No</button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -380,6 +420,22 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog }: Props)
                 </div>
               )}
             </div>
+
+            {/* Changes Saved toast */}
+            <AnimatePresence>
+              {savedToast && (
+                <motion.div
+                  className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-[#1A1A1A] text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 pointer-events-none"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Check size={12} className="text-[#C87A53]" />
+                  Changes Saved
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </>
       )}

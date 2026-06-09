@@ -108,7 +108,7 @@ export default function WorldMapLeaflet({ pins }: Props) {
       zoomControl: false,
       attributionControl: true,
       scrollWheelZoom: false,
-      touchZoom: true,
+      touchZoom: false,
       doubleClickZoom: false,
     });
 
@@ -156,67 +156,9 @@ export default function WorldMapLeaflet({ pins }: Props) {
     };
     container.addEventListener('wheel', handleWheel, { passive: false });
 
-    // Gesture events (Safari trackpad / Magic Mouse pinch)
-    let gestureStartZoom = map.getZoom();
-    const handleGestureStart = (e: Event) => {
-      e.preventDefault();
-      gestureStartZoom = targetZoom; // use target so start is consistent
-    };
-    const handleGestureChange = (e: Event) => {
-      e.preventDefault();
-      const scale = (e as unknown as { scale: number }).scale;
-      if (scale > 0) {
-        targetZoom = Math.max(1, Math.min(18, gestureStartZoom + Math.log2(scale)));
-        scheduleZoomFrame();
-      }
-    };
-    const handleGestureEnd = (e: Event) => { e.preventDefault(); };
-    container.addEventListener('gesturestart', handleGestureStart, { passive: false });
-    container.addEventListener('gesturechange', handleGestureChange, { passive: false });
-    container.addEventListener('gestureend', handleGestureEnd, { passive: false });
-
-    // Pointer-pair pinch (two-finger touch)
-    const ptrs = new Map<number, { x: number; y: number }>();
-    let pinchStartDist = 0;
-    let pinchStartZoom = 2;
-
-    const handlePtrDown = (e: PointerEvent) => {
-      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (ptrs.size === 2) {
-        const [a, b] = Array.from(ptrs.values());
-        pinchStartDist = Math.hypot(b.x - a.x, b.y - a.y);
-        pinchStartZoom = targetZoom;
-      }
-    };
-    const handlePtrMove = (e: PointerEvent) => {
-      if (!ptrs.has(e.pointerId)) return;
-      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (ptrs.size === 2 && pinchStartDist > 0) {
-        const [a, b] = Array.from(ptrs.values());
-        const dist = Math.hypot(b.x - a.x, b.y - a.y);
-        targetZoom = Math.max(1, Math.min(18, pinchStartZoom + Math.log2(dist / pinchStartDist)));
-        scheduleZoomFrame();
-      }
-    };
-    const handlePtrUp = (e: PointerEvent) => {
-      ptrs.delete(e.pointerId);
-      if (ptrs.size < 2) pinchStartDist = 0;
-    };
-    container.addEventListener('pointerdown', handlePtrDown);
-    container.addEventListener('pointermove', handlePtrMove);
-    container.addEventListener('pointerup', handlePtrUp);
-    container.addEventListener('pointercancel', handlePtrUp);
-
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
       container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('gesturestart', handleGestureStart);
-      container.removeEventListener('gesturechange', handleGestureChange);
-      container.removeEventListener('gestureend', handleGestureEnd);
-      container.removeEventListener('pointerdown', handlePtrDown);
-      container.removeEventListener('pointermove', handlePtrMove);
-      container.removeEventListener('pointerup', handlePtrUp);
-      container.removeEventListener('pointercancel', handlePtrUp);
       map.remove();
       mapRef.current = null;
       markersRef.current.clear();

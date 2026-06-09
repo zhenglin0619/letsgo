@@ -102,6 +102,13 @@ export default function TripsPage() {
       </motion.div>
 
       <div className="grid grid-cols-3 gap-6">
+        {trips.length === 0 && (
+          <div className="col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
+            style={{ borderColor: '#D4CFC6' }}>
+            <p className="font-medium text-[#1A1A1A] text-sm">No trips logged yet</p>
+            <p className="text-xs text-[#8A8A8A] mt-1">Add your first trip to get started</p>
+          </div>
+        )}
         {trips.map((trip, i) => (
           <motion.div
             key={trip.id}

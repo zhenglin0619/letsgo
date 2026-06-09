@@ -18,6 +18,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   initialDining?: { log: DiningLog; tripId: string };
+  defaultTripId?: string;
 }
 
 const MEAL_OPTIONS = ['Breakfast', 'Brunch', 'Lunch', 'Afternoon Tea', 'Dinner', 'Late Night'] as const;
@@ -44,7 +45,7 @@ const emptyForm = {
 };
 
 
-export default function AddRestaurantModal({ open, onClose, initialDining }: Props) {
+export default function AddRestaurantModal({ open, onClose, initialDining, defaultTripId }: Props) {
   const { trips, updateTrip, addStandaloneRestaurant, updateStandaloneRestaurant, deleteStandaloneRestaurant } = useTrips();
   const isEdit = !!initialDining;
   const [form, setForm] = useState(emptyForm);
@@ -54,10 +55,16 @@ export default function AddRestaurantModal({ open, onClose, initialDining }: Pro
   const fileRef = useRef<HTMLInputElement>(null);
   const isSelectingRef = useRef(false);
 
+  const initialDiningRef = useRef(initialDining);
+  initialDiningRef.current = initialDining;
+  const defaultTripIdRef = useRef(defaultTripId);
+  defaultTripIdRef.current = defaultTripId;
+
   useEffect(() => {
     if (!open) { setForm(emptyForm); setCoverPreview(''); setStep('form'); setGeocoded(null); return; }
-    if (initialDining) {
-      const { log, tripId } = initialDining;
+    const init = initialDiningRef.current;
+    if (init) {
+      const { log, tripId } = init;
       setForm({
         restaurantName: log.restaurantName,
         cuisine: log.cuisine,
@@ -75,12 +82,13 @@ export default function AddRestaurantModal({ open, onClose, initialDining }: Pro
       setCoverPreview(log.photos[0] ?? '');
       setGeocoded({ lat: log.location.lat, lng: log.location.lng, city: log.location.city, country: log.location.country });
     } else {
-      setForm(emptyForm);
+      setForm({ ...emptyForm, tripId: defaultTripIdRef.current ?? '' });
       setCoverPreview('');
       setGeocoded(null);
     }
     setStep('form');
-  }, [open, initialDining]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   function set<K extends keyof typeof emptyForm>(field: K, value: typeof emptyForm[K]) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -106,13 +114,33 @@ export default function AddRestaurantModal({ open, onClose, initialDining }: Pro
 
   const isValid = form.restaurantName.trim() && form.date;
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!isValid) return;
     const trip = trips.find(t => t.id === form.tripId);
 
-    const location = geocoded
-      ? { ...geocoded, address: form.address.trim() || undefined }
-      : { lat: 0, lng: 0, city: form.city.trim(), country: form.country.trim(), address: form.address.trim() || undefined };
+    let resolvedGeocode = geocoded;
+    if (!geocoded && form.address.trim()) {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(form.address)}&format=json&limit=1&addressdetails=1`,
+          { headers: { 'Accept-Language': 'en-US' } }
+        );
+        const results = await res.json();
+        if (results[0]) {
+          const r = results[0];
+          resolvedGeocode = {
+            lat: parseFloat(r.lat),
+            lng: parseFloat(r.lon),
+            city: r.address?.city ?? r.address?.town ?? r.address?.village ?? r.address?.county ?? '',
+            country: r.address?.country ?? '',
+          };
+        }
+      } catch { /* proceed with no coordinates */ }
+    }
+
+    const location = resolvedGeocode
+      ? { ...resolvedGeocode, address: form.address.trim() || undefined }
+      : { lat: 0, lng: 0, city: '', country: '', address: form.address.trim() || undefined };
 
     const log: DiningLog = {
       id: initialDining?.log.id ?? `dining-${Date.now()}`,

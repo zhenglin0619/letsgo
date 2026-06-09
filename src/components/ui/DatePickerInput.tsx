@@ -11,6 +11,7 @@ interface Props {
   onChange: (val: string) => void;
   min?: string;          // YYYY-MM-DD
   defaultMonth?: string; // YYYY-MM-DD — month to show when calendar first opens
+  placement?: 'right' | 'above';
 }
 
 const DISPLAY = 'MM/dd/yyyy';
@@ -26,7 +27,7 @@ function toISO(display: string) {
   return isValid(d) ? format(d, 'yyyy-MM-dd') : null;
 }
 
-export default function DatePickerInput({ label, value, onChange, min, defaultMonth }: Props) {
+export default function DatePickerInput({ label, value, onChange, min, defaultMonth, placement = 'right' }: Props) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(() => toDisplay(value));
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
@@ -49,12 +50,10 @@ export default function DatePickerInput({ label, value, onChange, min, defaultMo
   function handleToggle() {
     if (!open && ref.current) {
       const rect = ref.current.getBoundingClientRect();
-      setPopupStyle({
-        position: 'fixed',
-        top: rect.top,
-        left: rect.right + 8,
-        zIndex: 10200,
-      });
+      setPopupStyle(placement === 'above'
+        ? { position: 'fixed', bottom: window.innerHeight - rect.top + 8, left: rect.left, zIndex: 10200 }
+        : { position: 'fixed', top: rect.top, left: rect.right + 8, zIndex: 10200 }
+      );
     }
     setOpen(v => !v);
   }

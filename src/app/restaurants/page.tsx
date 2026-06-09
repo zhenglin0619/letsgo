@@ -189,7 +189,7 @@ export default function RestaurantsPage() {
           <div className="col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
             style={{ borderColor: '#D4CFC6' }}>
             <p className="font-medium text-[#1A1A1A] text-sm">No restaurants logged yet</p>
-            <p className="text-xs text-[#8A8A8A] mt-1">Add dining logs to your trips to see them here</p>
+            <p className="text-xs text-[#8A8A8A] mt-1">Add your first dining log to get started</p>
           </div>
         )}
       </div>
@@ -205,6 +205,8 @@ export default function RestaurantsPage() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         onUpdateLog={handleUpdateLog}
+        onEdit={() => selectedDining && selectedMeta && setEditTarget({ log: selectedDining, tripId: selectedMeta.tripId })}
+        onDelete={() => selectedDining && selectedMeta && handleDelete(selectedDining.id, selectedMeta.tripId, selectedMeta.isStandalone)}
       />
     </main>
   );

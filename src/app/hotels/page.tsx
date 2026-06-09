@@ -95,7 +95,7 @@ export default function HotelsPage() {
           <div className="col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
             style={{ borderColor: '#D4CFC6' }}>
             <p className="font-medium text-[#1A1A1A] text-sm">No hotels logged yet</p>
-            <p className="text-xs text-[#8A8A8A] mt-1">Add hotels to your trips to see them here</p>
+            <p className="text-xs text-[#8A8A8A] mt-1">Add your first stays to get started</p>
           </div>
         )}
       </div>

@@ -10,18 +10,26 @@ function nightsBetween(checkIn: string, checkOut: string) {
 }
 
 export default function StatsBento() {
-  const { trips } = useTrips();
+  const { trips, standaloneRestaurants } = useTrips();
 
-  const tripCount     = trips.length;
-  const countries     = new Set(trips.flatMap(t => t.countries)).size;
-  const cities        = new Set([
-    ...trips.map(t => t.city).filter(Boolean),
-    ...trips.flatMap(t => t.hotels.map(h => h.location.city)),
-    ...trips.flatMap(t => t.diningLogs.map(d => d.location.city)),
+  const allDining = [
+    ...trips.flatMap(t => t.diningLogs),
+    ...standaloneRestaurants,
+  ];
+
+  const tripCount  = trips.length;
+  const countries  = new Set([
+    ...trips.flatMap(t => t.countries),
+    ...allDining.map(d => d.location.country).filter(Boolean),
   ]).size;
-  const hotelCount    = trips.flatMap(t => t.hotels).length;
-  const nightCount    = trips.flatMap(t => t.hotels).reduce((s, h) => s + nightsBetween(h.checkIn, h.checkOut), 0);
-  const restCount     = trips.flatMap(t => t.diningLogs).length;
+  const cities     = new Set([
+    ...trips.map(t => t.city).filter(Boolean),
+    ...trips.flatMap(t => t.hotels.map(h => h.location.city)).filter(Boolean),
+    ...allDining.map(d => d.location.city).filter(Boolean),
+  ]).size;
+  const hotelCount = trips.flatMap(t => t.hotels).length;
+  const nightCount = trips.flatMap(t => t.hotels).reduce((s, h) => s + nightsBetween(h.checkIn, h.checkOut), 0);
+  const restCount  = allDining.length;
 
   const stats = [
     { label: 'Trips',             value: tripCount,                          icon: Plane,    color: '#404040' },

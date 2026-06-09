@@ -5,6 +5,7 @@ import { X, CheckCircle, ImagePlus } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
 import { Trip } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
+import GeoAutocomplete from '@/components/ui/GeoAutocomplete';
 
 interface Props {
   open: boolean;
@@ -144,30 +145,21 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
-                            Country
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Japan"
-                            value={form.country}
-                            onChange={e => set('country', e.target.value)}
-                            className="w-full text-sm border border-[#E8E6E1] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
-                            City
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Tokyo"
-                            value={form.city}
-                            onChange={e => set('city', e.target.value)}
-                            className="w-full text-sm border border-[#E8E6E1] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors"
-                          />
-                        </div>
+                        <GeoAutocomplete
+                          label="Country"
+                          placeholder="e.g. Japan"
+                          value={form.country}
+                          onChange={v => set('country', v)}
+                          types="country"
+                        />
+                        <GeoAutocomplete
+                          label="City"
+                          placeholder="e.g. Tokyo"
+                          value={form.city}
+                          onChange={v => set('city', v)}
+                          types="place"
+                          onSelectCountry={c => { if (!form.country) set('country', c); }}
+                        />
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
@@ -175,6 +167,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                           label="Start Date"
                           value={form.startDate}
                           onChange={v => set('startDate', v)}
+                          placement="above"
                         />
                         <DatePickerInput
                           label="End Date"
@@ -182,6 +175,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                           onChange={v => set('endDate', v)}
                           min={form.startDate}
                           defaultMonth={form.startDate}
+                          placement="above"
                         />
                       </div>
                     </div>
