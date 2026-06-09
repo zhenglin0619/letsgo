@@ -122,12 +122,10 @@ export default function AddRestaurantModal({ open, onClose, initialDining }: Pro
       time: (form.meal || 'Dinner') as DiningLog['time'],
       totalExpense: parseFloat(form.expense) || 0,
       currency: form.currency,
-      vibeRating: initialDining?.log.vibeRating ?? 3,
       overallRating: parseFloat(form.rating) || 0,
       location,
       photos: coverPreview ? [coverPreview] : (initialDining?.log.photos ?? []),
       dishes: initialDining?.log.dishes ?? [],
-      notes: initialDining?.log.notes ?? '',
       ...(form.michelinStars > 0 ? { michelinStars: form.michelinStars as 1 | 2 | 3 } : {}),
     };
 
@@ -250,8 +248,8 @@ export default function AddRestaurantModal({ open, onClose, initialDining }: Pro
                     {/* Row 2: Rating | Expense | Michelin Stars | Add to Trip */}
                     <div className="grid grid-cols-8 gap-3 items-end">
                       <div className="col-span-2">
-                        <label className={LABEL}>Rating <span className="normal-case font-normal text-[#C0BAB2]">(0–10)</span></label>
-                        <input type="number" min="0" max="10" step="0.1" placeholder="e.g. 8.2"
+                        <label className={LABEL}>Rating <span className="normal-case font-normal text-[#C0BAB2]">(0–5)</span></label>
+                        <input type="number" min="0" max="5" step="0.1" placeholder="e.g. 4.5"
                           value={form.rating} onChange={e => set('rating', e.target.value)}
                           className={`${INPUT} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`} />
                       </div>
@@ -293,27 +291,15 @@ export default function AddRestaurantModal({ open, onClose, initialDining }: Pro
                       </div>
                     </div>
 
-                    {/* Row 3: Country | City | Address */}
-                    <div className="grid grid-cols-4 gap-3 items-end">
-                      <div>
-                        <label className={LABEL}>Country</label>
-                        <input type="text" placeholder="e.g. Japan" value={form.country}
-                          onChange={e => set('country', e.target.value)} className={INPUT} />
-                      </div>
-                      <div>
-                        <label className={LABEL}>City</label>
-                        <input type="text" placeholder="e.g. Tokyo" value={form.city}
-                          onChange={e => set('city', e.target.value)} className={INPUT} />
-                      </div>
-                      <div className="col-span-2">
-                        <label className={LABEL}>Address</label>
-                        <AddressSearchBox
-                          value={form.address}
-                          onChange={v => { if (!isSelectingRef.current) setGeocoded(null); set('address', v); }}
-                          onLocate={handleLocate}
-                          onClear={() => setGeocoded(null)}
-                        />
-                      </div>
+                    {/* Row 3: Address */}
+                    <div>
+                      <label className={LABEL}>Address</label>
+                      <AddressSearchBox
+                        value={form.address}
+                        onChange={v => { if (!isSelectingRef.current) setGeocoded(null); set('address', v); }}
+                        onLocate={handleLocate}
+                        onClear={() => setGeocoded(null)}
+                      />
                     </div>
 
                     {/* Mini-map preview — shown after address is located */}

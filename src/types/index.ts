@@ -2,7 +2,7 @@ export interface Dish {
   id: string;
   name: string;
   category: 'Appetizer' | 'Mains' | 'Dessert' | 'Drinks' | 'Snack';
-  rating: number; // 0–10
+  rating: number; // 0–5
   notes: string;
   photo?: string;
 }
@@ -15,12 +15,10 @@ export interface DiningLog {
   time: 'Breakfast' | 'Brunch' | 'Lunch' | 'Afternoon Tea' | 'Dinner' | 'Late Night';
   totalExpense: number;
   currency: string;
-  vibeRating: number; // 1–5
-  overallRating: number; // 0–10
+  overallRating: number; // 0–5
   location: { lat: number; lng: number; city: string; country: string; address?: string };
   photos: string[];
   dishes: Dish[];
-  notes: string;
   michelinStars?: 1 | 2 | 3;
 }
 

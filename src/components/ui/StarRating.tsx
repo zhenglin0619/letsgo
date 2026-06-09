@@ -2,7 +2,7 @@
 import { useState } from 'react';
 
 interface StarRatingProps {
-  value: number; // 0–10
+  value: number; // 0–5
   onChange?: (v: number) => void;
   readonly?: boolean;
   size?: 'sm' | 'md' | 'lg';
@@ -11,7 +11,7 @@ interface StarRatingProps {
 export default function StarRating({ value, onChange, readonly = false, size = 'md' }: StarRatingProps) {
   const [hovered, setHovered] = useState<number | null>(null);
   const stars = 5;
-  const filled = hovered !== null ? hovered : value / 2;
+  const filled = hovered !== null ? hovered : value;
 
   const sizeCls = size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-6 h-6' : 'w-4 h-4';
 
@@ -25,7 +25,7 @@ export default function StarRating({ value, onChange, readonly = false, size = '
             key={i}
             type="button"
             disabled={readonly}
-            onClick={() => onChange?.(i * 2 + 2)}
+            onClick={() => onChange?.(i + 1)}
             onMouseEnter={() => !readonly && setHovered(i + 1)}
             onMouseLeave={() => !readonly && setHovered(null)}
             className={`${sizeCls} relative flex-shrink-0 ${readonly ? 'cursor-default' : 'cursor-pointer'}`}

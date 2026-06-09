@@ -285,6 +285,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         log={selectedDining}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        onUpdateLog={(updated) => {
+          setSelectedDining(updated);
+          updateTrip({ ...trip!, diningLogs: trip!.diningLogs.map(d => d.id === updated.id ? updated : d) });
+        }}
       />
 
       <AddRestaurantModal

@@ -6,6 +6,7 @@ import { MapPin, Clock, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import StarRating from '@/components/ui/StarRating';
 import MichelinBadge from '@/components/ui/MichelinBadge';
 import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
+import DiningDrawer from '@/components/dining/DiningDrawer';
 import { DiningLog } from '@/types';
 
 function formatDate(d: string) {
@@ -74,7 +75,7 @@ function DiningMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => 
 }
 
 export default function RestaurantsPage() {
-  const { trips, standaloneRestaurants, updateTrip, deleteStandaloneRestaurant } = useTrips();
+  const { trips, standaloneRestaurants, updateTrip, updateStandaloneRestaurant, deleteStandaloneRestaurant } = useTrips();
   const allRestaurants = [
     ...trips.flatMap(trip =>
       trip.diningLogs.map(dining => ({ ...dining, tripTitle: trip.title, tripId: trip.id, isStandalone: false }))
@@ -82,7 +83,28 @@ export default function RestaurantsPage() {
     ...standaloneRestaurants.map(log => ({ ...log, tripTitle: '', tripId: '', isStandalone: true })),
   ].sort((a, b) => b.overallRating - a.overallRating);
 
-  const [editTarget, setEditTarget] = useState<{ log: DiningLog; tripId: string } | null>(null);
+  const [editTarget, setEditTarget]       = useState<{ log: DiningLog; tripId: string } | null>(null);
+  const [selectedDining, setSelectedDining] = useState<DiningLog | null>(null);
+  const [selectedMeta, setSelectedMeta]     = useState<{ tripId: string; isStandalone: boolean } | null>(null);
+  const [drawerOpen, setDrawerOpen]         = useState(false);
+
+  function openDining(dining: typeof allRestaurants[number]) {
+    const { tripTitle: _t, isStandalone, tripId, ...log } = dining;
+    setSelectedDining(log);
+    setSelectedMeta({ tripId, isStandalone });
+    setDrawerOpen(true);
+  }
+
+  function handleUpdateLog(updated: DiningLog) {
+    setSelectedDining(updated);
+    if (!selectedMeta) return;
+    if (selectedMeta.isStandalone) {
+      updateStandaloneRestaurant(updated);
+    } else {
+      const trip = trips.find(t => t.id === selectedMeta.tripId);
+      if (trip) updateTrip({ ...trip, diningLogs: trip.diningLogs.map(d => d.id === updated.id ? updated : d) });
+    }
+  }
 
   function handleDelete(diningId: string, tripId: string, isStandalone: boolean) {
     if (isStandalone) {
@@ -112,10 +134,11 @@ export default function RestaurantsPage() {
         {allRestaurants.map((dining, i) => (
           <motion.div
             key={dining.id}
-            className="bento-card overflow-hidden"
+            className="bento-card overflow-hidden cursor-pointer"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1, duration: 0.45 }}
+            onClick={() => openDining(dining)}
           >
             <div className="relative h-44 overflow-hidden">
               {dining.photos[0] ? (
@@ -175,6 +198,13 @@ export default function RestaurantsPage() {
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
         initialDining={editTarget ?? undefined}
+      />
+
+      <DiningDrawer
+        log={selectedDining}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onUpdateLog={handleUpdateLog}
       />
     </main>
   );

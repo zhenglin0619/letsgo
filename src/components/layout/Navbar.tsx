@@ -82,7 +82,7 @@ function LetsGoLogo() {
 }
 
 function UserMenu() {
-  const { user, signOut } = useTrips();
+  const { user, signOut, demoMode, toggleDemoMode } = useTrips();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -127,6 +127,17 @@ function UserMenu() {
             )}
             <p className="text-xs text-[#8A8A8A] truncate">{user.email}</p>
           </div>
+          <button
+            onClick={() => { toggleDemoMode(); setOpen(false); }}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
+          >
+            <span>Demo Mode</span>
+            <div className={`w-8 h-4.5 rounded-full transition-colors flex items-center px-0.5 ${demoMode ? 'bg-[#C87A53]' : 'bg-[#D4CFC8]'}`}
+              style={{ height: '18px' }}>
+              <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${demoMode ? 'translate-x-3.5' : 'translate-x-0'}`} />
+            </div>
+          </button>
+          <div className="mx-4 my-1 h-px bg-[#F0ECE6]" />
           <button
             onClick={() => { setOpen(false); signOut(); }}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"

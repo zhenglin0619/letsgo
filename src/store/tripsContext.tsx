@@ -4,10 +4,13 @@ import type { ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Trip, DiningLog } from '@/types';
+import { mockTrips } from '@/store/data';
 
 interface TripsContextValue {
   user: User | null;
   authLoading: boolean;
+  demoMode: boolean;
+  toggleDemoMode: () => void;
   trips: Trip[];
   standaloneRestaurants: DiningLog[];
   addTrip:                    (t: Trip)        => void;
@@ -59,8 +62,26 @@ function deleteRestaurant$(userId: string, id: string) {
 export function TripsProvider({ children }: { children: ReactNode }) {
   const [user, setUser]               = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Real data from Supabase
   const [trips, setTrips]             = useState<Trip[]>([]);
   const [standaloneRestaurants, setStandalone] = useState<DiningLog[]>([]);
+
+  // Demo data (local-only copy of mock data — mutations work but never sync to DB)
+  const [demoMode, setDemoMode]             = useState(false);
+  const [demoTrips, setDemoTrips]           = useState<Trip[]>([...mockTrips]);
+  const [demoStandalone, setDemoStandalone] = useState<DiningLog[]>([]);
+
+  function toggleDemoMode() {
+    setDemoMode(on => {
+      if (!on) {
+        // Reset demo data to mock defaults each time demo mode is entered
+        setDemoTrips([...mockTrips]);
+        setDemoStandalone([]);
+      }
+      return !on;
+    });
+  }
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -81,40 +102,52 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const effectiveTrips      = demoMode ? demoTrips      : trips;
+  const effectiveStandalone = demoMode ? demoStandalone : standaloneRestaurants;
+
   return (
     <TripsContext.Provider value={{
       user,
       authLoading,
-      trips,
-      standaloneRestaurants,
+      demoMode,
+      toggleDemoMode,
+      trips:                effectiveTrips,
+      standaloneRestaurants: effectiveStandalone,
 
       addTrip: (t) => {
+        if (demoMode) { setDemoTrips(p => [t, ...p]); return; }
         setTrips(p => [t, ...p]);
         if (user) syncTrip(user.id, t);
       },
       updateTrip: (t) => {
+        if (demoMode) { setDemoTrips(p => p.map(x => x.id === t.id ? t : x)); return; }
         setTrips(p => p.map(x => x.id === t.id ? t : x));
         if (user) syncTrip(user.id, t);
       },
       deleteTrip: (id) => {
+        if (demoMode) { setDemoTrips(p => p.filter(x => x.id !== id)); return; }
         setTrips(p => p.filter(x => x.id !== id));
         if (user) deleteTrip$(user.id, id);
       },
 
       addStandaloneRestaurant: (log) => {
+        if (demoMode) { setDemoStandalone(p => [log, ...p]); return; }
         setStandalone(p => [log, ...p]);
         if (user) syncRestaurant(user.id, log);
       },
       updateStandaloneRestaurant: (log) => {
+        if (demoMode) { setDemoStandalone(p => p.map(x => x.id === log.id ? log : x)); return; }
         setStandalone(p => p.map(x => x.id === log.id ? log : x));
         if (user) syncRestaurant(user.id, log);
       },
       deleteStandaloneRestaurant: (id) => {
+        if (demoMode) { setDemoStandalone(p => p.filter(x => x.id !== id)); return; }
         setStandalone(p => p.filter(x => x.id !== id));
         if (user) deleteRestaurant$(user.id, id);
       },
 
       signOut: async () => {
+        setDemoMode(false);
         await supabase.auth.signOut();
       },
     }}>

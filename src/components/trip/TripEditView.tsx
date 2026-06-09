@@ -12,7 +12,7 @@ function blankHotel(): HotelLog {
   return {
     id: `hotel-${Date.now()}`,
     hotelName: '', checkIn: '', checkOut: '',
-    rating: 8,
+    rating: 4,
     location: { lat: 0, lng: 0, city: '', country: '' },
     photos: [], notes: '',
     pricePerNight: 0, currency: 'USD',
@@ -25,9 +25,9 @@ function blankDining(): DiningLog {
     restaurantName: '', cuisine: '',
     date: '', time: 'Dinner',
     totalExpense: 0, currency: 'USD',
-    vibeRating: 4, overallRating: 8,
+    overallRating: 4,
     location: { lat: 0, lng: 0, city: '', country: '' },
-    photos: [], dishes: [], notes: '',
+    photos: [], dishes: [],
   };
 }
 
@@ -84,8 +84,8 @@ function HotelCard({ hotel, onChange, onDelete }: {
               placeholder="e.g. Japan" className={INPUT} />
           </div>
           <div>
-            <label className={LABEL}>Rating (0–10)</label>
-            <input type="number" min="0" max="10" step="0.1" value={hotel.rating}
+            <label className={LABEL}>Rating (0–5)</label>
+            <input type="number" min="0" max="5" step="0.1" value={hotel.rating}
               onChange={e => s('rating', parseFloat(e.target.value) || 0)} className={INPUT} />
           </div>
           <div>
@@ -170,8 +170,8 @@ function DiningCard({ dining, onChange, onDelete }: {
             <DatePickerInput label="Date" value={dining.date} onChange={v => s('date', v)} />
           </div>
           <div>
-            <label className={LABEL}>Rating (0–10)</label>
-            <input type="number" min="0" max="10" step="0.1" value={dining.overallRating}
+            <label className={LABEL}>Rating (0–5)</label>
+            <input type="number" min="0" max="5" step="0.1" value={dining.overallRating}
               onChange={e => s('overallRating', parseFloat(e.target.value) || 0)} className={INPUT} />
           </div>
           <div>
@@ -208,12 +208,6 @@ function DiningCard({ dining, onChange, onDelete }: {
               <option value="2">★★ 2 Stars</option>
               <option value="3">★★★ 3 Stars</option>
             </select>
-          </div>
-          <div className="col-span-2">
-            <label className={LABEL}>Notes</label>
-            <textarea value={dining.notes} onChange={e => s('notes', e.target.value)}
-              placeholder="Your dining experience…" rows={2}
-              className={`${INPUT} resize-none`} />
           </div>
         </div>
       )}
