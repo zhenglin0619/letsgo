@@ -5,9 +5,9 @@ import StatsBento from '@/components/dashboard/StatsBento';
 
 export default function DashboardPage() {
   return (
-    <main className="pt-24 pb-24 px-8 max-w-7xl mx-auto">
+    <main className="pt-24 px-8 max-w-7xl mx-auto h-screen overflow-hidden">
       {/* Main bento grid */}
-      <div className="grid grid-cols-12 gap-4 mb-8">
+      <div className="grid grid-cols-12 gap-4">
         <motion.div
           className="col-span-9"
           initial={{ opacity: 0 }}
