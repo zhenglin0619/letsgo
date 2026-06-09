@@ -1,16 +1,35 @@
 'use client';
 import { motion } from 'framer-motion';
 import { Plane, BedDouble, Utensils, Earth } from 'lucide-react';
-import { globalStats } from '@/store/data';
+import { useTrips } from '@/store/tripsContext';
 
-const stats = [
-  { label: 'Trips', value: globalStats.trips, icon: Plane, color: '#404040' },
-  { label: 'Countries / Cities', value: `${globalStats.countriesVisited} / ${globalStats.citiesVisited}`, icon: Earth, color: '#404040' },
-  { label: 'Hotels / Nights', value: `${globalStats.hotels} / ${globalStats.nights}`, icon: BedDouble, color: '#404040' },
-  { label: 'Restaurants', value: globalStats.restaurants, icon: Utensils, color: '#404040' },
-];
+function nightsBetween(checkIn: string, checkOut: string) {
+  return Math.max(0, Math.round(
+    (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000
+  ));
+}
 
 export default function StatsBento() {
+  const { trips } = useTrips();
+
+  const tripCount     = trips.length;
+  const countries     = new Set(trips.flatMap(t => t.countries)).size;
+  const cities        = new Set([
+    ...trips.map(t => t.city).filter(Boolean),
+    ...trips.flatMap(t => t.hotels.map(h => h.location.city)),
+    ...trips.flatMap(t => t.diningLogs.map(d => d.location.city)),
+  ]).size;
+  const hotelCount    = trips.flatMap(t => t.hotels).length;
+  const nightCount    = trips.flatMap(t => t.hotels).reduce((s, h) => s + nightsBetween(h.checkIn, h.checkOut), 0);
+  const restCount     = trips.flatMap(t => t.diningLogs).length;
+
+  const stats = [
+    { label: 'Trips',             value: tripCount,                          icon: Plane,    color: '#404040' },
+    { label: 'Countries / Cities', value: `${countries} / ${cities}`,        icon: Earth,    color: '#404040' },
+    { label: 'Hotels / Nights',   value: `${hotelCount} / ${nightCount}`,    icon: BedDouble, color: '#404040' },
+    { label: 'Restaurants',       value: restCount,                           icon: Utensils, color: '#404040' },
+  ];
+
   return (
     <div className="flex flex-col gap-3 h-full">
       {stats.map((s, i) => (

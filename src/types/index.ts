@@ -12,12 +12,12 @@ export interface DiningLog {
   restaurantName: string;
   cuisine: string;
   date: string;
-  time: 'Breakfast' | 'Lunch' | 'Dinner' | 'Late Night';
+  time: 'Breakfast' | 'Brunch' | 'Lunch' | 'Afternoon Tea' | 'Dinner' | 'Late Night';
   totalExpense: number;
   currency: string;
   vibeRating: number; // 1–5
   overallRating: number; // 0–10
-  location: { lat: number; lng: number; city: string; country: string };
+  location: { lat: number; lng: number; city: string; country: string; address?: string };
   photos: string[];
   dishes: Dish[];
   notes: string;
@@ -45,6 +45,8 @@ export interface Trip {
   startDate: string;
   endDate: string;
   countries: string[];
+  city?: string;
+  photos?: string[];
   hotels: HotelLog[];
   diningLogs: DiningLog[];
   tags: string[];

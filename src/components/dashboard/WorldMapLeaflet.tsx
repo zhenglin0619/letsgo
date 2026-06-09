@@ -1,8 +1,19 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { mapPins } from '@/store/data';
+
+export interface MapPin {
+  id: string;
+  lat: number;
+  lng: number;
+  type: 'dining' | 'hotel';
+  label: string;
+}
+
+interface Props {
+  pins: MapPin[];
+}
 
 function makeIcon(type: string) {
   const color = type === 'dining' ? '#C87A53' : '#4A5343';
@@ -28,22 +39,27 @@ function makeIcon(type: string) {
   });
 }
 
-export default function WorldMapLeaflet() {
+export default function WorldMapLeaflet({ pins }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const [mapReady, setMapReady] = useState(false);
 
+  // Initialize map once
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    const container = containerRef.current;
+    if (!container || mapRef.current) return;
 
-    const map = L.map(containerRef.current, {
+    const map = L.map(container, {
       center: [22, 12],
       zoom: 2,
       zoomControl: false,
       attributionControl: true,
       scrollWheelZoom: false,
+      touchZoom: true,
+      doubleClickZoom: false,
     });
 
-    // CartoDB Positron — clean, light, Apple Maps-like
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
@@ -51,11 +67,96 @@ export default function WorldMapLeaflet() {
       maxZoom: 19,
     }).addTo(map);
 
-    // Custom zoom control, bottom-right
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Markers
-    mapPins.forEach(pin => {
+    mapRef.current = map;
+    setMapReady(true);
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const raw = e.deltaMode === 1 ? e.deltaY * 20 :
+                  e.deltaMode === 2 ? e.deltaY * 300 : e.deltaY;
+      map.setZoom(map.getZoom() - raw * 0.05, { animate: false });
+    };
+    container.addEventListener('wheel', handleWheel, { passive: false });
+
+    let gestureStartZoom = map.getZoom();
+    const handleGestureStart = (e: Event) => { e.preventDefault(); gestureStartZoom = map.getZoom(); };
+    const handleGestureChange = (e: Event) => {
+      e.preventDefault();
+      const scale = (e as unknown as { scale: number }).scale;
+      if (scale > 0) map.setZoom(gestureStartZoom + Math.log2(scale), { animate: false });
+    };
+    const handleGestureEnd = (e: Event) => { e.preventDefault(); };
+    container.addEventListener('gesturestart', handleGestureStart, { passive: false });
+    container.addEventListener('gesturechange', handleGestureChange, { passive: false });
+    container.addEventListener('gestureend', handleGestureEnd, { passive: false });
+
+    const ptrs = new Map<number, { x: number; y: number }>();
+    let pinchStartDist = 0;
+    let pinchStartZoom = 2;
+
+    const handlePtrDown = (e: PointerEvent) => {
+      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (ptrs.size === 2) {
+        const [a, b] = Array.from(ptrs.values());
+        pinchStartDist = Math.hypot(b.x - a.x, b.y - a.y);
+        pinchStartZoom = map.getZoom();
+      }
+    };
+    const handlePtrMove = (e: PointerEvent) => {
+      if (!ptrs.has(e.pointerId)) return;
+      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (ptrs.size === 2 && pinchStartDist > 0) {
+        const [a, b] = Array.from(ptrs.values());
+        const dist = Math.hypot(b.x - a.x, b.y - a.y);
+        map.setZoom(pinchStartZoom + Math.log2(dist / pinchStartDist), { animate: false });
+      }
+    };
+    const handlePtrUp = (e: PointerEvent) => {
+      ptrs.delete(e.pointerId);
+      if (ptrs.size < 2) pinchStartDist = 0;
+    };
+    container.addEventListener('pointerdown', handlePtrDown);
+    container.addEventListener('pointermove', handlePtrMove);
+    container.addEventListener('pointerup', handlePtrUp);
+    container.addEventListener('pointercancel', handlePtrUp);
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('gesturestart', handleGestureStart);
+      container.removeEventListener('gesturechange', handleGestureChange);
+      container.removeEventListener('gestureend', handleGestureEnd);
+      container.removeEventListener('pointerdown', handlePtrDown);
+      container.removeEventListener('pointermove', handlePtrMove);
+      container.removeEventListener('pointerup', handlePtrUp);
+      container.removeEventListener('pointercancel', handlePtrUp);
+      map.remove();
+      mapRef.current = null;
+      markersRef.current.clear();
+    };
+  }, []);
+
+  // Sync markers whenever pins or map readiness changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const currentIds = new Set(markersRef.current.keys());
+    const incomingIds = new Set(pins.map(p => p.id));
+
+    // Remove markers no longer in pins
+    for (const id of currentIds) {
+      if (!incomingIds.has(id)) {
+        markersRef.current.get(id)?.remove();
+        markersRef.current.delete(id);
+      }
+    }
+
+    // Add new markers
+    for (const pin of pins) {
+      if (markersRef.current.has(pin.id)) continue;
       const marker = L.marker([pin.lat, pin.lng], { icon: makeIcon(pin.type) });
       marker.bindPopup(
         `<div class="tt-popup">
@@ -67,15 +168,9 @@ export default function WorldMapLeaflet() {
       marker.on('mouseover', () => marker.openPopup());
       marker.on('mouseout', () => marker.closePopup());
       marker.addTo(map);
-    });
-
-    mapRef.current = map;
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
-  }, []);
+      markersRef.current.set(pin.id, marker);
+    }
+  }, [pins, mapReady]);
 
   return <div ref={containerRef} style={{ height: '100%', width: '100%' }} />;
 }

@@ -1,16 +1,16 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MapPin, Compass, BedDouble, Utensils } from 'lucide-react';
+import { MapPin, Plane, BedDouble, Utensils } from 'lucide-react';
 
 export default function Navbar() {
   const path = usePathname();
 
   const links = [
     { href: '/', label: 'World', icon: MapPin },
-    { href: '/trips', label: 'Trips', icon: Compass },
-    { href: '/hotels', label: 'Hotels', icon: BedDouble },
+    { href: '/trips', label: 'Trips', icon: Plane },
     { href: '/restaurants', label: 'Restaurants', icon: Utensils },
+    { href: '/hotels', label: 'Hotels', icon: BedDouble },
   ];
 
   return (

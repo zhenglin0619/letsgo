@@ -25,7 +25,6 @@ export default function HotelsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
       >
-        <p className="tag-chip mb-3">All Stays</p>
         <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Your Hotels</h1>
         <p className="mt-2 text-[#8A8A8A] text-sm">
           {allHotels.length} hotel{allHotels.length !== 1 ? 's' : ''} · {allHotels.reduce((sum, h) => sum + nights(h.checkIn, h.checkOut), 0)} nights total

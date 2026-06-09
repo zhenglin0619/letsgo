@@ -1,19 +1,98 @@
 'use client';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTrips } from '@/store/tripsContext';
-import { MapPin, Clock } from 'lucide-react';
+import { MapPin, Clock, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import StarRating from '@/components/ui/StarRating';
 import MichelinBadge from '@/components/ui/MichelinBadge';
+import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
+import { DiningLog } from '@/types';
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function DiningMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) { setConfirming(false); return; }
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+        className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors flex items-center justify-center"
+      >
+        <MoreHorizontal size={14} className="text-white" />
+      </button>
+
+      {open && (
+        <div className="absolute top-9 right-0 bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-40 z-30">
+          {!confirming ? (
+            <>
+              <button
+                onClick={e => { e.stopPropagation(); onEdit(); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
+              >
+                <Pencil size={13} className="text-[#8A8A8A]" /> Edit
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setConfirming(true); }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+              >
+                <Trash2 size={13} /> Delete
+              </button>
+            </>
+          ) : (
+            <div className="px-4 py-2">
+              <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this restaurant?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={e => { e.stopPropagation(); onDelete(); setOpen(false); }}
+                  className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
+                >Delete</button>
+                <button
+                  onClick={e => { e.stopPropagation(); setConfirming(false); }}
+                  className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
+                >Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RestaurantsPage() {
-  const { trips: mockTrips } = useTrips();
-  const allRestaurants = mockTrips.flatMap(trip =>
-    trip.diningLogs.map(dining => ({ ...dining, tripTitle: trip.title }))
-  ).sort((a, b) => b.overallRating - a.overallRating);
+  const { trips, standaloneRestaurants, updateTrip, deleteStandaloneRestaurant } = useTrips();
+  const allRestaurants = [
+    ...trips.flatMap(trip =>
+      trip.diningLogs.map(dining => ({ ...dining, tripTitle: trip.title, tripId: trip.id, isStandalone: false }))
+    ),
+    ...standaloneRestaurants.map(log => ({ ...log, tripTitle: '', tripId: '', isStandalone: true })),
+  ].sort((a, b) => b.overallRating - a.overallRating);
+
+  const [editTarget, setEditTarget] = useState<{ log: DiningLog; tripId: string } | null>(null);
+
+  function handleDelete(diningId: string, tripId: string, isStandalone: boolean) {
+    if (isStandalone) {
+      deleteStandaloneRestaurant(diningId);
+    } else {
+      const trip = trips.find(t => t.id === tripId);
+      if (!trip) return;
+      updateTrip({ ...trip, diningLogs: trip.diningLogs.filter(d => d.id !== diningId) });
+    }
+  }
 
   return (
     <main className="pt-24 pb-24 px-8 max-w-7xl mx-auto">
@@ -23,8 +102,7 @@ export default function RestaurantsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
       >
-        <p className="tag-chip mb-3">All Dining</p>
-        <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Your Restaurants</h1>
+        <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Dinings</h1>
         <p className="mt-2 text-[#8A8A8A] text-sm">
           {allRestaurants.length} restaurant{allRestaurants.length !== 1 ? 's' : ''} · sorted by rating
         </p>
@@ -39,48 +117,46 @@ export default function RestaurantsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1, duration: 0.45 }}
           >
-            {dining.photos[0] && (
-              <div className="relative h-44 overflow-hidden">
+            <div className="relative h-44 overflow-hidden">
+              {dining.photos[0] ? (
                 <img
                   src={dining.photos[0]}
                   alt={dining.restaurantName}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
-                <div className="absolute bottom-3 left-4 text-white">
-                  <h2 className="serif font-semibold text-lg leading-tight">{dining.restaurantName}</h2>
-                  <p className="text-xs text-white/70 mt-0.5">{dining.cuisine}</p>
-                </div>
-                <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                  <span className="text-white text-sm font-semibold serif">{dining.overallRating}</span>
-                </div>
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/30 via-[#E8E4DC] to-[#4A5343]/20" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+              <div className="absolute bottom-3 left-4 text-white">
+                <h2 className="serif font-semibold text-lg leading-tight">{dining.restaurantName}</h2>
+                <p className="text-xs text-white/70 mt-0.5">{dining.cuisine}</p>
               </div>
-            )}
-            <div className="p-4">
-              {!dining.photos[0] && (
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h2 className="serif font-semibold text-lg text-[#1A1A1A]">{dining.restaurantName}</h2>
-                    <p className="text-xs text-[#8A8A8A]">{dining.cuisine}</p>
-                  </div>
-                  <span className="serif text-2xl font-semibold text-[#C87A53]">{dining.overallRating}</span>
+              {dining.michelinStars && (
+                <div className="absolute top-3 left-3">
+                  <MichelinBadge stars={dining.michelinStars} />
                 </div>
               )}
-              <div className="flex items-center gap-3 text-xs text-[#8A8A8A] mb-3">
-                <span className="flex items-center gap-1"><MapPin size={11} />{dining.location.city}, {dining.location.country}</span>
-                <span className="flex items-center gap-1"><Clock size={11} />{dining.time}</span>
+              <div className="absolute top-3 right-3">
+                <DiningMenu
+                  onEdit={() => setEditTarget({ log: dining, tripId: dining.tripId })}
+                  onDelete={() => handleDelete(dining.id, dining.tripId, dining.isStandalone)}
+                />
               </div>
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
+            </div>
+
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3 text-xs text-[#8A8A8A]">
+                  <span className="flex items-center gap-1"><MapPin size={11} />{dining.location.city}, {dining.location.country}</span>
+                  <span className="flex items-center gap-1"><Clock size={11} />{dining.time}</span>
+                </div>
                 <StarRating value={dining.overallRating} readonly size="sm" />
-                {dining.michelinStars && <MichelinBadge stars={dining.michelinStars} />}
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-[#8A8A8A]">{formatDate(dining.date)}</span>
                 <span className="text-xs text-[#8A8A8A]">{dining.currency} {dining.totalExpense.toLocaleString()}</span>
               </div>
-              {dining.notes && (
-                <p className="text-xs text-[#8A8A8A] italic line-clamp-2 mt-2">&ldquo;{dining.notes}&rdquo;</p>
-              )}
               <p className="text-[10px] text-[#C87A53] font-medium mt-2 uppercase tracking-wider">{dining.tripTitle}</p>
             </div>
           </motion.div>
@@ -94,6 +170,12 @@ export default function RestaurantsPage() {
           </div>
         )}
       </div>
+
+      <AddRestaurantModal
+        open={!!editTarget}
+        onClose={() => setEditTarget(null)}
+        initialDining={editTarget ?? undefined}
+      />
     </main>
   );
 }

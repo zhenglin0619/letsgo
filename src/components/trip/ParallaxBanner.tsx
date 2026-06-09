@@ -36,15 +36,9 @@ export default function ParallaxBanner({ trip }: Props) {
       {/* Content */}
       <div className="absolute bottom-0 left-0 right-0 px-8 pb-10">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-wrap gap-2 mb-3">
-            {trip.tags.map(t => (
-              <span key={t} className="text-xs font-medium text-white bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">{t}</span>
-            ))}
-          </div>
           <h1 className="serif text-6xl font-semibold text-white mb-2 leading-tight drop-shadow-sm">
             {trip.title}
           </h1>
-          <p className="text-white/75 text-lg italic serif mb-4">{trip.subtitle}</p>
           <div className="flex items-center gap-5 text-white/70 text-sm">
             <span className="flex items-center gap-1.5">
               <Calendar size={14} />

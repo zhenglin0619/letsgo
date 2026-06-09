@@ -1,27 +1,30 @@
 'use client';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
 import FAB from './FAB';
-import QuickAddModal from '@/components/upload/QuickAddModal';
 import AddTripModal from '@/components/upload/AddTripModal';
+import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
 import { TripsProvider } from '@/store/tripsContext';
 
 export default function RootShell({ children }: { children: React.ReactNode }) {
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [addTripOpen, setAddTripOpen] = useState(false);
+  const [addRestaurantOpen, setAddRestaurantOpen] = useState(false);
+  const pathname = usePathname();
+  const hideFAB = /^\/trips\/.+/.test(pathname);
 
   function handleSelect(type: 'trip' | 'hotel' | 'restaurant') {
     if (type === 'trip') setAddTripOpen(true);
-    else setQuickAddOpen(true);
+    else if (type === 'restaurant') setAddRestaurantOpen(true);
   }
 
   return (
     <TripsProvider>
       <Navbar />
       {children}
-      <FAB onSelect={handleSelect} />
+      {!hideFAB && <FAB onSelect={handleSelect} />}
       <AddTripModal open={addTripOpen} onClose={() => setAddTripOpen(false)} />
-      <QuickAddModal open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />
+      <AddRestaurantModal open={addRestaurantOpen} onClose={() => setAddRestaurantOpen(false)} />
     </TripsProvider>
   );
 }

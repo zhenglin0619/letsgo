@@ -152,5 +152,6 @@ export const mapPins = [
   { lat: 1.3521, lng: 103.8198, type: 'hotel', label: 'Singapore Hotel' },
   { lat: 22.3193, lng: 114.1694, type: 'dining', label: 'Hong Kong Dining' },
   { lat: 40.7128, lng: -74.0060, type: 'hotel', label: 'NYC Hotel' },
+  { lat: 42.3438, lng: -71.0961, type: 'dining', label: '30 Peterborough St, Boston' },
   { lat: -33.8688, lng: 151.2093, type: 'dining', label: 'Sydney Dining' },
 ];

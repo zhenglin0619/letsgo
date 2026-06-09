@@ -1,6 +1,8 @@
 'use client';
 import dynamic from 'next/dynamic';
-import { ShimmerBlock } from '@/components/ui/Shimmer';
+import { useMemo } from 'react';
+import { useTrips } from '@/store/tripsContext';
+import type { MapPin } from './WorldMapLeaflet';
 
 const WorldMapLeaflet = dynamic(() => import('./WorldMapLeaflet'), {
   ssr: false,
@@ -8,6 +10,40 @@ const WorldMapLeaflet = dynamic(() => import('./WorldMapLeaflet'), {
 });
 
 export default function WorldMap() {
+  const { trips, standaloneRestaurants } = useTrips();
+
+  const pins = useMemo<MapPin[]>(() => [
+    ...trips.flatMap(trip => [
+      ...trip.diningLogs
+        .filter(d => d.location.lat !== 0 || d.location.lng !== 0)
+        .map(d => ({
+          id: d.id,
+          lat: d.location.lat,
+          lng: d.location.lng,
+          type: 'dining' as const,
+          label: d.restaurantName,
+        })),
+      ...trip.hotels
+        .filter(h => h.location.lat !== 0 || h.location.lng !== 0)
+        .map(h => ({
+          id: h.id,
+          lat: h.location.lat,
+          lng: h.location.lng,
+          type: 'hotel' as const,
+          label: h.hotelName,
+        })),
+    ]),
+    ...standaloneRestaurants
+      .filter(d => d.location.lat !== 0 || d.location.lng !== 0)
+      .map(d => ({
+        id: d.id,
+        lat: d.location.lat,
+        lng: d.location.lng,
+        type: 'dining' as const,
+        label: d.restaurantName,
+      })),
+  ], [trips, standaloneRestaurants]);
+
   return (
     <div className="bento-card overflow-hidden" style={{ background: '#fff', isolation: 'isolate' }}>
       {/* Header */}
@@ -27,7 +63,7 @@ export default function WorldMap() {
 
       {/* Map */}
       <div style={{ height: 520 }}>
-        <WorldMapLeaflet />
+        <WorldMapLeaflet pins={pins} />
       </div>
     </div>
   );

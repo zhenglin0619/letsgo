@@ -29,11 +29,14 @@ function toISO(display: string) {
 export default function DatePickerInput({ label, value, onChange, min, defaultMonth }: Props) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(() => toDisplay(value));
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
   const ref = useRef<HTMLDivElement>(null);
 
-  const selected      = value        ? (() => { try { return parseISO(value);        } catch { return undefined; } })() : undefined;
-  const minDate       = min          ? (() => { try { return parseISO(min);          } catch { return undefined; } })() : undefined;
+  const selected         = value        ? (() => { try { return parseISO(value);        } catch { return undefined; } })() : undefined;
+  const minDate          = min          ? (() => { try { return parseISO(min);          } catch { return undefined; } })() : undefined;
   const defaultMonthDate = defaultMonth ? (() => { try { return parseISO(defaultMonth); } catch { return undefined; } })() : undefined;
+
+  useEffect(() => { setText(toDisplay(value)); }, [value]);
 
   useEffect(() => {
     function onOutside(e: MouseEvent) {
@@ -42,6 +45,19 @@ export default function DatePickerInput({ label, value, onChange, min, defaultMo
     document.addEventListener('mousedown', onOutside);
     return () => document.removeEventListener('mousedown', onOutside);
   }, []);
+
+  function handleToggle() {
+    if (!open && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setPopupStyle({
+        position: 'fixed',
+        top: rect.top,
+        left: rect.right + 8,
+        zIndex: 10200,
+      });
+    }
+    setOpen(v => !v);
+  }
 
   function handleType(e: React.ChangeEvent<HTMLInputElement>) {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
@@ -58,14 +74,12 @@ export default function DatePickerInput({ label, value, onChange, min, defaultMo
   }
 
   function handleBlur() {
-    // If text is incomplete/invalid, snap back to current valid value
     if (text && !toISO(text)) setText(toDisplay(value));
   }
 
   function handleCalendarSelect(date: Date | undefined) {
     if (!date) return;
-    const iso = format(date, 'yyyy-MM-dd');
-    onChange(iso);
+    onChange(format(date, 'yyyy-MM-dd'));
     setText(format(date, DISPLAY));
     setOpen(false);
   }
@@ -89,7 +103,7 @@ export default function DatePickerInput({ label, value, onChange, min, defaultMo
         />
         <button
           type="button"
-          onClick={() => setOpen(v => !v)}
+          onClick={handleToggle}
           className="flex-shrink-0 ml-2 text-[#8A8A8A] hover:text-[#C87A53] transition-colors"
         >
           <CalendarDays size={18} />
@@ -97,7 +111,7 @@ export default function DatePickerInput({ label, value, onChange, min, defaultMo
       </div>
 
       {open && (
-        <div className="absolute bottom-full left-0 mb-2 z-[200] bg-white rounded-2xl shadow-xl border border-[#E8E6E1] p-4">
+        <div style={popupStyle} className="bg-white rounded-2xl shadow-xl border border-[#E8E6E1] p-4">
           <DayPicker
             mode="single"
             selected={selected}

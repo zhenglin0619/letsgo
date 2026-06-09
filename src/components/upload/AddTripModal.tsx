@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, ImagePlus } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
@@ -9,16 +9,37 @@ import DatePickerInput from '@/components/ui/DatePickerInput';
 interface Props {
   open: boolean;
   onClose: () => void;
+  initialTrip?: Trip;
 }
 
 const emptyForm = { title: '', country: '', city: '', startDate: '', endDate: '' };
 
-export default function AddTripModal({ open, onClose }: Props) {
-  const { addTrip } = useTrips();
+export default function AddTripModal({ open, onClose, initialTrip }: Props) {
+  const { addTrip, updateTrip } = useTrips();
+  const isEdit = !!initialTrip;
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState<string>('');
   const [step, setStep] = useState<'form' | 'done'>('form');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Re-initialize form whenever the modal opens (or switches trip)
+  useEffect(() => {
+    if (!open) return;
+    if (initialTrip) {
+      setForm({
+        title:     initialTrip.title,
+        country:   initialTrip.countries[0] || '',
+        city:      initialTrip.city || '',
+        startDate: initialTrip.startDate,
+        endDate:   initialTrip.endDate,
+      });
+      setCoverPreview(initialTrip.coverPhoto || '');
+    } else {
+      setForm(emptyForm);
+      setCoverPreview('');
+    }
+    setStep('form');
+  }, [open, initialTrip]);
 
   function set(field: string, value: string) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -27,41 +48,50 @@ export default function AddTripModal({ open, onClose }: Props) {
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setCoverPreview(url);
+    const reader = new FileReader();
+    reader.onload = () => setCoverPreview(reader.result as string);
+    reader.readAsDataURL(file);
   }
 
   const isValid = form.title.trim() && form.country.trim() && form.city.trim() && form.startDate && form.endDate;
 
   function handleSubmit() {
     if (!isValid) return;
-    const id = `${form.city.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-    const newTrip: Trip = {
-      id,
-      title: form.title.trim(),
-      subtitle: '',
-      coverPhoto: coverPreview,
-      startDate: form.startDate,
-      endDate: form.endDate,
-      countries: [form.country.trim()],
-      tags: [],
-      hotels: [],
-      diningLogs: [],
-    };
-    addTrip(newTrip);
+    if (isEdit) {
+      updateTrip({
+        ...initialTrip!,
+        title:      form.title.trim(),
+        countries:  [form.country.trim()],
+        city:       form.city.trim(),
+        startDate:  form.startDate,
+        endDate:    form.endDate,
+        coverPhoto: coverPreview,
+      });
+    } else {
+      const id = `${form.city.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+      addTrip({
+        id,
+        title:      form.title.trim(),
+        subtitle:   '',
+        coverPhoto: coverPreview,
+        startDate:  form.startDate,
+        endDate:    form.endDate,
+        countries:  [form.country.trim()],
+        city:       form.city.trim(),
+        tags:       [],
+        hotels:     [],
+        diningLogs: [],
+      });
+    }
     setStep('done');
     setTimeout(() => {
       onClose();
-      setForm(emptyForm);
-      setCoverPreview('');
       setStep('form');
     }, 1400);
   }
 
   function handleClose() {
     onClose();
-    setForm(emptyForm);
-    setCoverPreview('');
     setStep('form');
   }
 
@@ -88,7 +118,7 @@ export default function AddTripModal({ open, onClose }: Props) {
             >
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E1]">
-                <h2 className="serif text-lg font-semibold text-[#1A1A1A]">Add a New Trip</h2>
+                <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{isEdit ? 'Edit Trip' : 'Add a Trip'}</h2>
                 <button
                   onClick={handleClose}
                   className="w-8 h-8 rounded-full bg-[#F0ECE6] flex items-center justify-center hover:bg-[#E8E4DC] transition-colors"
@@ -207,8 +237,8 @@ export default function AddTripModal({ open, onClose }: Props) {
                     >
                       <CheckCircle size={32} className="text-green-500" />
                     </motion.div>
-                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">Trip Created</h3>
-                    <p className="text-sm text-[#8A8A8A]">Find it on the Trips page</p>
+                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{isEdit ? 'Changes Saved' : 'Trip Created'}</h3>
+                    {isEdit && <p className="text-sm text-[#8A8A8A]">Your trip has been updated</p>}
                   </div>
                 )}
               </div>
@@ -220,7 +250,7 @@ export default function AddTripModal({ open, onClose }: Props) {
                     disabled={!isValid}
                     className="bg-[#1A1A1A] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-[#333] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    Create Trip
+                    {isEdit ? 'Save Changes' : 'Create Trip'}
                   </button>
                 </div>
               )}

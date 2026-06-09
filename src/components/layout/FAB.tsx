@@ -1,16 +1,16 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Compass, BedDouble, Utensils } from 'lucide-react';
+import { Plus, Plane, Utensils, BedDouble } from 'lucide-react';
 
 interface FABProps {
   onSelect: (type: 'trip' | 'hotel' | 'restaurant') => void;
 }
 
 const options = [
-  { type: 'trip' as const, label: 'Trip', icon: Compass },
-  { type: 'hotel' as const, label: 'Hotel', icon: BedDouble },
+  { type: 'trip' as const,       label: 'Trip',       icon: Plane },
   { type: 'restaurant' as const, label: 'Restaurant', icon: Utensils },
+  { type: 'hotel' as const,      label: 'Hotel',      icon: BedDouble },
 ];
 
 export default function FAB({ onSelect }: FABProps) {
