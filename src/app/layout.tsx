@@ -3,7 +3,7 @@ import './globals.css';
 import RootShell from '@/components/layout/RootShell';
 
 export const metadata: Metadata = {
-  title: "LET'S GO — Your Travel Chronicle",
+  title: "LET'S GO",
   description: 'A premium journal for your dining and hotel footprint across the world.',
 };
 

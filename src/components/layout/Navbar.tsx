@@ -1,7 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MapPin, Plane, BedDouble, Utensils } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { MapPin, Plane, BedDouble, Utensils, LogOut, User } from 'lucide-react';
+import { useTrips } from '@/store/tripsContext';
 
 function LetsGoLogo() {
   return (
@@ -79,6 +81,65 @@ function LetsGoLogo() {
   );
 }
 
+function UserMenu() {
+  const { user, signOut } = useTrips();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const avatarUrl: string = user?.user_metadata?.avatar_url ?? '';
+  const displayName: string = user?.user_metadata?.full_name ?? user?.email ?? '';
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  if (!user) return null;
+
+  return (
+    <div ref={ref} className="relative pl-5 border-l border-[#E8E6E1]">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#C87A53] transition-all"
+      >
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+        ) : (
+          <div className="w-full h-full bg-[#F0ECE6] flex items-center justify-center">
+            <User size={14} className="text-[#8A8A8A]" />
+          </div>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-10 w-52 bg-white rounded-2xl shadow-xl border border-[#E8E6E1] py-2 z-[99999]"
+          style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
+          <div className="px-4 py-2.5 border-b border-[#F0ECE6]">
+            {avatarUrl && (
+              <img src={avatarUrl} alt={displayName} referrerPolicy="no-referrer"
+                className="w-9 h-9 rounded-full object-cover mb-2" />
+            )}
+            {displayName && (
+              <p className="text-sm font-semibold text-[#1A1A1A] truncate">{displayName}</p>
+            )}
+            <p className="text-xs text-[#8A8A8A] truncate">{user.email}</p>
+          </div>
+          <button
+            onClick={() => { setOpen(false); signOut(); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
+          >
+            <LogOut size={14} />
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Navbar() {
   const path = usePathname();
 
@@ -104,6 +165,7 @@ export default function Navbar() {
             </Link>
           );
         })}
+        <UserMenu />
       </nav>
     </header>
   );
