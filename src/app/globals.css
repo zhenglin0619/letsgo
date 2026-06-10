@@ -13,6 +13,82 @@
   --shadow: rgba(26, 26, 26, 0.08);
 }
 
+/* ── Navbar glass ────────────────────────────────────────────────────────────── */
+.navbar-glass {
+  background: rgba(251, 251, 250, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom-width: 1px !important;
+  border-bottom-style: solid !important;
+  border-bottom-color: rgba(180, 175, 168, 0.6) !important;
+}
+
+/* ── Night mode ──────────────────────────────────────────────────────────────── */
+html.dark {
+  --canvas:     #17161A;
+  --white:      #1F1E23;
+  --charcoal:   #EAE5DE;
+  --olive:      #7C8F74;
+  --terracotta: #D4895E;
+  --muted:      #807B75;
+  --border:     #2E2C34;
+  --shadow:     rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+/* Body & base text */
+html.dark body {
+  background-color: #17161A;
+  color: #EAE5DE;
+}
+
+/* Navbar */
+html.dark .navbar-glass {
+  background: rgba(23, 22, 26, 0.90);
+  border-bottom-color: rgba(50, 48, 58, 0.7) !important;
+}
+
+/* White/light surface backgrounds — attribute selectors avoid escaping issues */
+html.dark [class*="bg-white"]       { background-color: #1F1E23 !important; }
+html.dark [class*="bg-[#F5F2EE]"]  { background-color: #252229 !important; }
+html.dark [class*="bg-[#F0ECE6]"]  { background-color: #252229 !important; }
+html.dark [class*="bg-[#F9F7F4]"]  { background-color: #28262C !important; }
+html.dark [class*="bg-[#FDF6F2]"]  { background-color: #251F24 !important; }
+html.dark [class*="bg-[#FBFBFA]"]  { background-color: #17161A !important; }
+
+/* Text colors */
+html.dark [class*="text-[#1A1A1A]"] { color: #EAE5DE !important; }
+html.dark [class*="text-[#8A8A8A]"] { color: #807B75 !important; }
+html.dark [class*="text-[#4A5343]"] { color: #7C8F74 !important; }
+
+/* Borders */
+html.dark [class*="border-[#E8E6E1]"] { border-color: #2E2C34 !important; }
+html.dark [class*="border-[#D4CFC6]"] { border-color: #3A3840 !important; }
+html.dark [class*="border-[#F0ECE6]"] { border-color: #2E2C34 !important; }
+
+/* Inputs & selects */
+html.dark input, html.dark select, html.dark textarea {
+  background-color: #1F1E23 !important;
+  color: #EAE5DE !important;
+  border-color: #2E2C34 !important;
+}
+html.dark input::placeholder, html.dark textarea::placeholder { color: #5A5760 !important; }
+
+/* Hover surfaces */
+html.dark [class*="hover:bg-[#F5F2EE]"]:hover { background-color: #2C2A32 !important; }
+html.dark [class*="hover:bg-[#F9F7F4]"]:hover { background-color: #2C2A32 !important; }
+html.dark [class*="hover:bg-[#F0ECE6]"]:hover { background-color: #2C2A32 !important; }
+html.dark [class*="hover:bg-[#E8E4DC]"]:hover { background-color: #333038 !important; }
+
+/* Scrollbar */
+html.dark ::-webkit-scrollbar-thumb { background: #48454F; }
+
+/* World map header — night mode */
+html.dark .world-map-header {
+  background-color: var(--white);
+  border-bottom-color: var(--border) !important;
+}
+
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 

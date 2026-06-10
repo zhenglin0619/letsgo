@@ -54,9 +54,9 @@ export default function WorldMap() {
   ], [trips, standaloneRestaurants, standaloneHotels]);
 
   return (
-    <div className="bento-card overflow-hidden" style={{ background: '#fff', isolation: 'isolate' }}>
-      {/* Header */}
-      <div className="px-5 py-3 flex items-center justify-between border-b border-[#F0ECE6]">
+    <div className="bento-card overflow-hidden" style={{ isolation: 'isolate' }}>
+      {/* Header — adapts to night mode */}
+      <div className="world-map-header px-5 py-3 flex items-center justify-between border-b border-[#F0ECE6]">
         <h2 className="serif text-xl font-semibold text-[#1A1A1A]">World Footprint</h2>
         <div className="flex items-center gap-4 text-xs text-[#8A8A8A]">
           <span className="flex items-center gap-1.5">
@@ -70,8 +70,8 @@ export default function WorldMap() {
         </div>
       </div>
 
-      {/* Map */}
-      <div style={{ height: 520 }}>
+      {/* Map — always light so CARTO tiles look correct */}
+      <div style={{ height: 520, background: '#fff' }}>
         <WorldMapLeaflet pins={pins} />
       </div>
     </div>

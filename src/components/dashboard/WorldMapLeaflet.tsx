@@ -46,6 +46,31 @@ export default function WorldMapLeaflet({ pins }: Props) {
   const meMakerRef = useRef<L.Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const el = document.documentElement;
+    setDark(el.classList.contains('dark'));
+    const observer = new MutationObserver(() => setDark(el.classList.contains('dark')));
+    observer.observe(el, { attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  // Style Leaflet zoom buttons to match dark/light mode
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !mapReady) return;
+    const btns = container.querySelectorAll<HTMLElement>(
+      '.leaflet-control-zoom-in, .leaflet-control-zoom-out'
+    );
+    btns.forEach(btn => {
+      btn.style.backgroundColor = dark ? '#2A2830' : '#fff';
+      btn.style.color           = dark ? '#EAE5DE' : '#000';
+      btn.style.borderColor     = dark ? '#3E3B47' : '#ccc';
+      btn.onmouseenter = () => { btn.style.backgroundColor = dark ? '#333040' : '#f4f4f4'; };
+      btn.onmouseleave = () => { btn.style.backgroundColor = dark ? '#2A2830' : '#fff'; };
+    });
+  }, [dark, mapReady]);
 
   function handleLocate() {
     if (!navigator.geolocation || !mapRef.current) return;
@@ -209,13 +234,14 @@ export default function WorldMapLeaflet({ pins }: Props) {
         style={{
           position: 'absolute', top: 12, right: 12, zIndex: 1000,
           width: 32, height: 32, borderRadius: 8,
-          background: '#fff', border: '1px solid #E8E6E1',
-          boxShadow: '0 1px 6px rgba(0,0,0,0.12)',
+          background: dark ? '#2A2830' : '#fff',
+          border: `1px solid ${dark ? '#3E3B47' : '#E8E6E1'}`,
+          boxShadow: dark ? '0 1px 6px rgba(0,0,0,0.35)' : '0 1px 6px rgba(0,0,0,0.12)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', transition: 'background 0.15s',
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#F5F2EE')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+        onMouseEnter={e => (e.currentTarget.style.background = dark ? '#333040' : '#F5F2EE')}
+        onMouseLeave={e => (e.currentTarget.style.background = dark ? '#2A2830' : '#fff')}
       >
         {locating ? (
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C87A53" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
@@ -223,7 +249,7 @@ export default function WorldMapLeaflet({ pins }: Props) {
             <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
           </svg>
         ) : (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={dark ? '#EAE5DE' : '#1A1A1A'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3" />
             <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
             <circle cx="12" cy="12" r="8" />
@@ -236,15 +262,16 @@ export default function WorldMapLeaflet({ pins }: Props) {
         style={{
           position: 'absolute', top: 52, right: 12, zIndex: 1000,
           width: 32, height: 32, borderRadius: 8,
-          background: '#fff', border: '1px solid #E8E6E1',
-          boxShadow: '0 1px 6px rgba(0,0,0,0.12)',
+          background: dark ? '#2A2830' : '#fff',
+          border: `1px solid ${dark ? '#3E3B47' : '#E8E6E1'}`,
+          boxShadow: dark ? '0 1px 6px rgba(0,0,0,0.35)' : '0 1px 6px rgba(0,0,0,0.12)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', transition: 'background 0.15s',
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#F5F2EE')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+        onMouseEnter={e => (e.currentTarget.style.background = dark ? '#333040' : '#F5F2EE')}
+        onMouseLeave={e => (e.currentTarget.style.background = dark ? '#2A2830' : '#fff')}
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={dark ? '#EAE5DE' : '#1A1A1A'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 3l5 5M3 3v5M3 3h5" />
           <path d="M21 3l-5 5M21 3v5M21 3h-5" />
           <path d="M3 21l5-5M3 21v-5M3 21h5" />

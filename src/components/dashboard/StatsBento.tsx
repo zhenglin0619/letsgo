@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { Plane, BedDouble, Utensils, Earth } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
+import { useState, useEffect } from 'react';
 
 function nightsBetween(checkIn: string, checkOut: string) {
   return Math.max(0, Math.round(
@@ -11,6 +12,14 @@ function nightsBetween(checkIn: string, checkOut: string) {
 
 export default function StatsBento() {
   const { trips, standaloneRestaurants } = useTrips();
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const el = document.documentElement;
+    setDark(el.classList.contains('dark'));
+    const observer = new MutationObserver(() => setDark(el.classList.contains('dark')));
+    observer.observe(el, { attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const allDining = [
     ...trips.flatMap(t => t.diningLogs),
@@ -31,11 +40,13 @@ export default function StatsBento() {
   const nightCount = trips.flatMap(t => t.hotels).reduce((s, h) => s + nightsBetween(h.checkIn, h.checkOut), 0);
   const restCount  = allDining.length;
 
+  const iconColor = dark ? '#D4895E' : '#404040';
+
   const stats = [
-    { label: 'Trips',             value: tripCount,                          icon: Plane,    color: '#404040' },
-    { label: 'Countries / Cities', value: `${countries} / ${cities}`,        icon: Earth,    color: '#404040' },
-    { label: 'Hotels / Nights',   value: `${hotelCount} / ${nightCount}`,    icon: BedDouble, color: '#404040' },
-    { label: 'Restaurants',       value: restCount,                           icon: Utensils, color: '#404040' },
+    { label: 'Trips',             value: tripCount,                          icon: Plane,     },
+    { label: 'Countries / Cities', value: `${countries} / ${cities}`,        icon: Earth,     },
+    { label: 'Hotels / Nights',   value: `${hotelCount} / ${nightCount}`,    icon: BedDouble, },
+    { label: 'Restaurants',       value: restCount,                           icon: Utensils,  },
   ];
 
   return (
@@ -54,8 +65,8 @@ export default function StatsBento() {
               <p className="serif text-3xl font-semibold text-[#1A1A1A]">{s.value}</p>
             </div>
             <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: `${s.color}18` }}>
-              <s.icon size={20} style={{ color: s.color }} />
+              style={{ background: `${iconColor}18` }}>
+              <s.icon size={20} style={{ color: iconColor }} />
             </div>
           </div>
         </motion.div>

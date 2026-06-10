@@ -27,18 +27,6 @@ function LetsGoLogo() {
         {/* Left meridian (far-side, fainter) */}
         <path d="M20 7 Q15.5 13.5 15.5 20 Q15.5 26.5 20 33" fill="none" stroke="#C87A53" strokeWidth="0.65" opacity="0.22"/>
 
-        {/* ── Flight path arrow ── */}
-        {/* Main diagonal line */}
-        <line x1="15" y1="25" x2="25" y2="15" stroke="#1A1A1A" strokeWidth="1.6" strokeLinecap="round"/>
-        {/* Arrowhead */}
-        <path d="M25 15 L20.5 15 M25 15 L25 19.5" stroke="#1A1A1A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-
-        {/* Origin: filled terracotta dot */}
-        <circle cx="14.5" cy="25.5" r="2" fill="#C87A53"/>
-
-        {/* Destination: dark ring with terracotta center */}
-        <circle cx="25.5" cy="14.5" r="1.9" fill="#1A1A1A"/>
-        <circle cx="25.5" cy="14.5" r="0.85" fill="#C87A53"/>
       </svg>
 
       {/* ── Wordmark ── */}
@@ -64,7 +52,21 @@ function LetsGoLogo() {
 function UserMenu() {
   const { user, signOut, demoMode, toggleDemoMode } = useTrips();
   const [open, setOpen] = useState(false);
+  const [nightMode, setNightMode] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setNightMode(localStorage.getItem('nightMode') === 'true');
+  }, []);
+
+  function toggleNightMode() {
+    setNightMode(prev => {
+      const next = !prev;
+      localStorage.setItem('nightMode', String(next));
+      document.documentElement.classList.toggle('dark', next);
+      return next;
+    });
+  }
 
   const avatarUrl: string = user?.user_metadata?.avatar_url ?? '';
   const displayName: string = user?.user_metadata?.full_name ?? user?.email ?? '';
@@ -108,11 +110,21 @@ function UserMenu() {
             <p className="text-xs text-[#8A8A8A] truncate">{user.email}</p>
           </div>
           <button
-            onClick={() => { toggleDemoMode(); setOpen(false); }}
+            onClick={toggleNightMode}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
+          >
+            <span>Night Mode</span>
+            <div className={`w-8 rounded-full transition-colors flex items-center px-0.5 ${nightMode ? 'bg-[#C87A53]' : 'bg-[#D4CFC8]'}`}
+              style={{ height: '18px' }}>
+              <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${nightMode ? 'translate-x-3.5' : 'translate-x-0'}`} />
+            </div>
+          </button>
+          <button
+            onClick={toggleDemoMode}
             className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
           >
             <span>Demo Mode</span>
-            <div className={`w-8 h-4.5 rounded-full transition-colors flex items-center px-0.5 ${demoMode ? 'bg-[#C87A53]' : 'bg-[#D4CFC8]'}`}
+            <div className={`w-8 rounded-full transition-colors flex items-center px-0.5 ${demoMode ? 'bg-[#C87A53]' : 'bg-[#D4CFC8]'}`}
               style={{ height: '18px' }}>
               <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${demoMode ? 'translate-x-3.5' : 'translate-x-0'}`} />
             </div>
@@ -142,8 +154,7 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="fixed top-0 inset-x-0 z-[9999] flex items-center justify-between pl-2 pr-8 py-[9px]"
-      style={{ background: 'rgba(251,251,250,0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(180,175,168,0.6)' }}>
+    <header className="navbar-glass fixed top-0 inset-x-0 z-[9999] flex items-center justify-between pl-2 pr-8 py-[9px]">
       <LetsGoLogo />
       <nav className="flex items-center gap-6">
         {links.map(({ href, label, icon: Icon }) => {
