@@ -29,37 +29,43 @@ interface TripsContextValue {
 const TripsContext = createContext<TripsContextValue | null>(null);
 
 // ── Supabase sync helpers (optimistic: state first, DB in background) ──────────
+// Standalone restaurants and hotels are stored as a single sentinel row in the
+// trips table (id = '__standalone__') to avoid needing a second table.
+const STANDALONE_ID = '__standalone__';
+
 async function loadUserData(userId: string) {
-  const [tripsRes, restRes] = await Promise.all([
-    supabase.from('trips').select('data').eq('user_id', userId),
-    supabase.from('standalone_restaurants').select('data').eq('user_id', userId),
+  const [tripsRes, standaloneRes] = await Promise.all([
+    supabase.from('trips').select('id,data').eq('user_id', userId).neq('id', STANDALONE_ID),
+    supabase.from('trips').select('data').eq('user_id', userId).eq('id', STANDALONE_ID).maybeSingle(),
   ]);
+  const sd = standaloneRes.data?.data as { restaurants?: DiningLog[]; hotels?: HotelLog[] } | null;
+  console.log('[supabase] loaded standalone row:', standaloneRes.data, 'error:', standaloneRes.error);
   return {
-    trips:      (tripsRes.data ?? []).map(r => r.data as Trip),
-    standalone: (restRes.data  ?? []).map(r => r.data as DiningLog),
+    trips:            (tripsRes.data ?? []).map(r => r.data as Trip),
+    standalone:       sd?.restaurants ?? [],
+    standaloneHotels: sd?.hotels ?? [],
   };
 }
 
 function syncTrip(userId: string, t: Trip) {
   supabase.from('trips')
     .upsert({ id: t.id, user_id: userId, data: t, updated_at: new Date().toISOString() })
-    .then(({ error }) => { if (error) console.error('[supabase] trip sync', error); });
+    .then(({ error }) => { if (error) console.warn('[supabase] trip sync:', error.message ?? error); });
 }
 
 function deleteTrip$(userId: string, id: string) {
   supabase.from('trips').delete().eq('id', id).eq('user_id', userId)
-    .then(({ error }) => { if (error) console.error('[supabase] trip delete', error); });
+    .then(({ error }) => { if (error) console.warn('[supabase] trip delete:', error.message ?? error); });
 }
 
-function syncRestaurant(userId: string, log: DiningLog) {
-  supabase.from('standalone_restaurants')
-    .upsert({ id: log.id, user_id: userId, data: log, updated_at: new Date().toISOString() })
-    .then(({ error }) => { if (error) console.error('[supabase] restaurant sync', error); });
-}
-
-function deleteRestaurant$(userId: string, id: string) {
-  supabase.from('standalone_restaurants').delete().eq('id', id).eq('user_id', userId)
-    .then(({ error }) => { if (error) console.error('[supabase] restaurant delete', error); });
+function syncStandalone(userId: string, restaurants: DiningLog[], hotels: HotelLog[]) {
+  console.log('[supabase] syncing standalone:', restaurants.length, 'restaurants,', hotels.length, 'hotels');
+  supabase.from('trips')
+    .upsert({ id: STANDALONE_ID, user_id: userId, data: { restaurants, hotels }, updated_at: new Date().toISOString() })
+    .then(({ error }) => {
+      if (error) console.error('[supabase] standalone sync FAILED:', error.code, error.message, error.details);
+      else console.log('[supabase] standalone sync OK');
+    });
 }
 
 // ── Provider ───────────────────────────────────────────────────────────────────
@@ -68,15 +74,14 @@ export function TripsProvider({ children }: { children: ReactNode }) {
   const [authLoading, setAuthLoading] = useState(true);
 
   // Real data from Supabase
-  const [trips, setTrips]             = useState<Trip[]>([]);
-  const [standaloneRestaurants, setStandalone] = useState<DiningLog[]>([]);
-
-  const [standaloneHotels, setStandaloneHotels]   = useState<HotelLog[]>([]);
+  const [trips, setTrips]                       = useState<Trip[]>([]);
+  const [standaloneRestaurants, setStandalone]  = useState<DiningLog[]>([]);
+  const [standaloneHotels, setStandaloneHotels] = useState<HotelLog[]>([]);
 
   // Demo data (local-only copy of mock data — mutations work but never sync to DB)
-  const [demoMode, setDemoMode]             = useState(false);
-  const [demoTrips, setDemoTrips]           = useState<Trip[]>([...mockTrips]);
-  const [demoStandalone, setDemoStandalone] = useState<DiningLog[]>([...mockStandaloneRestaurants]);
+  const [demoMode, setDemoMode]                         = useState(false);
+  const [demoTrips, setDemoTrips]                       = useState<Trip[]>([...mockTrips]);
+  const [demoStandalone, setDemoStandalone]             = useState<DiningLog[]>([...mockStandaloneRestaurants]);
   const [demoStandaloneHotels, setDemoStandaloneHotels] = useState<HotelLog[]>([...mockStandaloneHotels]);
 
   function toggleDemoMode() {
@@ -96,12 +101,14 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         const u = session?.user ?? null;
         setUser(u);
         if (u) {
-          const { trips: t, standalone: s } = await loadUserData(u.id);
+          const { trips: t, standalone: s, standaloneHotels: sh } = await loadUserData(u.id);
           setTrips(t);
           setStandalone(s);
+          setStandaloneHotels(sh);
         } else {
           setTrips([]);
           setStandalone([]);
+          setStandaloneHotels([]);
         }
         setAuthLoading(false);
       }
@@ -109,8 +116,8 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const effectiveTrips          = demoMode ? demoTrips             : trips;
-  const effectiveStandalone     = demoMode ? demoStandalone        : standaloneRestaurants;
+  const effectiveTrips            = demoMode ? demoTrips            : trips;
+  const effectiveStandalone       = demoMode ? demoStandalone       : standaloneRestaurants;
   const effectiveStandaloneHotels = demoMode ? demoStandaloneHotels : standaloneHotels;
 
   return (
@@ -141,31 +148,40 @@ export function TripsProvider({ children }: { children: ReactNode }) {
 
       addStandaloneRestaurant: (log) => {
         if (demoMode) { setDemoStandalone(p => [log, ...p]); return; }
-        setStandalone(p => [log, ...p]);
-        if (user) syncRestaurant(user.id, log);
+        const next = [log, ...standaloneRestaurants];
+        setStandalone(next);
+        if (user) syncStandalone(user.id, next, standaloneHotels);
       },
       updateStandaloneRestaurant: (log) => {
         if (demoMode) { setDemoStandalone(p => p.map(x => x.id === log.id ? log : x)); return; }
-        setStandalone(p => p.map(x => x.id === log.id ? log : x));
-        if (user) syncRestaurant(user.id, log);
+        const next = standaloneRestaurants.map(x => x.id === log.id ? log : x);
+        setStandalone(next);
+        if (user) syncStandalone(user.id, next, standaloneHotels);
       },
       deleteStandaloneRestaurant: (id) => {
         if (demoMode) { setDemoStandalone(p => p.filter(x => x.id !== id)); return; }
-        setStandalone(p => p.filter(x => x.id !== id));
-        if (user) deleteRestaurant$(user.id, id);
+        const next = standaloneRestaurants.filter(x => x.id !== id);
+        setStandalone(next);
+        if (user) syncStandalone(user.id, next, standaloneHotels);
       },
 
       addStandaloneHotel: (h) => {
         if (demoMode) { setDemoStandaloneHotels(p => [h, ...p]); return; }
-        setStandaloneHotels(p => [h, ...p]);
+        const next = [h, ...standaloneHotels];
+        setStandaloneHotels(next);
+        if (user) syncStandalone(user.id, standaloneRestaurants, next);
       },
       updateStandaloneHotel: (h) => {
         if (demoMode) { setDemoStandaloneHotels(p => p.map(x => x.id === h.id ? h : x)); return; }
-        setStandaloneHotels(p => p.map(x => x.id === h.id ? h : x));
+        const next = standaloneHotels.map(x => x.id === h.id ? h : x);
+        setStandaloneHotels(next);
+        if (user) syncStandalone(user.id, standaloneRestaurants, next);
       },
       deleteStandaloneHotel: (id) => {
         if (demoMode) { setDemoStandaloneHotels(p => p.filter(x => x.id !== id)); return; }
-        setStandaloneHotels(p => p.filter(x => x.id !== id));
+        const next = standaloneHotels.filter(x => x.id !== id);
+        setStandaloneHotels(next);
+        if (user) syncStandalone(user.id, standaloneRestaurants, next);
       },
 
       signOut: async () => {
