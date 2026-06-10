@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Trip, DiningLog, HotelLog } from '@/types';
-import { mockTrips } from '@/store/data';
+import { mockTrips, mockStandaloneRestaurants, mockStandaloneHotels } from '@/store/data';
 
 interface TripsContextValue {
   user: User | null;
@@ -76,15 +76,15 @@ export function TripsProvider({ children }: { children: ReactNode }) {
   // Demo data (local-only copy of mock data — mutations work but never sync to DB)
   const [demoMode, setDemoMode]             = useState(false);
   const [demoTrips, setDemoTrips]           = useState<Trip[]>([...mockTrips]);
-  const [demoStandalone, setDemoStandalone] = useState<DiningLog[]>([]);
-  const [demoStandaloneHotels, setDemoStandaloneHotels] = useState<HotelLog[]>([]);
+  const [demoStandalone, setDemoStandalone] = useState<DiningLog[]>([...mockStandaloneRestaurants]);
+  const [demoStandaloneHotels, setDemoStandaloneHotels] = useState<HotelLog[]>([...mockStandaloneHotels]);
 
   function toggleDemoMode() {
     setDemoMode(on => {
       if (!on) {
-        // Reset demo data to mock defaults each time demo mode is entered
         setDemoTrips([...mockTrips]);
-        setDemoStandalone([]);
+        setDemoStandalone([...mockStandaloneRestaurants]);
+        setDemoStandaloneHotels([...mockStandaloneHotels]);
       }
       return !on;
     });
