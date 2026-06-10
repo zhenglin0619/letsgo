@@ -224,16 +224,16 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className={LABEL}>Room Type</label>
-                            <select value={form.roomType} onChange={e => set('roomType', e.target.value)} className={SELECT}>
+                            <select value={form.roomType} onChange={e => set('roomType', e.target.value)} className={`${SELECT} ${form.roomType === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
                               <option value="">Select…</option>
-                              {ROOM_TYPES.map(r => <option key={r} value={r}>{r}</option>)}
+                              {ROOM_TYPES.map(r => <option key={r} value={r} className="text-[#1A1A1A]">{r}</option>)}
                             </select>
                           </div>
                           <div>
                             <label className={LABEL}>View Type</label>
-                            <select value={form.viewType} onChange={e => set('viewType', e.target.value)} className={SELECT}>
+                            <select value={form.viewType} onChange={e => set('viewType', e.target.value)} className={`${SELECT} ${form.viewType === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
                               <option value="">Select…</option>
-                              {VIEW_TYPES.map(v => <option key={v} value={v}>{v}</option>)}
+                              {VIEW_TYPES.map(v => <option key={v} value={v} className="text-[#1A1A1A]">{v}</option>)}
                             </select>
                           </div>
                         </div>
@@ -290,9 +290,9 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                       </div>
                       <div>
                         <label className={LABEL}>Add to Trip <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span></label>
-                        <select value={form.tripId} onChange={e => set('tripId', e.target.value)} className={SELECT}>
+                        <select value={form.tripId} onChange={e => set('tripId', e.target.value)} className={`${SELECT} ${form.tripId === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
                           <option value="">Select a trip…</option>
-                          {trips.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+                          {trips.map(t => <option key={t.id} value={t.id} className="text-[#1A1A1A]">{t.title}</option>)}
                         </select>
                       </div>
                     </div>

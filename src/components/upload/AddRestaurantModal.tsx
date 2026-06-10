@@ -238,9 +238,9 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                           </div>
                           <div>
                             <label className={LABEL}>Meal Type</label>
-                            <select value={form.meal} onChange={e => set('meal', e.target.value as typeof MEAL_OPTIONS[number] | '')} className={SELECT}>
+                            <select value={form.meal} onChange={e => set('meal', e.target.value as typeof MEAL_OPTIONS[number] | '')} className={`${SELECT} ${form.meal === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
                               <option value="">Select…</option>
-                              {MEAL_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
+                              {MEAL_OPTIONS.map(m => <option key={m} value={m} className="text-[#1A1A1A]">{m}</option>)}
                             </select>
                           </div>
                         </div>
@@ -313,9 +313,9 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                       </div>
                       <div className="col-span-2">
                         <label className={LABEL}>Add to Trip <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span></label>
-                        <select value={form.tripId} onChange={e => set('tripId', e.target.value)} className={SELECT}>
+                        <select value={form.tripId} onChange={e => set('tripId', e.target.value)} className={`${SELECT} ${form.tripId === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
                           <option value="">Select a trip…</option>
-                          {trips.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+                          {trips.map(t => <option key={t.id} value={t.id} className="text-[#1A1A1A]">{t.title}</option>)}
                         </select>
                       </div>
                     </div>
