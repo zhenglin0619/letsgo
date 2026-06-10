@@ -31,6 +31,7 @@ function DishEditRow({
 }) {
   const controls = useDragControls();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [ratingStr, setRatingStr] = useState(dish.rating === 0 ? '' : String(dish.rating));
   const INPUT = 'text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors';
 
   function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -93,11 +94,12 @@ function DishEditRow({
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <input
-              type="number" min="0" max="5" step="0.1"
-              className={`${INPUT} w-10 flex-shrink-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none`}
-              value={dish.rating}
-              placeholder="0–5"
-              onChange={e => onChange({ ...dish, rating: parseFloat(e.target.value) || 0 })}
+              type="text" inputMode="decimal"
+              className={`${INPUT} w-10 flex-shrink-0`}
+              value={ratingStr}
+              placeholder="0"
+              onChange={e => { const v = e.target.value; if (/^([0-4](\.\d?)?|5(\.0?)?)?$/.test(v)) setRatingStr(v); }}
+              onBlur={() => { const n = parseFloat(ratingStr) || 0; onChange({ ...dish, rating: n }); setRatingStr(n === 0 ? '' : String(n)); }}
             />
           </div>
           <textarea
@@ -386,10 +388,10 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
                           <input
-                            type="number" min="0" max="5" step="0.1" placeholder="0–5"
-                            className="w-10 flex-shrink-0 text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white text-[#1A1A1A] placeholder:text-[#C0BAB2] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                            type="text" inputMode="decimal" placeholder="0–5"
+                            className="w-10 flex-shrink-0 text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white text-[#1A1A1A] placeholder:text-[#C0BAB2]"
                             value={addForm.rating}
-                            onChange={e => setAddForm(f => ({ ...f, rating: e.target.value }))}
+                            onChange={e => { const v = e.target.value; if (/^([0-4](\.\d?)?|5(\.0?)?)?$/.test(v)) setAddForm(f => ({ ...f, rating: v })); }}
                           />
                         </div>
                         <div className="flex items-end gap-2">

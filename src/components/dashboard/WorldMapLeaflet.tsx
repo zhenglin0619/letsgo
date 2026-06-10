@@ -68,7 +68,7 @@ export default function WorldMapLeaflet({ pins }: Props) {
               <div style="
                 position:absolute;inset:0;border-radius:50%;
                 background:#3B82F6;opacity:0.22;
-                animation:me-pulse 1.8s ease-in-out infinite;
+                animation:me-pulse 1.5s ease-in-out infinite;
               "></div>
               <div style="
                 width:13px;height:13px;border-radius:50%;
@@ -104,7 +104,8 @@ export default function WorldMapLeaflet({ pins }: Props) {
 
     const map = L.map(container, {
       center: [22, 12],
-      zoom: 2,
+      zoom: 1.8,
+      zoomSnap: 0,
       zoomControl: false,
       attributionControl: true,
       scrollWheelZoom: false,
@@ -230,7 +231,7 @@ export default function WorldMapLeaflet({ pins }: Props) {
         )}
       </button>
       <button
-        onClick={() => mapRef.current?.flyTo([22, 12], 2, { animate: true, duration: 1.2 })}
+        onClick={() => mapRef.current?.flyTo([22, 12], 1.8, { animate: true, duration: 1.2 })}
         title="Reset view"
         style={{
           position: 'absolute', top: 52, right: 12, zIndex: 1000,

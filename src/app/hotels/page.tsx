@@ -98,7 +98,7 @@ export default function HotelsPage() {
   return (
     <main className="pt-24 pb-24 px-8 max-w-7xl mx-auto">
       <motion.div
-        className="mb-10"
+        className="mb-5"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}

@@ -277,9 +277,10 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                     <div className="grid grid-cols-8 gap-3 items-end">
                       <div className="col-span-2">
                         <label className={LABEL}>Rating <span className="normal-case font-normal text-[#C0BAB2]">(0–5)</span></label>
-                        <input type="number" min="0" max="5" step="0.1" placeholder="e.g. 4.5"
-                          value={form.rating} onChange={e => set('rating', e.target.value)}
-                          className={`${INPUT} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`} />
+                        <input type="text" inputMode="decimal" placeholder="e.g. 4.5"
+                          value={form.rating}
+                          onChange={e => { const v = e.target.value; if (/^([0-4](\.\d?)?|5(\.0?)?)?$/.test(v)) set('rating', v); }}
+                          className={INPUT} />
                       </div>
                       <div className="col-span-2">
                         <label className={LABEL}>Total Expense</label>

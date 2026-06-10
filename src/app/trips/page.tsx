@@ -90,7 +90,7 @@ export default function TripsPage() {
   return (
     <main className="pt-24 pb-24 px-8 max-w-7xl mx-auto">
       <motion.div
-        className="mb-10"
+        className="mb-5"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
@@ -120,7 +120,7 @@ export default function TripsPage() {
             <Link href={`/trips/${trip.id}`} className="block group">
               <div className="bento-card overflow-hidden">
                 {/* Cover */}
-                <div className="relative h-90 overflow-hidden">
+                <div className="relative h-100 overflow-hidden">
                   {trip.coverPhoto
                     ? <img src={trip.coverPhoto} alt={trip.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     : <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/30 via-[#E8E4DC] to-[#4A5343]/20" />

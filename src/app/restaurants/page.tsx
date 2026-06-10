@@ -81,7 +81,7 @@ export default function RestaurantsPage() {
       trip.diningLogs.map(dining => ({ ...dining, tripTitle: trip.title, tripId: trip.id, isStandalone: false }))
     ),
     ...standaloneRestaurants.map(log => ({ ...log, tripTitle: '', tripId: '', isStandalone: true })),
-  ].sort((a, b) => b.overallRating - a.overallRating);
+  ].sort((a, b) => b.date.localeCompare(a.date));
 
   const [editTarget, setEditTarget]       = useState<{ log: DiningLog; tripId: string } | null>(null);
   const [selectedDining, setSelectedDining] = useState<DiningLog | null>(null);
@@ -119,14 +119,14 @@ export default function RestaurantsPage() {
   return (
     <main className="pt-24 pb-24 px-8 max-w-7xl mx-auto">
       <motion.div
-        className="mb-10"
+        className="mb-5"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
       >
         <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Dinings</h1>
         <p className="mt-2 text-[#8A8A8A] text-sm">
-          {allRestaurants.length} restaurant{allRestaurants.length !== 1 ? 's' : ''} · sorted by rating
+          {allRestaurants.length} restaurant{allRestaurants.length !== 1 ? 's' : ''} · sorted by date
         </p>
       </motion.div>
 
