@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTrips } from '@/store/tripsContext';
-import { MapPin, Calendar, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { MapPin, Calendar, MoreHorizontal, Pencil, Trash2, Search, X } from 'lucide-react';
 import AddHotelModal from '@/components/upload/AddHotelModal';
 import HotelDrawer from '@/components/hotel/HotelDrawer';
 import StarRating from '@/components/ui/StarRating';
@@ -84,6 +84,28 @@ export default function HotelsPage() {
     ...standaloneHotels.map(hotel => ({ ...hotel, tripTitle: '', tripId: '', isStandalone: true })),
   ].sort((a, b) => b.checkIn.localeCompare(a.checkIn));
 
+  const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState('date-desc');
+
+  const base = query.trim()
+    ? allHotels.filter(h => {
+        const q = query.toLowerCase();
+        return (
+          h.hotelName.toLowerCase().includes(q) ||
+          h.location.city.toLowerCase().includes(q) ||
+          h.location.country.toLowerCase().includes(q)
+        );
+      })
+    : allHotels;
+
+  const filtered = [...base].sort((a, b) => {
+    if (sortBy === 'date-desc') return b.checkIn.localeCompare(a.checkIn);
+    if (sortBy === 'date-asc')  return a.checkIn.localeCompare(b.checkIn);
+    if (sortBy === 'rate-desc') return b.rating - a.rating;
+    if (sortBy === 'rate-asc')  return a.rating - b.rating;
+    return 0;
+  });
+
   const [editTarget, setEditTarget] = useState<{ hotel: HotelLog; tripId: string } | null>(null);
   const [selectedHotel, setSelectedHotel] = useState<{ hotel: HotelLog; tripId: string; isStandalone: boolean } | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -106,14 +128,61 @@ export default function HotelsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
       >
-        <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Stays</h1>
-        <p className="mt-2 text-[#8A8A8A] text-sm">
-          {allHotels.length} hotel{allHotels.length !== 1 ? 's' : ''} · {allHotels.reduce((sum, h) => sum + nights(h.checkIn, h.checkOut), 0)} nights total
-        </p>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Stays</h1>
+            <p className="mt-2 text-[#8A8A8A] text-sm">
+              {allHotels.length} hotel{allHotels.length !== 1 ? 's' : ''} · {allHotels.reduce((sum, h) => sum + nights(h.checkIn, h.checkOut), 0)} nights total
+            </p>
+          </div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="py-2 pl-3 pr-7 text-sm bg-white border border-[#E8E6E1] rounded-xl focus:outline-none focus:border-[#C87A53] text-[#8A8A8A] transition-colors appearance-none cursor-pointer"
+            >
+              <option value="date-desc">Date (newest)</option>
+              <option value="date-asc">Date (oldest)</option>
+              <option value="rate-desc">Rating (highest)</option>
+              <option value="rate-asc">Rating (lowest)</option>
+            </select>
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A8A] pointer-events-none" />
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search hotels…"
+                className="pl-8 pr-8 py-2 text-sm bg-white border border-[#E8E6E1] rounded-xl focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors w-56"
+              />
+              {query && (
+                <button onClick={() => setQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#C0BAB2] hover:text-[#8A8A8A] transition-colors">
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       <div className="grid grid-cols-3 gap-6">
-        {allHotels.map((hotel, i) => (
+        {filtered.length === 0 && (
+          <div className="col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
+            style={{ borderColor: '#D4CFC6' }}>
+            {query ? (
+              <>
+                <p className="font-medium text-[#1A1A1A] text-sm">No hotels match &ldquo;{query}&rdquo;</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">Try a different hotel name, city, or country</p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-[#1A1A1A] text-sm">No hotels logged yet</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">Add your first stay to get started</p>
+              </>
+            )}
+          </div>
+        )}
+        {filtered.map((hotel, i) => (
           <motion.div
             key={hotel.id}
             className="bento-card overflow-hidden cursor-pointer"
@@ -165,13 +234,6 @@ export default function HotelsPage() {
           </motion.div>
         ))}
 
-        {allHotels.length === 0 && (
-          <div className="col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
-            style={{ borderColor: '#D4CFC6' }}>
-            <p className="font-medium text-[#1A1A1A] text-sm">No hotels logged yet</p>
-            <p className="text-xs text-[#8A8A8A] mt-1">Add your first stays to get started</p>
-          </div>
-        )}
       </div>
 
       <HotelDrawer

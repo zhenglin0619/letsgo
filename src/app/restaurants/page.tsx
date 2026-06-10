@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTrips } from '@/store/tripsContext';
-import { MapPin, Clock, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { MapPin, Clock, MoreHorizontal, Pencil, Trash2, Search, X } from 'lucide-react';
 import StarRating from '@/components/ui/StarRating';
 import MichelinBadge from '@/components/ui/MichelinBadge';
 import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
@@ -83,6 +83,29 @@ export default function RestaurantsPage() {
     ...standaloneRestaurants.map(log => ({ ...log, tripTitle: '', tripId: '', isStandalone: true })),
   ].sort((a, b) => b.date.localeCompare(a.date));
 
+  const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState('date-desc');
+
+  const base = query.trim()
+    ? allRestaurants.filter(r => {
+        const q = query.toLowerCase();
+        return (
+          r.restaurantName.toLowerCase().includes(q) ||
+          r.cuisine.toLowerCase().includes(q) ||
+          r.location.city.toLowerCase().includes(q) ||
+          r.location.country.toLowerCase().includes(q)
+        );
+      })
+    : allRestaurants;
+
+  const filtered = [...base].sort((a, b) => {
+    if (sortBy === 'date-desc') return b.date.localeCompare(a.date);
+    if (sortBy === 'date-asc')  return a.date.localeCompare(b.date);
+    if (sortBy === 'rate-desc') return b.overallRating - a.overallRating;
+    if (sortBy === 'rate-asc')  return a.overallRating - b.overallRating;
+    return 0;
+  });
+
   const [editTarget, setEditTarget]       = useState<{ log: DiningLog; tripId: string } | null>(null);
   const [selectedDining, setSelectedDining] = useState<DiningLog | null>(null);
   const [selectedMeta, setSelectedMeta]     = useState<{ tripId: string; isStandalone: boolean } | null>(null);
@@ -123,14 +146,61 @@ export default function RestaurantsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
       >
-        <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Dinings</h1>
-        <p className="mt-2 text-[#8A8A8A] text-sm">
-          {allRestaurants.length} restaurant{allRestaurants.length !== 1 ? 's' : ''} · across {new Set(allRestaurants.map(r => r.location.city)).size} cities
-        </p>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Dinings</h1>
+            <p className="mt-2 text-[#8A8A8A] text-sm">
+              {allRestaurants.length} restaurant{allRestaurants.length !== 1 ? 's' : ''} · across {new Set(allRestaurants.map(r => r.location.city)).size} cities
+            </p>
+          </div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="py-2 pl-3 pr-7 text-sm bg-white border border-[#E8E6E1] rounded-xl focus:outline-none focus:border-[#C87A53] text-[#8A8A8A] transition-colors appearance-none cursor-pointer"
+            >
+              <option value="date-desc">Date (newest)</option>
+              <option value="date-asc">Date (oldest)</option>
+              <option value="rate-desc">Rating (highest)</option>
+              <option value="rate-asc">Rating (lowest)</option>
+            </select>
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A8A] pointer-events-none" />
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search restaurants…"
+                className="pl-8 pr-8 py-2 text-sm bg-white border border-[#E8E6E1] rounded-xl focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors w-56"
+              />
+              {query && (
+                <button onClick={() => setQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#C0BAB2] hover:text-[#8A8A8A] transition-colors">
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       <div className="grid grid-cols-3 gap-6">
-        {allRestaurants.map((dining, i) => (
+        {filtered.length === 0 && (
+          <div className="col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
+            style={{ borderColor: '#D4CFC6' }}>
+            {query ? (
+              <>
+                <p className="font-medium text-[#1A1A1A] text-sm">No restaurants match &ldquo;{query}&rdquo;</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">Try a different restaurant name, cuisine, city, or country</p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-[#1A1A1A] text-sm">No restaurants logged yet</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">Add your first dining log to get started</p>
+              </>
+            )}
+          </div>
+        )}
+        {filtered.map((dining, i) => (
           <motion.div
             key={dining.id}
             className="bento-card overflow-hidden cursor-pointer"
@@ -184,13 +254,6 @@ export default function RestaurantsPage() {
           </motion.div>
         ))}
 
-        {allRestaurants.length === 0 && (
-          <div className="col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
-            style={{ borderColor: '#D4CFC6' }}>
-            <p className="font-medium text-[#1A1A1A] text-sm">No restaurants logged yet</p>
-            <p className="text-xs text-[#8A8A8A] mt-1">Add your first dining log to get started</p>
-          </div>
-        )}
       </div>
 
       <AddRestaurantModal

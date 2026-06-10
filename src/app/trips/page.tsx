@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTrips } from '@/store/tripsContext';
 import { Trip } from '@/types';
-import { Calendar, MapPin, BedDouble, Utensils, ArrowRight, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, BedDouble, Utensils, ArrowRight, MoreHorizontal, Pencil, Trash2, Search, X } from 'lucide-react';
 import AddTripModal from '@/components/upload/AddTripModal';
 
 function formatRange(start: string, end: string) {
@@ -84,8 +84,31 @@ function TripMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => vo
 
 export default function TripsPage() {
   const { trips: rawTrips, deleteTrip } = useTrips();
-  const trips = [...rawTrips].sort((a, b) => b.startDate.localeCompare(a.startDate));
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
+  const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState('date-desc');
+
+  const avgTripRating = (t: Trip) => {
+    const vals = [...t.hotels.map(h => h.rating), ...t.diningLogs.map(d => d.overallRating)].filter(Boolean);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+  };
+
+  const base = query.trim()
+    ? rawTrips.filter(t => {
+        const q = query.toLowerCase();
+        const cities = [...t.hotels.map(h => h.location.city), ...t.diningLogs.map(d => d.location.city)];
+        return t.title.toLowerCase().includes(q) || t.countries.some(c => c.toLowerCase().includes(q)) || cities.some(c => c.toLowerCase().includes(q));
+      })
+    : rawTrips;
+
+  const filtered = [...base].sort((a, b) => {
+    if (sortBy === 'date-desc') return b.startDate.localeCompare(a.startDate);
+    if (sortBy === 'date-asc')  return a.startDate.localeCompare(b.startDate);
+    if (sortBy === 'rate-desc') return avgTripRating(b) - avgTripRating(a);
+    if (sortBy === 'rate-asc')  return avgTripRating(a) - avgTripRating(b);
+    return 0;
+  });
+
 
   return (
     <main className="pt-24 pb-24 px-8 max-w-7xl mx-auto">
@@ -95,21 +118,61 @@ export default function TripsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
       >
-        <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Trips</h1>
-        <p className="mt-2 text-[#8A8A8A] text-sm">
-          {trips.length} trips · across {[...new Set(trips.flatMap(t => t.countries))].length} countries
-        </p>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Trips</h1>
+            <p className="mt-2 text-[#8A8A8A] text-sm">
+              {rawTrips.length} trips · across {[...new Set(rawTrips.flatMap(t => t.countries))].length} countries
+            </p>
+          </div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="py-2 pl-3 pr-7 text-sm bg-white border border-[#E8E6E1] rounded-xl focus:outline-none focus:border-[#C87A53] text-[#8A8A8A] transition-colors appearance-none cursor-pointer"
+            >
+              <option value="date-desc">Date (newest)</option>
+              <option value="date-asc">Date (oldest)</option>
+              <option value="rate-desc">Rating (highest)</option>
+              <option value="rate-asc">Rating (lowest)</option>
+            </select>
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A8A] pointer-events-none" />
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search trips, cities…"
+                className="pl-8 pr-8 py-2 text-sm bg-white border border-[#E8E6E1] rounded-xl focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors w-56"
+              />
+              {query && (
+                <button onClick={() => setQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#C0BAB2] hover:text-[#8A8A8A] transition-colors">
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       <div className="grid grid-cols-3 gap-6">
-        {trips.length === 0 && (
+        {filtered.length === 0 && (
           <div className="col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
             style={{ borderColor: '#D4CFC6' }}>
-            <p className="font-medium text-[#1A1A1A] text-sm">No trips logged yet</p>
-            <p className="text-xs text-[#8A8A8A] mt-1">Add your first trip to get started</p>
+            {query ? (
+              <>
+                <p className="font-medium text-[#1A1A1A] text-sm">No trips match &ldquo;{query}&rdquo;</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">Try a different destination or trip name</p>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-[#1A1A1A] text-sm">No trips logged yet</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">Add your first trip to get started</p>
+              </>
+            )}
           </div>
         )}
-        {trips.map((trip, i) => (
+        {filtered.map((trip, i) => (
           <motion.div
             key={trip.id}
             className="relative"
