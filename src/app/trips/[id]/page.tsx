@@ -11,7 +11,7 @@ import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
 import AddTripModal from '@/components/upload/AddTripModal';
 import AddHotelModal from '@/components/upload/AddHotelModal';
 
-import { DiningLog } from '@/types';
+import { DiningLog, HotelLog } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BedDouble, Utensils, Images, MoreHorizontal, Pencil, Trash2, Plus, X, ChevronLeft, ChevronRight, Plane } from 'lucide-react';
 
@@ -91,6 +91,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [editingDining, setEditingDining] = useState<DiningLog | null>(null);
+  const [editingHotel, setEditingHotel] = useState<HotelLog | null>(null);
   const [addRestaurantOpen, setAddRestaurantOpen] = useState(false);
   const [addHotelOpen, setAddHotelOpen] = useState(false);
   const [addTripOpen, setAddTripOpen] = useState(false);
@@ -263,7 +264,13 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                 )}
                 {trip!.hotels.map((hotel, i) => (
-                  <HotelCard key={hotel.id} hotel={hotel} index={i} />
+                  <HotelCard
+                    key={hotel.id}
+                    hotel={hotel}
+                    index={i}
+                    onEdit={() => setEditingHotel(hotel)}
+                    onDelete={() => updateTrip({ ...trip!, hotels: trip!.hotels.filter(h => h.id !== hotel.id) })}
+                  />
                 ))}
               </div>
             )}
@@ -295,7 +302,12 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
       <AddTripModal open={editTripOpen} onClose={() => setEditTripOpen(false)} initialTrip={trip!} />
       <AddTripModal open={addTripOpen} onClose={() => setAddTripOpen(false)} />
-      <AddHotelModal open={addHotelOpen} onClose={() => setAddHotelOpen(false)} defaultTripId={trip!.id} />
+      <AddHotelModal
+        open={addHotelOpen || !!editingHotel}
+        onClose={() => { setAddHotelOpen(false); setEditingHotel(null); }}
+        defaultTripId={trip!.id}
+        initialHotel={editingHotel ? { hotel: editingHotel, tripId: trip!.id } : undefined}
+      />
 
       {/* FAB — bottom-left */}
       <AnimatePresence>

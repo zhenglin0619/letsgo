@@ -1,7 +1,11 @@
 'use client';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTrips } from '@/store/tripsContext';
-import { MapPin, Calendar, Star } from 'lucide-react';
+import { MapPin, Calendar, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import AddHotelModal from '@/components/upload/AddHotelModal';
+import StarRating from '@/components/ui/StarRating';
+import { HotelLog } from '@/types';
 
 function nights(checkIn: string, checkOut: string) {
   return Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000);
@@ -11,12 +15,85 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function HotelMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) { setConfirming(false); return; }
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+        className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors flex items-center justify-center"
+      >
+        <MoreHorizontal size={14} className="text-white" />
+      </button>
+
+      {open && (
+        <div className="absolute top-9 right-0 bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-40 z-30">
+          {!confirming ? (
+            <>
+              <button
+                onClick={e => { e.stopPropagation(); onEdit(); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
+              >
+                <Pencil size={13} className="text-[#8A8A8A]" /> Edit
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setConfirming(true); }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+              >
+                <Trash2 size={13} /> Delete
+              </button>
+            </>
+          ) : (
+            <div className="px-4 py-2">
+              <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this hotel?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={e => { e.stopPropagation(); onDelete(); setOpen(false); }}
+                  className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
+                >Delete</button>
+                <button
+                  onClick={e => { e.stopPropagation(); setConfirming(false); }}
+                  className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
+                >Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function HotelsPage() {
-  const { trips, standaloneHotels } = useTrips();
+  const { trips, standaloneHotels, updateTrip, updateStandaloneHotel, deleteStandaloneHotel } = useTrips();
   const allHotels = [
-    ...trips.flatMap(trip => trip.hotels.map(hotel => ({ ...hotel, tripTitle: trip.title, tripId: trip.id }))),
-    ...standaloneHotels.map(hotel => ({ ...hotel, tripTitle: '', tripId: '' })),
+    ...trips.flatMap(trip => trip.hotels.map(hotel => ({ ...hotel, tripTitle: trip.title, tripId: trip.id, isStandalone: false }))),
+    ...standaloneHotels.map(hotel => ({ ...hotel, tripTitle: '', tripId: '', isStandalone: true })),
   ].sort((a, b) => b.checkIn.localeCompare(a.checkIn));
+
+  const [editTarget, setEditTarget] = useState<{ hotel: HotelLog; tripId: string } | null>(null);
+
+  function handleDelete(hotelId: string, tripId: string, isStandalone: boolean) {
+    if (isStandalone) {
+      deleteStandaloneHotel(hotelId);
+    } else {
+      const trip = trips.find(t => t.id === tripId);
+      if (!trip) return;
+      updateTrip({ ...trip, hotels: trip.hotels.filter(h => h.id !== hotelId) });
+    }
+  }
 
   return (
     <main className="pt-24 pb-24 px-8 max-w-7xl mx-auto">
@@ -26,7 +103,7 @@ export default function HotelsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
       >
-        <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Your Hotels</h1>
+        <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Stays</h1>
         <p className="mt-2 text-[#8A8A8A] text-sm">
           {allHotels.length} hotel{allHotels.length !== 1 ? 's' : ''} · {allHotels.reduce((sum, h) => sum + nights(h.checkIn, h.checkOut), 0)} nights total
         </p>
@@ -41,7 +118,7 @@ export default function HotelsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1, duration: 0.45 }}
           >
-            <div className="relative h-48 overflow-hidden">
+            <div className="relative h-45 overflow-hidden">
               {hotel.photos[0] ? (
                 <img
                   src={hotel.photos[0]}
@@ -54,29 +131,29 @@ export default function HotelsPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
               <div className="absolute bottom-3 left-4 text-white">
                 <h2 className="serif font-semibold text-lg leading-tight">{hotel.hotelName}</h2>
-                <p className="text-xs text-white/70 flex items-center gap-1 mt-0.5">
-                  <MapPin size={10} />{hotel.location.city}, {hotel.location.country}
-                </p>
               </div>
-              {hotel.rating > 0 && (
-                <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                  <Star size={11} className="text-yellow-300 fill-yellow-300" />
-                  <span className="text-white text-xs font-semibold">{hotel.rating}</span>
-                </div>
-              )}
+              <div className="absolute top-3 right-3">
+                <HotelMenu
+                  onEdit={() => { const { tripTitle: _t, isStandalone: _s, ...h } = hotel; setEditTarget({ hotel: h, tripId: hotel.tripId }); }}
+                  onDelete={() => handleDelete(hotel.id, hotel.tripId, hotel.isStandalone)}
+                />
+              </div>
             </div>
             <div className="p-4">
-              <div className="flex items-center gap-4 text-xs text-[#8A8A8A] mb-3">
-                <span className="flex items-center gap-1">
-                  <Calendar size={11} />{formatDate(hotel.checkIn)} – {formatDate(hotel.checkOut)}
-                </span>
-              </div>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-[#4A5343] font-medium">
-                  {nights(hotel.checkIn, hotel.checkOut)} night{nights(hotel.checkIn, hotel.checkOut) !== 1 ? 's' : ''}
+                <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
+                  <MapPin size={11} />{hotel.location.city}, {hotel.location.country}
+                </span>
+                {hotel.rating > 0 && (
+                  <StarRating value={hotel.rating} readonly size="sm" />
+                )}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
+                  <Calendar size={11} />{formatDate(hotel.checkIn)} – {formatDate(hotel.checkOut)} · {nights(hotel.checkIn, hotel.checkOut)} night{nights(hotel.checkIn, hotel.checkOut) !== 1 ? 's' : ''}
                 </span>
                 <span className="text-xs text-[#8A8A8A]">
-                  {hotel.currency} {hotel.pricePerNight.toLocaleString()} / night
+                  {hotel.currency} {Math.round(hotel.pricePerNight / (nights(hotel.checkIn, hotel.checkOut) || 1)).toLocaleString()} / night
                 </span>
               </div>
               <p className="text-[10px] text-[#C87A53] font-medium mt-2 uppercase tracking-wider">{hotel.tripTitle}</p>
@@ -92,6 +169,12 @@ export default function HotelsPage() {
           </div>
         )}
       </div>
+
+      <AddHotelModal
+        open={!!editTarget}
+        onClose={() => setEditTarget(null)}
+        initialHotel={editTarget ?? undefined}
+      />
     </main>
   );
 }

@@ -120,14 +120,14 @@ export default function TripsPage() {
             <Link href={`/trips/${trip.id}`} className="block group">
               <div className="bento-card overflow-hidden">
                 {/* Cover */}
-                <div className="relative h-56 overflow-hidden">
+                <div className="relative h-90 overflow-hidden">
                   {trip.coverPhoto
                     ? <img src={trip.coverPhoto} alt={trip.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     : <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/30 via-[#E8E4DC] to-[#4A5343]/20" />
                   }
                   <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-4 text-white">
-                    <h2 className="serif font-semibold text-xl leading-tight">{trip.title}</h2>
+                    <h2 className="serif font-semibold text-2xl leading-tight">{trip.title}</h2>
                   </div>
                 </div>
 

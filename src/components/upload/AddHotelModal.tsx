@@ -43,7 +43,7 @@ const emptyForm = {
 };
 
 export default function AddHotelModal({ open, onClose, defaultTripId, initialHotel }: Props) {
-  const { trips, updateTrip, addStandaloneHotel } = useTrips();
+  const { trips, updateTrip, addStandaloneHotel, updateStandaloneHotel } = useTrips();
   const isEdit = !!initialHotel;
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState('');
@@ -158,6 +158,13 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
         } else {
           updateTrip({ ...oldTrip, hotels: oldTrip.hotels.filter(h => h.id !== hotel.id) });
           if (trip) updateTrip({ ...trip, hotels: [...trip.hotels, hotel] });
+          else updateStandaloneHotel(hotel);
+        }
+      } else {
+        if (trip) {
+          updateTrip({ ...trip, hotels: [...trip.hotels, hotel] });
+        } else {
+          updateStandaloneHotel(hotel);
         }
       }
     } else if (trip) {

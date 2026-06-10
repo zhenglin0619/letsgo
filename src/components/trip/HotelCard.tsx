@@ -1,13 +1,88 @@
 'use client';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { HotelLog } from '@/types';
-import { Calendar, DollarSign, Star } from 'lucide-react';
+import { MapPin, Calendar, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import StarRating from '@/components/ui/StarRating';
 
-interface Props { hotel: HotelLog; index: number }
+interface Props {
+  hotel: HotelLog;
+  index: number;
+  onEdit: () => void;
+  onDelete: () => void;
+}
 
-export default function HotelCard({ hotel, index }: Props) {
-  const nights = Math.round((new Date(hotel.checkOut).getTime() - new Date(hotel.checkIn).getTime()) / 86400000);
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+function nights(checkIn: string, checkOut: string) {
+  return Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000);
+}
+
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function HotelMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) { setConfirming(false); return; }
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+        className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors flex items-center justify-center"
+      >
+        <MoreHorizontal size={14} className="text-white" />
+      </button>
+
+      {open && (
+        <div className="absolute top-9 right-0 bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-40 z-30">
+          {!confirming ? (
+            <>
+              <button
+                onClick={e => { e.stopPropagation(); onEdit(); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
+              >
+                <Pencil size={13} className="text-[#8A8A8A]" /> Edit
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setConfirming(true); }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+              >
+                <Trash2 size={13} /> Delete
+              </button>
+            </>
+          ) : (
+            <div className="px-4 py-2">
+              <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this hotel?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={e => { e.stopPropagation(); onDelete(); setOpen(false); }}
+                  className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
+                >Delete</button>
+                <button
+                  onClick={e => { e.stopPropagation(); setConfirming(false); }}
+                  className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
+                >Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function HotelCard({ hotel, index, onEdit, onDelete }: Props) {
+  const n = nights(hotel.checkIn, hotel.checkOut);
 
   return (
     <motion.div
@@ -16,30 +91,38 @@ export default function HotelCard({ hotel, index }: Props) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08 }}
     >
-      {hotel.photos[0] && (
-        <div className="h-40 overflow-hidden">
+      <div className="relative h-48 overflow-hidden">
+        {hotel.photos[0] ? (
           <img src={hotel.photos[0]} alt={hotel.hotelName} className="w-full h-full object-cover" />
-        </div>
-      )}
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-1">
-          <h3 className="serif text-base font-semibold text-[#1A1A1A]">{hotel.hotelName}</h3>
-          <div className="flex items-center gap-0.5 text-[#C87A53] text-xs font-semibold">
-            <Star size={11} fill="#C87A53" />{hotel.rating}
-          </div>
-        </div>
-        <p className="text-xs text-[#8A8A8A] mb-3">{hotel.location.city}, {hotel.location.country}</p>
-        <div className="flex gap-4 text-xs text-[#4A5343]">
-          <span className="flex items-center gap-1">
-            <Calendar size={11} />{fmtDate(hotel.checkIn)} – {fmtDate(hotel.checkOut)} · {nights}n
-          </span>
-          <span className="flex items-center gap-1">
-            <DollarSign size={11} />{hotel.pricePerNight} {hotel.currency}/night
-          </span>
-        </div>
-        {hotel.notes && (
-          <p className="text-xs text-[#8A8A8A] mt-3 leading-relaxed line-clamp-2 italic">{hotel.notes}</p>
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-[#4A5343]/30 via-[#E8E4DC] to-[#C87A53]/20" />
         )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+        <div className="absolute bottom-3 left-4 text-white">
+          <h2 className="serif font-semibold text-lg leading-tight">{hotel.hotelName}</h2>
+        </div>
+        <div className="absolute top-3 right-3">
+          <HotelMenu onEdit={onEdit} onDelete={onDelete} />
+        </div>
+      </div>
+
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
+            <MapPin size={11} />{hotel.location.city}, {hotel.location.country}
+          </span>
+          {hotel.rating > 0 && (
+            <StarRating value={hotel.rating} readonly size="sm" />
+          )}
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
+            <Calendar size={11} />{formatDate(hotel.checkIn)} – {formatDate(hotel.checkOut)} · {n} night{n !== 1 ? 's' : ''}
+          </span>
+          <span className="text-xs text-[#8A8A8A]">
+            {hotel.currency} {Math.round(hotel.pricePerNight / (n || 1)).toLocaleString()} / night
+          </span>
+        </div>
       </div>
     </motion.div>
   );
