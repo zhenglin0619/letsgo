@@ -278,9 +278,9 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                         <div>
                           <label className={LABEL}>Total Expense</label>
                           <div className="flex gap-1.5">
-                            <input type="number" min="0" placeholder="0" value={form.expense}
-                              onChange={e => set('expense', e.target.value)}
-                              className={`${INPUT} flex-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`} />
+                            <input type="text" inputMode="decimal" placeholder="0" value={form.expense}
+                              onChange={e => { if (/^\d*\.?\d*$/.test(e.target.value)) set('expense', e.target.value); }}
+                              className={`${INPUT} flex-1`} />
                             <select value={form.currency} onChange={e => set('currency', e.target.value)}
                               className="text-sm border border-[#E8E6E1] rounded-xl px-2 py-2 focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] bg-white transition-colors w-14 appearance-none flex-shrink-0">
                               {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
