@@ -28,7 +28,9 @@ export interface HotelLog {
   checkIn: string;
   checkOut: string;
   rating: number;
-  location: { lat: number; lng: number; city: string; country: string };
+  roomType?: string;
+  viewType?: string;
+  location: { lat: number; lng: number; city: string; country: string; address?: string };
   photos: string[];
   notes: string;
   pricePerNight: number;

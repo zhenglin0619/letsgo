@@ -10,7 +10,7 @@ const WorldMapLeaflet = dynamic(() => import('./WorldMapLeaflet'), {
 });
 
 export default function WorldMap() {
-  const { trips, standaloneRestaurants } = useTrips();
+  const { trips, standaloneRestaurants, standaloneHotels } = useTrips();
 
   const pins = useMemo<MapPin[]>(() => [
     ...trips.flatMap(trip => [
@@ -42,7 +42,16 @@ export default function WorldMap() {
         type: 'dining' as const,
         label: d.restaurantName,
       })),
-  ], [trips, standaloneRestaurants]);
+    ...standaloneHotels
+      .filter(h => h.location.lat !== 0 || h.location.lng !== 0)
+      .map(h => ({
+        id: h.id,
+        lat: h.location.lat,
+        lng: h.location.lng,
+        type: 'hotel' as const,
+        label: h.hotelName,
+      })),
+  ], [trips, standaloneRestaurants, standaloneHotels]);
 
   return (
     <div className="bento-card overflow-hidden" style={{ background: '#fff', isolation: 'isolate' }}>

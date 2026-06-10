@@ -5,6 +5,7 @@ import Navbar from './Navbar';
 import FAB from './FAB';
 import AddTripModal from '@/components/upload/AddTripModal';
 import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
+import AddHotelModal from '@/components/upload/AddHotelModal';
 import AuthModal from '@/components/auth/AuthModal';
 import { TripsProvider, useTrips } from '@/store/tripsContext';
 
@@ -12,6 +13,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const { user, authLoading } = useTrips();
   const [addTripOpen, setAddTripOpen]           = useState(false);
   const [addRestaurantOpen, setAddRestaurantOpen] = useState(false);
+  const [addHotelOpen, setAddHotelOpen]         = useState(false);
   const pathname = usePathname();
   const hideFAB  = /^\/trips\/.+/.test(pathname);
 
@@ -50,6 +52,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   function handleSelect(type: 'trip' | 'hotel' | 'restaurant') {
     if (type === 'trip') setAddTripOpen(true);
     else if (type === 'restaurant') setAddRestaurantOpen(true);
+    else if (type === 'hotel') setAddHotelOpen(true);
   }
 
   return (
@@ -59,6 +62,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       {!hideFAB && <FAB onSelect={handleSelect} />}
       <AddTripModal open={addTripOpen} onClose={() => setAddTripOpen(false)} />
       <AddRestaurantModal open={addRestaurantOpen} onClose={() => setAddRestaurantOpen(false)} />
+      <AddHotelModal open={addHotelOpen} onClose={() => setAddHotelOpen(false)} />
     </>
   );
 }

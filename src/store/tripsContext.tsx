@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { Trip, DiningLog } from '@/types';
+import { Trip, DiningLog, HotelLog } from '@/types';
 import { mockTrips } from '@/store/data';
 
 interface TripsContextValue {
@@ -13,12 +13,16 @@ interface TripsContextValue {
   toggleDemoMode: () => void;
   trips: Trip[];
   standaloneRestaurants: DiningLog[];
+  standaloneHotels: HotelLog[];
   addTrip:                    (t: Trip)        => void;
   updateTrip:                 (t: Trip)        => void;
   deleteTrip:                 (id: string)     => void;
   addStandaloneRestaurant:    (log: DiningLog) => void;
   updateStandaloneRestaurant: (log: DiningLog) => void;
   deleteStandaloneRestaurant: (id: string)     => void;
+  addStandaloneHotel:         (h: HotelLog)    => void;
+  updateStandaloneHotel:      (h: HotelLog)    => void;
+  deleteStandaloneHotel:      (id: string)     => void;
   signOut: () => Promise<void>;
 }
 
@@ -67,10 +71,13 @@ export function TripsProvider({ children }: { children: ReactNode }) {
   const [trips, setTrips]             = useState<Trip[]>([]);
   const [standaloneRestaurants, setStandalone] = useState<DiningLog[]>([]);
 
+  const [standaloneHotels, setStandaloneHotels]   = useState<HotelLog[]>([]);
+
   // Demo data (local-only copy of mock data — mutations work but never sync to DB)
   const [demoMode, setDemoMode]             = useState(false);
   const [demoTrips, setDemoTrips]           = useState<Trip[]>([...mockTrips]);
   const [demoStandalone, setDemoStandalone] = useState<DiningLog[]>([]);
+  const [demoStandaloneHotels, setDemoStandaloneHotels] = useState<HotelLog[]>([]);
 
   function toggleDemoMode() {
     setDemoMode(on => {
@@ -102,8 +109,9 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const effectiveTrips      = demoMode ? demoTrips      : trips;
-  const effectiveStandalone = demoMode ? demoStandalone : standaloneRestaurants;
+  const effectiveTrips          = demoMode ? demoTrips             : trips;
+  const effectiveStandalone     = demoMode ? demoStandalone        : standaloneRestaurants;
+  const effectiveStandaloneHotels = demoMode ? demoStandaloneHotels : standaloneHotels;
 
   return (
     <TripsContext.Provider value={{
@@ -113,6 +121,7 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       toggleDemoMode,
       trips:                effectiveTrips,
       standaloneRestaurants: effectiveStandalone,
+      standaloneHotels:     effectiveStandaloneHotels,
 
       addTrip: (t) => {
         if (demoMode) { setDemoTrips(p => [t, ...p]); return; }
@@ -144,6 +153,19 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         if (demoMode) { setDemoStandalone(p => p.filter(x => x.id !== id)); return; }
         setStandalone(p => p.filter(x => x.id !== id));
         if (user) deleteRestaurant$(user.id, id);
+      },
+
+      addStandaloneHotel: (h) => {
+        if (demoMode) { setDemoStandaloneHotels(p => [h, ...p]); return; }
+        setStandaloneHotels(p => [h, ...p]);
+      },
+      updateStandaloneHotel: (h) => {
+        if (demoMode) { setDemoStandaloneHotels(p => p.map(x => x.id === h.id ? h : x)); return; }
+        setStandaloneHotels(p => p.map(x => x.id === h.id ? h : x));
+      },
+      deleteStandaloneHotel: (id) => {
+        if (demoMode) { setDemoStandaloneHotels(p => p.filter(x => x.id !== id)); return; }
+        setStandaloneHotels(p => p.filter(x => x.id !== id));
       },
 
       signOut: async () => {

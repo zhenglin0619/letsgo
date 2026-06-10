@@ -9,6 +9,7 @@ import DiningCard from '@/components/trip/DiningCard';
 import DiningDrawer from '@/components/dining/DiningDrawer';
 import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
 import AddTripModal from '@/components/upload/AddTripModal';
+import AddHotelModal from '@/components/upload/AddHotelModal';
 
 import { DiningLog } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -91,6 +92,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [editingDining, setEditingDining] = useState<DiningLog | null>(null);
   const [addRestaurantOpen, setAddRestaurantOpen] = useState(false);
+  const [addHotelOpen, setAddHotelOpen] = useState(false);
   const [addTripOpen, setAddTripOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -293,6 +295,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
       <AddTripModal open={editTripOpen} onClose={() => setEditTripOpen(false)} initialTrip={trip!} />
       <AddTripModal open={addTripOpen} onClose={() => setAddTripOpen(false)} />
+      <AddHotelModal open={addHotelOpen} onClose={() => setAddHotelOpen(false)} defaultTripId={trip!.id} />
 
       {/* FAB — bottom-left */}
       <AnimatePresence>
@@ -316,6 +319,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               {([
                 { type: 'trip' as const,       label: 'Trip',       icon: Plane },
                 { type: 'restaurant' as const, label: 'Restaurant', icon: Utensils },
+                { type: 'hotel' as const,      label: 'Hotel',      icon: BedDouble },
               ] as const).map((opt, i, arr) => {
                 const Icon = opt.icon;
                 return (
@@ -323,7 +327,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     key={opt.type}
                     onClick={() => {
                       if (opt.type === 'trip') setAddTripOpen(true);
-                      else setAddRestaurantOpen(true);
+                      else if (opt.type === 'restaurant') setAddRestaurantOpen(true);
+                      else setAddHotelOpen(true);
                       setFabOpen(false);
                     }}
                     className="flex items-center gap-3 bg-white text-[#1A1A1A] text-base font-medium px-5 py-3 rounded-full shadow-xl hover:bg-[#F5F2EE] transition-colors whitespace-nowrap"
