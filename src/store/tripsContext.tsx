@@ -28,44 +28,171 @@ interface TripsContextValue {
 
 const TripsContext = createContext<TripsContextValue | null>(null);
 
-// ── Supabase sync helpers (optimistic: state first, DB in background) ──────────
-// Standalone restaurants and hotels are stored as a single sentinel row in the
-// trips table (id = '__standalone__') to avoid needing a second table.
-const STANDALONE_ID = '__standalone__';
+// ── DB row shapes ──────────────────────────────────────────────────────────────
+interface TripRow {
+  id: string; user_id: string; title: string; cover_photo: string;
+  start_date: string; end_date: string; countries: string[];
+  city: string | null; photos: string[];
+}
+interface RestaurantRow {
+  id: string; user_id: string; trip_id: string | null;
+  restaurant_name: string; cuisine: string; date: string;
+  meal_type: string; total_expense: number; currency: string;
+  overall_rating: number; location: DiningLog['location'];
+  photos: string[]; dishes: DiningLog['dishes']; michelin_stars: number;
+}
+interface HotelRow {
+  id: string; user_id: string; trip_id: string | null;
+  hotel_name: string; check_in: string; check_out: string;
+  price_per_night: number; currency: string; rating: number;
+  room_type: string | null; view_type: string | null;
+  location: HotelLog['location']; photos: string[]; notes: string;
+}
 
-async function loadUserData(userId: string) {
-  const [tripsRes, standaloneRes] = await Promise.all([
-    supabase.from('trips').select('id,data').eq('user_id', userId).neq('id', STANDALONE_ID),
-    supabase.from('trips').select('data').eq('user_id', userId).eq('id', STANDALONE_ID).maybeSingle(),
-  ]);
-  const sd = standaloneRes.data?.data as { restaurants?: DiningLog[]; hotels?: HotelLog[] } | null;
-  console.log('[supabase] loaded standalone row:', standaloneRes.data, 'error:', standaloneRes.error);
+// ── DB ↔ domain converters ────────────────────────────────────────────────────
+function tripToRow(t: Trip, userId: string): TripRow {
   return {
-    trips:            (tripsRes.data ?? []).map(r => r.data as Trip),
-    standalone:       sd?.restaurants ?? [],
-    standaloneHotels: sd?.hotels ?? [],
+    id: t.id, user_id: userId, title: t.title, cover_photo: t.coverPhoto,
+    start_date: t.startDate, end_date: t.endDate, countries: t.countries,
+    city: t.city ?? null, photos: t.photos ?? [],
+  };
+}
+function rowToTrip(r: TripRow, diningLogs: DiningLog[], hotels: HotelLog[]): Trip {
+  return {
+    id: r.id, title: r.title, coverPhoto: r.cover_photo,
+    startDate: r.start_date, endDate: r.end_date, countries: r.countries,
+    ...(r.city   ? { city:   r.city }   : {}),
+    ...(r.photos.length ? { photos: r.photos } : {}),
+    diningLogs, hotels,
+  };
+}
+function logToRow(d: DiningLog, userId: string, tripId: string | null): RestaurantRow {
+  return {
+    id: d.id, user_id: userId, trip_id: tripId,
+    restaurant_name: d.restaurantName, cuisine: d.cuisine,
+    date: d.date, meal_type: d.time, total_expense: d.totalExpense,
+    currency: d.currency, overall_rating: d.overallRating,
+    location: d.location, photos: d.photos, dishes: d.dishes,
+    michelin_stars: d.michelinStars ?? 0,
+  };
+}
+function rowToLog(r: RestaurantRow): DiningLog {
+  return {
+    id: r.id, restaurantName: r.restaurant_name, cuisine: r.cuisine,
+    date: r.date, time: r.meal_type as DiningLog['time'],
+    totalExpense: r.total_expense, currency: r.currency,
+    overallRating: r.overall_rating, location: r.location,
+    photos: r.photos, dishes: r.dishes,
+    ...(r.michelin_stars > 0 ? { michelinStars: r.michelin_stars as 1 | 2 | 3 } : {}),
+  };
+}
+function hotelToRow(h: HotelLog, userId: string, tripId: string | null): HotelRow {
+  return {
+    id: h.id, user_id: userId, trip_id: tripId,
+    hotel_name: h.hotelName, check_in: h.checkIn, check_out: h.checkOut,
+    price_per_night: h.pricePerNight, currency: h.currency, rating: h.rating,
+    room_type: h.roomType ?? null, view_type: h.viewType ?? null,
+    location: h.location, photos: h.photos, notes: h.notes,
+  };
+}
+function rowToHotel(r: HotelRow): HotelLog {
+  return {
+    id: r.id, hotelName: r.hotel_name, checkIn: r.check_in, checkOut: r.check_out,
+    pricePerNight: r.price_per_night, currency: r.currency, rating: r.rating,
+    location: r.location, photos: r.photos, notes: r.notes,
+    ...(r.room_type  ? { roomType:  r.room_type }  : {}),
+    ...(r.view_type  ? { viewType:  r.view_type }  : {}),
   };
 }
 
-function syncTrip(userId: string, t: Trip) {
-  supabase.from('trips')
-    .upsert({ id: t.id, user_id: userId, data: t, updated_at: new Date().toISOString() })
-    .then(({ error }) => { if (error) console.warn('[supabase] trip sync:', error.message ?? error); });
+// ── Supabase sync helpers ─────────────────────────────────────────────────────
+async function loadUserData(userId: string) {
+  const [tripsRes, restRes, hotelRes] = await Promise.all([
+    supabase.from('trips').select('*').eq('user_id', userId),
+    supabase.from('restaurants').select('*').eq('user_id', userId),
+    supabase.from('hotels').select('*').eq('user_id', userId),
+  ]);
+  const tripRows  = (tripsRes.data  ?? []) as TripRow[];
+  const restRows  = (restRes.data   ?? []) as RestaurantRow[];
+  const hotelRows = (hotelRes.data  ?? []) as HotelRow[];
+
+  const trips = tripRows.map(t =>
+    rowToTrip(
+      t,
+      restRows.filter(r => r.trip_id === t.id).map(rowToLog),
+      hotelRows.filter(h => h.trip_id === t.id).map(rowToHotel),
+    )
+  );
+  return {
+    trips,
+    standalone:       restRows.filter(r => r.trip_id === null).map(rowToLog),
+    standaloneHotels: hotelRows.filter(h => h.trip_id === null).map(rowToHotel),
+  };
+}
+
+async function syncTrip(userId: string, t: Trip): Promise<void> {
+  const now = new Date().toISOString();
+
+  const { error: te } = await supabase.from('trips')
+    .upsert({ ...tripToRow(t, userId), updated_at: now });
+  if (te) { console.warn('[supabase] trip sync:', te.message); return; }
+
+  // Upsert restaurants, then prune any removed from this trip
+  if (t.diningLogs.length > 0) {
+    const { error: re } = await supabase.from('restaurants')
+      .upsert(t.diningLogs.map(d => ({ ...logToRow(d, userId, t.id), updated_at: now })));
+    if (re) console.warn('[supabase] restaurant sync:', re.message);
+    const ids = t.diningLogs.map(d => d.id);
+    await supabase.from('restaurants').delete()
+      .eq('user_id', userId).eq('trip_id', t.id)
+      .not('id', 'in', `(${ids.join(',')})`);
+  } else {
+    await supabase.from('restaurants').delete().eq('user_id', userId).eq('trip_id', t.id);
+  }
+
+  // Upsert hotels, then prune any removed from this trip
+  if (t.hotels.length > 0) {
+    const { error: he } = await supabase.from('hotels')
+      .upsert(t.hotels.map(h => ({ ...hotelToRow(h, userId, t.id), updated_at: now })));
+    if (he) console.warn('[supabase] hotel sync:', he.message);
+    const ids = t.hotels.map(h => h.id);
+    await supabase.from('hotels').delete()
+      .eq('user_id', userId).eq('trip_id', t.id)
+      .not('id', 'in', `(${ids.join(',')})`);
+  } else {
+    await supabase.from('hotels').delete().eq('user_id', userId).eq('trip_id', t.id);
+  }
 }
 
 function deleteTrip$(userId: string, id: string) {
+  // CASCADE in DB deletes associated restaurants and hotels automatically
   supabase.from('trips').delete().eq('id', id).eq('user_id', userId)
-    .then(({ error }) => { if (error) console.warn('[supabase] trip delete:', error.message ?? error); });
+    .then(({ error }) => { if (error) console.warn('[supabase] trip delete:', error.message); });
 }
 
-function syncStandalone(userId: string, restaurants: DiningLog[], hotels: HotelLog[]) {
-  console.log('[supabase] syncing standalone:', restaurants.length, 'restaurants,', hotels.length, 'hotels');
-  supabase.from('trips')
-    .upsert({ id: STANDALONE_ID, user_id: userId, data: { restaurants, hotels }, updated_at: new Date().toISOString() })
-    .then(({ error }) => {
-      if (error) console.error('[supabase] standalone sync FAILED:', error.code, error.message, error.details);
-      else console.log('[supabase] standalone sync OK');
-    });
+function syncRestaurant(userId: string, log: DiningLog, tripId: string | null) {
+  supabase.from('restaurants')
+    .upsert({ ...logToRow(log, userId, tripId), updated_at: new Date().toISOString() })
+    .then(({ error }) => { if (error) console.warn('[supabase] restaurant sync:', error.message); });
+}
+
+function deleteRestaurant$(userId: string, id: string) {
+  // Only delete if still standalone (trip_id IS NULL) to avoid race with syncTrip moving it
+  supabase.from('restaurants').delete()
+    .eq('id', id).eq('user_id', userId).is('trip_id', null)
+    .then(({ error }) => { if (error) console.warn('[supabase] restaurant delete:', error.message); });
+}
+
+function syncHotel(userId: string, hotel: HotelLog, tripId: string | null) {
+  supabase.from('hotels')
+    .upsert({ ...hotelToRow(hotel, userId, tripId), updated_at: new Date().toISOString() })
+    .then(({ error }) => { if (error) console.warn('[supabase] hotel sync:', error.message); });
+}
+
+function deleteHotel$(userId: string, id: string) {
+  supabase.from('hotels').delete()
+    .eq('id', id).eq('user_id', userId).is('trip_id', null)
+    .then(({ error }) => { if (error) console.warn('[supabase] hotel delete:', error.message); });
 }
 
 // ── Provider ───────────────────────────────────────────────────────────────────
@@ -73,12 +200,10 @@ export function TripsProvider({ children }: { children: ReactNode }) {
   const [user, setUser]               = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // Real data from Supabase
   const [trips, setTrips]                       = useState<Trip[]>([]);
   const [standaloneRestaurants, setStandalone]  = useState<DiningLog[]>([]);
   const [standaloneHotels, setStandaloneHotels] = useState<HotelLog[]>([]);
 
-  // Demo data (local-only copy of mock data — mutations work but never sync to DB)
   const [demoMode, setDemoMode]                         = useState(false);
   const [demoTrips, setDemoTrips]                       = useState<Trip[]>([...mockTrips]);
   const [demoStandalone, setDemoStandalone]             = useState<DiningLog[]>([...mockStandaloneRestaurants]);
@@ -133,12 +258,12 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       addTrip: (t) => {
         if (demoMode) { setDemoTrips(p => [t, ...p]); return; }
         setTrips(p => [t, ...p]);
-        if (user) syncTrip(user.id, t);
+        if (user) syncTrip(user.id, t).catch(e => console.warn('[supabase]', e));
       },
       updateTrip: (t) => {
         if (demoMode) { setDemoTrips(p => p.map(x => x.id === t.id ? t : x)); return; }
         setTrips(p => p.map(x => x.id === t.id ? t : x));
-        if (user) syncTrip(user.id, t);
+        if (user) syncTrip(user.id, t).catch(e => console.warn('[supabase]', e));
       },
       deleteTrip: (id) => {
         if (demoMode) { setDemoTrips(p => p.filter(x => x.id !== id)); return; }
@@ -148,40 +273,34 @@ export function TripsProvider({ children }: { children: ReactNode }) {
 
       addStandaloneRestaurant: (log) => {
         if (demoMode) { setDemoStandalone(p => [log, ...p]); return; }
-        const next = [log, ...standaloneRestaurants];
-        setStandalone(next);
-        if (user) syncStandalone(user.id, next, standaloneHotels);
+        setStandalone(p => [log, ...p]);
+        if (user) syncRestaurant(user.id, log, null);
       },
       updateStandaloneRestaurant: (log) => {
         if (demoMode) { setDemoStandalone(p => p.map(x => x.id === log.id ? log : x)); return; }
-        const next = standaloneRestaurants.map(x => x.id === log.id ? log : x);
-        setStandalone(next);
-        if (user) syncStandalone(user.id, next, standaloneHotels);
+        setStandalone(p => p.map(x => x.id === log.id ? log : x));
+        if (user) syncRestaurant(user.id, log, null);
       },
       deleteStandaloneRestaurant: (id) => {
         if (demoMode) { setDemoStandalone(p => p.filter(x => x.id !== id)); return; }
-        const next = standaloneRestaurants.filter(x => x.id !== id);
-        setStandalone(next);
-        if (user) syncStandalone(user.id, next, standaloneHotels);
+        setStandalone(p => p.filter(x => x.id !== id));
+        if (user) deleteRestaurant$(user.id, id);
       },
 
       addStandaloneHotel: (h) => {
         if (demoMode) { setDemoStandaloneHotels(p => [h, ...p]); return; }
-        const next = [h, ...standaloneHotels];
-        setStandaloneHotels(next);
-        if (user) syncStandalone(user.id, standaloneRestaurants, next);
+        setStandaloneHotels(p => [h, ...p]);
+        if (user) syncHotel(user.id, h, null);
       },
       updateStandaloneHotel: (h) => {
         if (demoMode) { setDemoStandaloneHotels(p => p.map(x => x.id === h.id ? h : x)); return; }
-        const next = standaloneHotels.map(x => x.id === h.id ? h : x);
-        setStandaloneHotels(next);
-        if (user) syncStandalone(user.id, standaloneRestaurants, next);
+        setStandaloneHotels(p => p.map(x => x.id === h.id ? h : x));
+        if (user) syncHotel(user.id, h, null);
       },
       deleteStandaloneHotel: (id) => {
         if (demoMode) { setDemoStandaloneHotels(p => p.filter(x => x.id !== id)); return; }
-        const next = standaloneHotels.filter(x => x.id !== id);
-        setStandaloneHotels(next);
-        if (user) syncStandalone(user.id, standaloneRestaurants, next);
+        setStandaloneHotels(p => p.filter(x => x.id !== id));
+        if (user) deleteHotel$(user.id, id);
       },
 
       signOut: async () => {
