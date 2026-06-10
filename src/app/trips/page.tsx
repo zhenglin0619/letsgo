@@ -6,6 +6,7 @@ import { useTrips } from '@/store/tripsContext';
 import { Trip } from '@/types';
 import { Calendar, MapPin, BedDouble, Utensils, ArrowRight, MoreHorizontal, Pencil, Trash2, Search, X } from 'lucide-react';
 import AddTripModal from '@/components/upload/AddTripModal';
+import SortMenu, { DATE_OPTIONS } from '@/components/ui/SortMenu';
 
 function formatRange(start: string, end: string) {
   const s = new Date(start);
@@ -126,16 +127,7 @@ export default function TripsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 mb-0.5">
-            <select
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value)}
-              className="py-2 pl-3 pr-7 text-sm bg-white border border-[#E8E6E1] rounded-xl focus:outline-none focus:border-[#C87A53] text-[#8A8A8A] transition-colors appearance-none cursor-pointer"
-            >
-              <option value="date-desc">Date (newest)</option>
-              <option value="date-asc">Date (oldest)</option>
-              <option value="rate-desc">Rating (highest)</option>
-              <option value="rate-asc">Rating (lowest)</option>
-            </select>
+            <SortMenu value={sortBy} onChange={setSortBy} options={DATE_OPTIONS} />
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A8A] pointer-events-none" />
               <input
