@@ -10,6 +10,7 @@ import DiningDrawer from '@/components/dining/DiningDrawer';
 import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
 import AddTripModal from '@/components/upload/AddTripModal';
 import AddHotelModal from '@/components/upload/AddHotelModal';
+import HotelDrawer from '@/components/hotel/HotelDrawer';
 
 import { DiningLog, HotelLog } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -92,6 +93,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [editingDining, setEditingDining] = useState<DiningLog | null>(null);
   const [editingHotel, setEditingHotel] = useState<HotelLog | null>(null);
+  const [hotelDrawerHotel, setHotelDrawerHotel] = useState<HotelLog | null>(null);
+  const [hotelDrawerOpen, setHotelDrawerOpen] = useState(false);
   const [addRestaurantOpen, setAddRestaurantOpen] = useState(false);
   const [addHotelOpen, setAddHotelOpen] = useState(false);
   const [addTripOpen, setAddTripOpen] = useState(false);
@@ -268,6 +271,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     key={hotel.id}
                     hotel={hotel}
                     index={i}
+                    onClick={() => { setHotelDrawerHotel(hotel); setHotelDrawerOpen(true); }}
                     onEdit={() => setEditingHotel(hotel)}
                     onDelete={() => updateTrip({ ...trip!, hotels: trip!.hotels.filter(h => h.id !== hotel.id) })}
                   />
@@ -300,6 +304,21 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         defaultTripId={trip!.id}
       />
 
+      <HotelDrawer
+        hotel={hotelDrawerHotel}
+        open={hotelDrawerOpen}
+        onClose={() => setHotelDrawerOpen(false)}
+        onEdit={() => { if (hotelDrawerHotel) setEditingHotel(hotelDrawerHotel); setHotelDrawerOpen(false); }}
+        onDelete={() => {
+          if (!hotelDrawerHotel) return;
+          updateTrip({ ...trip!, hotels: trip!.hotels.filter(h => h.id !== hotelDrawerHotel.id) });
+          setHotelDrawerOpen(false);
+        }}
+        onUpdateHotel={(updated) => {
+          setHotelDrawerHotel(updated);
+          updateTrip({ ...trip!, hotels: trip!.hotels.map(h => h.id === updated.id ? updated : h) });
+        }}
+      />
       <AddTripModal open={editTripOpen} onClose={() => setEditTripOpen(false)} initialTrip={trip!} />
       <AddTripModal open={addTripOpen} onClose={() => setAddTripOpen(false)} />
       <AddHotelModal

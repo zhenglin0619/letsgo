@@ -142,7 +142,7 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="fixed top-0 inset-x-0 z-[9999] flex items-center justify-between pl-4 pr-8 py-[9px]"
+    <header className="fixed top-0 inset-x-0 z-[9999] flex items-center justify-between pl-2 pr-8 py-[9px]"
       style={{ background: 'rgba(251,251,250,0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(180,175,168,0.6)' }}>
       <LetsGoLogo />
       <nav className="flex items-center gap-6">

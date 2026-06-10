@@ -8,6 +8,7 @@ import StarRating from '@/components/ui/StarRating';
 interface Props {
   hotel: HotelLog;
   index: number;
+  onClick?: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -81,12 +82,13 @@ function HotelMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => v
   );
 }
 
-export default function HotelCard({ hotel, index, onEdit, onDelete }: Props) {
+export default function HotelCard({ hotel, index, onClick, onEdit, onDelete }: Props) {
   const n = nights(hotel.checkIn, hotel.checkOut);
 
   return (
     <motion.div
-      className="bento-card overflow-hidden"
+      className="bento-card overflow-hidden cursor-pointer"
+      onClick={onClick}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08 }}

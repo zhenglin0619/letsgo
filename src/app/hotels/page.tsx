@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useTrips } from '@/store/tripsContext';
 import { MapPin, Calendar, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import AddHotelModal from '@/components/upload/AddHotelModal';
+import HotelDrawer from '@/components/hotel/HotelDrawer';
 import StarRating from '@/components/ui/StarRating';
 import { HotelLog } from '@/types';
 
@@ -84,6 +85,8 @@ export default function HotelsPage() {
   ].sort((a, b) => b.checkIn.localeCompare(a.checkIn));
 
   const [editTarget, setEditTarget] = useState<{ hotel: HotelLog; tripId: string } | null>(null);
+  const [selectedHotel, setSelectedHotel] = useState<{ hotel: HotelLog; tripId: string; isStandalone: boolean } | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   function handleDelete(hotelId: string, tripId: string, isStandalone: boolean) {
     if (isStandalone) {
@@ -113,10 +116,11 @@ export default function HotelsPage() {
         {allHotels.map((hotel, i) => (
           <motion.div
             key={hotel.id}
-            className="bento-card overflow-hidden"
+            className="bento-card overflow-hidden cursor-pointer"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1, duration: 0.45 }}
+            onClick={() => { const { tripTitle: _t, isStandalone: _s, ...h } = hotel; setSelectedHotel({ hotel: h, tripId: hotel.tripId, isStandalone: hotel.isStandalone }); setDrawerOpen(true); }}
           >
             <div className="relative h-45 overflow-hidden">
               {hotel.photos[0] ? (
@@ -169,6 +173,32 @@ export default function HotelsPage() {
           </div>
         )}
       </div>
+
+      <HotelDrawer
+        hotel={selectedHotel?.hotel ?? null}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onEdit={() => {
+          if (!selectedHotel) return;
+          setEditTarget({ hotel: selectedHotel.hotel, tripId: selectedHotel.tripId });
+          setDrawerOpen(false);
+        }}
+        onDelete={() => {
+          if (!selectedHotel) return;
+          handleDelete(selectedHotel.hotel.id, selectedHotel.tripId, selectedHotel.isStandalone);
+          setDrawerOpen(false);
+        }}
+        onUpdateHotel={(updated) => {
+          if (!selectedHotel) return;
+          setSelectedHotel(s => s ? { ...s, hotel: updated } : s);
+          if (selectedHotel.isStandalone) {
+            updateStandaloneHotel(updated);
+          } else {
+            const trip = trips.find(t => t.id === selectedHotel.tripId);
+            if (trip) updateTrip({ ...trip, hotels: trip.hotels.map(h => h.id === updated.id ? updated : h) });
+          }
+        }}
+      />
 
       <AddHotelModal
         open={!!editTarget}

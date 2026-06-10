@@ -5,10 +5,10 @@ import { DiningLog, Dish } from '@/types';
 import StarRating from '@/components/ui/StarRating';
 import MichelinBadge from '@/components/ui/MichelinBadge';
 import DishRow from './DishRow';
-import { X, MapPin, GripVertical, Trash2, Plus, Check, ImagePlus, Pencil } from 'lucide-react';
+import { X, MapPin, GripVertical, Trash2, Plus, Check, ImagePlus, Pencil, MoreHorizontal } from 'lucide-react';
 
 const CATEGORIES: Dish['category'][] = ['Appetizer', 'Mains', 'Dessert', 'Drinks', 'Snack'];
-const emptyDishForm = { name: '', category: 'Mains' as Dish['category'], rating: '', notes: '', photo: '' };
+const emptyDishForm = { name: '', category: '' as Dish['category'], rating: '', notes: '', photo: '' };
 
 interface Props {
   log: DiningLog | null;
@@ -127,7 +127,9 @@ function DishEditRow({
 export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, onDelete }: Props) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const addFileRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [editMode, setEditMode]           = useState(false);
+  const [menuOpen, setMenuOpen]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [savedToast, setSavedToast]       = useState(false);
   const [localDishes, setLocalDishes] = useState<Dish[]>([]);
@@ -142,7 +144,14 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
     e.target.value = '';
   }
 
-  useEffect(() => { if (!open) { setEditMode(false); setAddForm(emptyDishForm); setConfirmDelete(false); setSavedToast(false); } }, [open]);
+  useEffect(() => { if (!open) { setEditMode(false); setAddForm(emptyDishForm); setConfirmDelete(false); setSavedToast(false); setMenuOpen(false); } }, [open]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [menuOpen]);
   useEffect(() => { setEditMode(false); setAddForm(emptyDishForm); }, [log?.id]);
 
   useEffect(() => {
@@ -240,36 +249,51 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                     </div>
                   </div>
                 )}
-                {/* Edit / Delete buttons */}
+                {/* ⋯ menu */}
                 {(onEdit || onDelete) && (
-                  <div className="absolute top-3 right-3 flex gap-1.5">
-                    {onEdit && (
-                      <button
-                        onClick={() => { onEdit(); onClose(); }}
-                        className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors flex items-center justify-center"
-                      >
-                        <Pencil size={13} className="text-white" />
-                      </button>
-                    )}
-                    {onDelete && !confirmDelete && (
-                      <button
-                        onClick={() => setConfirmDelete(true)}
-                        className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors flex items-center justify-center"
-                      >
-                        <Trash2 size={13} className="text-white" />
-                      </button>
-                    )}
-                    {onDelete && confirmDelete && (
-                      <div className="flex items-center gap-1 bg-white rounded-xl shadow-lg border border-[#E8E6E1] px-2 py-1">
-                        <span className="text-xs text-[#1A1A1A] font-medium">Delete?</span>
-                        <button
-                          onClick={() => { onDelete(); onClose(); }}
-                          className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 px-2 py-0.5 rounded-lg transition-colors"
-                        >Yes</button>
-                        <button
-                          onClick={() => setConfirmDelete(false)}
-                          className="text-xs font-medium text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors"
-                        >No</button>
+                  <div ref={menuRef} className="absolute top-3 right-3">
+                    <button
+                      onClick={() => setMenuOpen(v => !v)}
+                      className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors flex items-center justify-center"
+                    >
+                      <MoreHorizontal size={14} className="text-white" />
+                    </button>
+                    {menuOpen && (
+                      <div className="absolute top-9 right-0 bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-36 z-30">
+                        {!confirmDelete ? (
+                          <>
+                            {onEdit && (
+                              <button
+                                onClick={() => { onEdit(); onClose(); }}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
+                              >
+                                <Pencil size={13} className="text-[#8A8A8A]" /> Edit
+                              </button>
+                            )}
+                            {onDelete && (
+                              <button
+                                onClick={() => setConfirmDelete(true)}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 size={13} /> Delete
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <div className="px-4 py-2">
+                            <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this restaurant?</p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => { onDelete!(); onClose(); }}
+                                className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
+                              >Delete</button>
+                              <button
+                                onClick={() => setConfirmDelete(false)}
+                                className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
+                              >Cancel</button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -295,7 +319,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                     </div>
                   </div>
                   <div className="bg-[#FBFBFA] rounded-lg p-3">
-                    <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">Total</p>
+                    <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">Total Expense</p>
                     <p className="text-xs font-medium text-[#1A1A1A]">{log.currency} {log.totalExpense}</p>
                   </div>
                 </div>
@@ -308,9 +332,9 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                   {onUpdateLog && !editMode && (
                     <button
                       onClick={openEditMode}
-                      className="text-xs font-medium text-[#C87A53] hover:text-[#A85F3A] transition-colors"
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[#8A8A8A] hover:text-[#C87A53] hover:bg-[#F5F2EE] transition-colors"
                     >
-                      Edit Dishes
+                      <Pencil size={13} />
                     </button>
                   )}
                   {editMode && (
@@ -381,10 +405,12 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                             onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
                           />
                           <select
-                            className="text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white text-[#1A1A1A] appearance-none w-20 flex-shrink-0"
+                            className="text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white appearance-none w-20 flex-shrink-0"
+                            style={{ color: addForm.category ? '#1A1A1A' : '#C0BAB2' }}
                             value={addForm.category}
                             onChange={e => setAddForm(f => ({ ...f, category: e.target.value as Dish['category'] }))}
                           >
+                            <option value="" disabled>Select…</option>
                             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
                           <input
