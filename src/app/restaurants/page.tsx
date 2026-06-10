@@ -89,9 +89,8 @@ export default function RestaurantsPage() {
   const [drawerOpen, setDrawerOpen]         = useState(false);
 
   function openDining(dining: typeof allRestaurants[number]) {
-    const { tripTitle: _t, isStandalone, tripId, ...log } = dining;
-    setSelectedDining(log);
-    setSelectedMeta({ tripId, isStandalone });
+    setSelectedDining(dining);
+    setSelectedMeta({ tripId: dining.tripId, isStandalone: dining.isStandalone });
     setDrawerOpen(true);
   }
 
@@ -126,7 +125,7 @@ export default function RestaurantsPage() {
       >
         <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Dinings</h1>
         <p className="mt-2 text-[#8A8A8A] text-sm">
-          {allRestaurants.length} restaurant{allRestaurants.length !== 1 ? 's' : ''} · sorted by date
+          {allRestaurants.length} restaurant{allRestaurants.length !== 1 ? 's' : ''} · across {new Set(allRestaurants.map(r => r.location.city)).size} cities
         </p>
       </motion.div>
 

@@ -1,5 +1,6 @@
 'use client';
 import { useState, use, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
 import { useTrips } from '@/store/tripsContext';
 import ParallaxBanner from '@/components/trip/ParallaxBanner';
@@ -146,6 +147,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       {/* Banner + menu button */}
       <div className="relative">
         <ParallaxBanner trip={trip!} />
+        <Link href="/trips" className="absolute top-25 left-8 z-10 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/35 transition-colors flex items-center justify-center">
+          <ChevronLeft size={16} className="text-white" />
+        </Link>
         <div className="absolute top-25 right-8 z-10">
           <TripMenu
             onEdit={() => setEditTripOpen(true)}

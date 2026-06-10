@@ -120,7 +120,7 @@ export default function HotelsPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1, duration: 0.45 }}
-            onClick={() => { const { tripTitle: _t, isStandalone: _s, ...h } = hotel; setSelectedHotel({ hotel: h, tripId: hotel.tripId, isStandalone: hotel.isStandalone }); setDrawerOpen(true); }}
+            onClick={() => { setSelectedHotel({ hotel, tripId: hotel.tripId, isStandalone: hotel.isStandalone }); setDrawerOpen(true); }}
           >
             <div className="relative h-45 overflow-hidden">
               {hotel.photos[0] ? (
@@ -138,7 +138,7 @@ export default function HotelsPage() {
               </div>
               <div className="absolute top-3 right-3">
                 <HotelMenu
-                  onEdit={() => { const { tripTitle: _t, isStandalone: _s, ...h } = hotel; setEditTarget({ hotel: h, tripId: hotel.tripId }); }}
+                  onEdit={() => { setEditTarget({ hotel, tripId: hotel.tripId }); }}
                   onDelete={() => handleDelete(hotel.id, hotel.tripId, hotel.isStandalone)}
                 />
               </div>
