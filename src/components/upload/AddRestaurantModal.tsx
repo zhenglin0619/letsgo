@@ -8,6 +8,7 @@ import { DiningLog } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
 import type { LocatedPlace } from '@/components/ui/AddressSearchBox';
 import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
+import { uploadDataUrl, deleteStoragePhoto } from '@/lib/imageUtils';
 
 const AddressSearchBox = dynamic(() => import('@/components/ui/AddressSearchBox'), {
   ssr: false,
@@ -102,7 +103,6 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
     const reader = new FileReader();
     reader.onload = () => setCoverPreview(reader.result as string);
     reader.readAsDataURL(file);
-    e.target.value = '';
   }
 
   function handleLocate(place: LocatedPlace) {
@@ -119,8 +119,9 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
   async function handleSubmit() {
     if (!isValid) return;
     const photo = coverPreview
-      ? (imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview)
+      ? await uploadDataUrl(imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview)
       : null;
+    if (photo && initialDining?.log.photos[0]) deleteStoragePhoto(initialDining.log.photos[0]);
     const trip = trips.find(t => t.id === form.tripId);
 
     let resolvedGeocode = geocoded;
@@ -255,7 +256,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                       {/* Cover photo — aligned with the top block only */}
                       <div className="flex-1 flex flex-col">
                         <label className={LABEL}>Cover Photo <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span></label>
-                        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                        <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleImageChange} />
                         {coverPreview ? (
                           <div className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
                             <DraggableImage ref={imgRef} src={coverPreview} alt="Cover" onReplace={() => fileRef.current?.click()} />

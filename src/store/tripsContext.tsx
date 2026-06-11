@@ -40,7 +40,7 @@ const TripsContext = createContext<TripsContextValue | null>(null);
 interface TripRow {
   id: string; user_id: string; title: string; cover_photo: string;
   start_date: string; end_date: string; countries: string[];
-  city: string | null; photos: string[];
+  city: string | null; photos?: string[];
 }
 interface RestaurantRow {
   id: string; user_id: string; trip_id: string | null;
@@ -70,7 +70,7 @@ function rowToTrip(r: TripRow, diningLogs: DiningLog[], hotels: HotelLog[]): Tri
     id: r.id, title: r.title, coverPhoto: r.cover_photo,
     startDate: r.start_date, endDate: r.end_date, countries: r.countries,
     ...(r.city   ? { city:   r.city }   : {}),
-    ...(r.photos.length ? { photos: r.photos } : {}),
+    ...(r.photos?.length ? { photos: r.photos } : {}),
     diningLogs, hotels,
   };
 }
@@ -134,7 +134,7 @@ async function loadUserData(userId: string) {
   const ownerIds = [userId, ...(sharedRows?.map(r => r.owner_id as string) ?? [])];
 
   const [tripsRes, restRes, hotelRes] = await Promise.all([
-    supabase.from('trips').select('*').in('user_id', ownerIds),
+    supabase.from('trips').select('id,user_id,title,cover_photo,start_date,end_date,countries,city').in('user_id', ownerIds),
     supabase.from('restaurants').select('*').in('user_id', ownerIds),
     supabase.from('hotels').select('*').in('user_id', ownerIds),
   ]);

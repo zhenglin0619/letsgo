@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTrips } from '@/store/tripsContext';
 import { Trip } from '@/types';
+import { deleteStoragePhotos } from '@/lib/imageUtils';
+import { supabase } from '@/lib/supabase';
 import { Calendar, MapPin, BedDouble, Utensils, ArrowRight, MoreHorizontal, Pencil, Trash2, Search, X } from 'lucide-react';
 import AddTripModal from '@/components/upload/AddTripModal';
 import SortMenu, { DATE_OPTIONS } from '@/components/ui/SortMenu';
@@ -85,6 +87,18 @@ function TripMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => vo
 
 export default function TripsPage() {
   const { trips: rawTrips, deleteTrip } = useTrips();
+
+  async function handleDeleteTrip(trip: Trip) {
+    const { data } = await supabase.from('trips').select('photos').eq('id', trip.id).single();
+    const highlights = (data?.photos as string[] | null) ?? [];
+    deleteStoragePhotos([
+      trip.coverPhoto,
+      ...highlights,
+      ...trip.diningLogs.flatMap(d => [...d.photos, ...d.dishes.map(dish => dish.photo)]),
+      ...trip.hotels.flatMap(h => h.photos),
+    ]);
+    deleteTrip(trip.id);
+  }
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('date-desc');
@@ -207,7 +221,7 @@ export default function TripsPage() {
             <div className="absolute top-3 right-3 z-20">
               <TripMenu
                 onEdit={() => setEditingTrip(trip)}
-                onDelete={() => deleteTrip(trip.id)}
+                onDelete={() => handleDeleteTrip(trip)}
               />
             </div>
           </motion.div>

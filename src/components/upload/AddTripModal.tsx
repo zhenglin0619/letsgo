@@ -7,6 +7,7 @@ import { Trip } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
 import GeoAutocomplete from '@/components/ui/GeoAutocomplete';
 import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
+import { uploadPhoto, uploadDataUrl } from '@/lib/imageUtils';
 
 interface Props {
   open: boolean;
@@ -21,8 +22,10 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
   const isEdit = !!initialTrip;
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState<string>('');
+  const [highlightPhotos, setHighlightPhotos] = useState<string[]>([]);
   const [step, setStep] = useState<'form' | 'done'>('form');
   const fileRef = useRef<HTMLInputElement>(null);
+  const highlightFileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<DraggableImageHandle>(null);
 
   // Re-initialize form whenever the modal opens (or switches trip)
@@ -37,9 +40,11 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
         endDate:   initialTrip.endDate,
       });
       setCoverPreview(initialTrip.coverPhoto || '');
+      setHighlightPhotos(initialTrip.photos ?? []);
     } else {
       setForm(emptyForm);
       setCoverPreview('');
+      setHighlightPhotos([]);
     }
     setStep('form');
   }, [open, initialTrip]);
@@ -56,11 +61,27 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
     reader.readAsDataURL(file);
   }
 
+  const MAX_HIGHLIGHT = 20;
+
+  function handleHighlightImages(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    files.slice(0, MAX_HIGHLIGHT).forEach(file => {
+      uploadPhoto(file).then(url => {
+        setHighlightPhotos(prev => {
+          if (prev.length >= MAX_HIGHLIGHT) return prev;
+          return [...prev, url];
+        });
+      });
+    });
+  }
+
+
   const isValid = form.title.trim() && form.country.trim() && form.city.trim() && form.startDate && form.endDate;
 
   async function handleSubmit() {
     if (!isValid) return;
-    const photo = imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview;
+    const photo = await uploadDataUrl(imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview);
     if (isEdit) {
       updateTrip({
         ...initialTrip!,
@@ -70,6 +91,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
         startDate:  form.startDate,
         endDate:    form.endDate,
         coverPhoto: photo,
+        photos:     highlightPhotos,
       });
     } else {
       const id = `${form.city.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
@@ -81,6 +103,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
         endDate:    form.endDate,
         countries:  [form.country.trim()],
         city:       form.city.trim(),
+        photos:     highlightPhotos,
         hotels:     [],
         diningLogs: [],
       });
@@ -131,88 +154,116 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
 
               <div className="p-6">
                 {step === 'form' && (
-                  <div className="flex gap-5">
-                    {/* Left: form fields */}
-                    <div className="flex-1 space-y-5 min-w-0">
-                      <div>
+                  <>
+                    <div className="flex gap-5">
+                      {/* Left: form fields */}
+                      <div className="flex-1 space-y-5 min-w-0">
+                        <div>
+                          <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
+                            Trip Name
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Tokyo, Japan (Summer 2025)"
+                            value={form.title}
+                            onChange={e => set('title', e.target.value)}
+                            className="w-full text-sm border border-[#E8E6E1] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <GeoAutocomplete
+                            label="City"
+                            placeholder="e.g. Tokyo"
+                            value={form.city}
+                            onChange={v => set('city', v)}
+                            types="place"
+                            onSelectCountry={c => { if (!form.country) set('country', c); }}
+                          />
+                          <GeoAutocomplete
+                            label="Country"
+                            placeholder="e.g. Japan"
+                            value={form.country}
+                            onChange={v => set('country', v)}
+                            types="country"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <DatePickerInput
+                            label="Start Date"
+                            value={form.startDate}
+                            onChange={v => set('startDate', v)}
+                            placement="above"
+                          />
+                          <DatePickerInput
+                            label="End Date"
+                            value={form.endDate}
+                            onChange={v => set('endDate', v)}
+                            min={form.startDate}
+                            defaultMonth={form.startDate}
+                            placement="above"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Right: cover photo upload */}
+                      <div className="w-50 flex-shrink-0 flex flex-col">
                         <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
-                          Trip Name
+                          Cover Photo <span className="normal-case text-[#C0BAB2]">(optional)</span>
                         </label>
                         <input
-                          type="text"
-                          placeholder="e.g. Tokyo, Japan (Summer 2025)"
-                          value={form.title}
-                          onChange={e => set('title', e.target.value)}
-                          className="w-full text-sm border border-[#E8E6E1] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors"
+                          ref={fileRef}
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
+                          className="hidden"
+                          onChange={handleImageChange}
                         />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <GeoAutocomplete
-                          label="City"
-                          placeholder="e.g. Tokyo"
-                          value={form.city}
-                          onChange={v => set('city', v)}
-                          types="place"
-                          onSelectCountry={c => { if (!form.country) set('country', c); }}
-                        />
-                        <GeoAutocomplete
-                          label="Country"
-                          placeholder="e.g. Japan"
-                          value={form.country}
-                          onChange={v => set('country', v)}
-                          types="country"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <DatePickerInput
-                          label="Start Date"
-                          value={form.startDate}
-                          onChange={v => set('startDate', v)}
-                          placement="above"
-                        />
-                        <DatePickerInput
-                          label="End Date"
-                          value={form.endDate}
-                          onChange={v => set('endDate', v)}
-                          min={form.startDate}
-                          defaultMonth={form.startDate}
-                          placement="above"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Right: cover photo upload */}
-                    <div className="w-75 flex-shrink-0 flex flex-col">
-                      <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
-                        Cover Photo <span className="normal-case text-[#C0BAB2]">(optional)</span>
-                      </label>
-                      <input
-                        ref={fileRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageChange}
-                      />
-                      {coverPreview ? (
-                        <div className="w-full aspect-[24/25] rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
-                          <DraggableImage ref={imgRef} src={coverPreview} alt="Cover" onReplace={() => fileRef.current?.click()} />
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => fileRef.current?.click()}
-                          className="w-full aspect-[24/25] rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors group relative"
-                        >
-                          <div className="flex flex-col items-center justify-center h-full gap-2 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors p-4">
-                            <ImagePlus size={24} />
-                            <span className="text-[11px] font-medium text-center leading-tight">Click to upload cover</span>
+                        {coverPreview ? (
+                          <div className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
+                            <DraggableImage ref={imgRef} src={coverPreview} alt="Cover" onReplace={() => fileRef.current?.click()} />
                           </div>
-                        </button>
-                      )}
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => fileRef.current?.click()}
+                            className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors group relative"
+                          >
+                            <div className="flex flex-col items-center justify-center h-full gap-2 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors p-4">
+                              <ImagePlus size={24} />
+                              <span className="text-[11px] font-medium text-center leading-tight">Click to upload cover</span>
+                            </div>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
+
+                    {/* Highlight Photos */}
+                    <input
+                      ref={highlightFileRef}
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
+                      multiple
+                      className="hidden"
+                      onChange={handleHighlightImages}
+                    />
+                    <div className="mt-5">
+                      <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
+                        Highlight Photos <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => highlightPhotos.length < MAX_HIGHLIGHT && highlightFileRef.current?.click()}
+                        disabled={highlightPhotos.length >= MAX_HIGHLIGHT}
+                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-[#E8E6E1] hover:border-[#C87A53] transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+                      >
+                        <ImagePlus size={15} className="text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors" />
+                        <span className="text-sm text-[#8A8A8A]">
+                          {highlightPhotos.length > 0 ? `${highlightPhotos.length}/${MAX_HIGHLIGHT} photos added` : 'Add photos'}
+                        </span>
+                      </button>
+                    </div>
+                  </>
                 )}
 
                 {step === 'done' && (

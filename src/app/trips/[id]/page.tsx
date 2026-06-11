@@ -14,6 +14,8 @@ import AddHotelModal from '@/components/upload/AddHotelModal';
 import HotelDrawer from '@/components/hotel/HotelDrawer';
 
 import { DiningLog, HotelLog } from '@/types';
+import { uploadPhoto, deleteStoragePhoto, deleteStoragePhotos } from '@/lib/imageUtils';
+import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BedDouble, Utensils, Images, MoreHorizontal, Pencil, Trash2, Plus, X, ChevronLeft, ChevronRight, Plane } from 'lucide-react';
 
@@ -102,28 +104,37 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [fabOpen, setFabOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const photos = trip!.photos ?? [];
+  const [photos, setPhotos] = useState<string[]>(trip?.photos ?? []);
+
+  useEffect(() => {
+    if (trip?.photos !== undefined) { setPhotos(trip.photos); return; }
+    supabase.from('trips').select('photos').eq('id', id).single()
+      .then(({ data }) => { if (data?.photos) setPhotos(data.photos as string[]); });
+  }, [id, trip?.photos]);
+
+  const MAX_PHOTOS = 20;
 
   function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
-    let loaded = 0;
-    const newPhotos: string[] = [];
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        newPhotos.push(ev.target!.result as string);
-        loaded++;
-        if (loaded === files.length) {
+    e.target.value = '';
+    const remaining = MAX_PHOTOS - photos.length;
+    if (!files.length || remaining <= 0) return;
+    const toUpload = files.slice(0, remaining);
+    let done = 0;
+    const newPhotos: string[] = new Array(toUpload.length);
+    toUpload.forEach((file, idx) => {
+      uploadPhoto(file).then(url => {
+        newPhotos[idx] = url;
+        done++;
+        if (done === toUpload.length) {
           updateTrip({ ...trip!, photos: [...photos, ...newPhotos] });
         }
-      };
-      reader.readAsDataURL(file);
+      });
     });
-    e.target.value = '';
   }
 
   function removePhoto(index: number) {
+    deleteStoragePhoto(photos[index]);
     const updated = photos.filter((_, i) => i !== index);
     updateTrip({ ...trip!, photos: updated });
     if (lightboxIndex !== null) {
@@ -133,6 +144,12 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   function handleDelete() {
+    deleteStoragePhotos([
+      trip!.coverPhoto,
+      ...photos,
+      ...trip!.diningLogs.flatMap(d => [...d.photos, ...d.dishes.map(dish => dish.photo)]),
+      ...trip!.hotels.flatMap(h => h.photos),
+    ]);
     deleteTrip(trip!.id);
     router.push('/trips');
   }
@@ -194,7 +211,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
                   multiple
                   className="hidden"
                   onChange={handlePhotoUpload}
@@ -231,13 +248,16 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                         </button>
                       </div>
                     ))}
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="break-inside-avoid w-full aspect-square rounded-xl border-2 border-dashed border-[#D8D4CC] flex flex-col items-center justify-center gap-2 text-[#8A8A8A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors"
-                    >
-                      <Plus size={20} strokeWidth={1.5} />
-                      <span className="text-xs font-medium">Add photos</span>
-                    </button>
+                    {photos.length < MAX_PHOTOS && (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="break-inside-avoid w-full aspect-square rounded-xl border-2 border-dashed border-[#D8D4CC] flex flex-col items-center justify-center gap-2 text-[#8A8A8A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors"
+                      >
+                        <Plus size={20} strokeWidth={1.5} />
+                        <span className="text-xs font-medium">Add photos</span>
+                        <span className="text-[10px] text-[#C0BAB2]">{photos.length}/{MAX_PHOTOS}</span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -257,7 +277,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     index={i}
                     onClick={() => openDining(log)}
                     onEdit={() => setEditingDining(log)}
-                    onDelete={() => updateTrip({ ...trip!, diningLogs: trip!.diningLogs.filter(d => d.id !== log.id) })}
+                    onDelete={() => {
+                      deleteStoragePhotos([...log.photos, ...log.dishes.map(d => d.photo)]);
+                      updateTrip({ ...trip!, diningLogs: trip!.diningLogs.filter(d => d.id !== log.id) });
+                    }}
                   />
                 ))}
               </div>
@@ -277,7 +300,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     index={i}
                     onClick={() => { setHotelDrawerHotel(hotel); setHotelDrawerOpen(true); }}
                     onEdit={() => setEditingHotel(hotel)}
-                    onDelete={() => updateTrip({ ...trip!, hotels: trip!.hotels.filter(h => h.id !== hotel.id) })}
+                    onDelete={() => {
+                      deleteStoragePhotos(hotel.photos);
+                      updateTrip({ ...trip!, hotels: trip!.hotels.filter(h => h.id !== hotel.id) });
+                    }}
                   />
                 ))}
               </div>
@@ -297,6 +323,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         onEdit={() => selectedDining && setEditingDining(selectedDining)}
         onDelete={() => {
           if (!selectedDining) return;
+          deleteStoragePhotos([...selectedDining.photos, ...selectedDining.dishes.map(d => d.photo)]);
           updateTrip({ ...trip!, diningLogs: trip!.diningLogs.filter(d => d.id !== selectedDining.id) });
         }}
       />
@@ -315,6 +342,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         onEdit={() => { if (hotelDrawerHotel) setEditingHotel(hotelDrawerHotel); setHotelDrawerOpen(false); }}
         onDelete={() => {
           if (!hotelDrawerHotel) return;
+          deleteStoragePhotos(hotelDrawerHotel.photos);
           updateTrip({ ...trip!, hotels: trip!.hotels.filter(h => h.id !== hotelDrawerHotel.id) });
           setHotelDrawerOpen(false);
         }}

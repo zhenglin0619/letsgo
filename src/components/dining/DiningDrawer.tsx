@@ -7,6 +7,7 @@ import MichelinBadge from '@/components/ui/MichelinBadge';
 import DishRow from './DishRow';
 import { X, MapPin, GripVertical, Trash2, Plus, Check, ImagePlus, Pencil, MoreHorizontal } from 'lucide-react';
 import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
+import { uploadPhoto, uploadDataUrl, deleteStoragePhoto } from '@/lib/imageUtils';
 
 const CATEGORIES: Dish['category'][] = ['Appetizer', 'Mains', 'Dessert', 'Drinks', 'Snack'];
 const emptyDishForm = { name: '', category: '' as Dish['category'], rating: '', notes: '', photo: '' };
@@ -38,10 +39,9 @@ function DishEditRow({
   function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => onChange({ ...dish, photo: reader.result as string });
-    reader.readAsDataURL(file);
     e.target.value = '';
+    if (dish.photo) deleteStoragePhoto(dish.photo);
+    uploadPhoto(file).then(url => onChange({ ...dish, photo: url }));
   }
 
   return (
@@ -57,7 +57,7 @@ function DishEditRow({
         </div>
 
         {/* Photo */}
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+        <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handlePhoto} />
         {dish.photo ? (
           <div className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors relative bg-[#F5F2EE]">
             <DraggableImage
@@ -143,10 +143,9 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
   function handleAddPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setAddForm(f => ({ ...f, photo: reader.result as string }));
-    reader.readAsDataURL(file);
     e.target.value = '';
+    if (addForm.photo) deleteStoragePhoto(addForm.photo);
+    uploadPhoto(file).then(url => setAddForm(f => ({ ...f, photo: url })));
   }
 
   useEffect(() => { if (!open) { setEditMode(false); setAddForm(emptyDishForm); setConfirmDelete(false); setSavedToast(false); setMenuOpen(false); } }, [open]);
@@ -192,7 +191,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
   async function handleAddDish() {
     if (!addForm.name.trim()) return;
     const photo = addForm.photo
-      ? (addImgRef.current ? await addImgRef.current.getCroppedImage() : addForm.photo)
+      ? await uploadDataUrl(addImgRef.current ? await addImgRef.current.getCroppedImage() : addForm.photo)
       : undefined;
     const newDish: Dish = {
       id: `dish-${Date.now()}`,
@@ -372,7 +371,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                         key={dish.id}
                         dish={dish}
                         onChange={updated => setLocalDishes(prev => prev.map(d => d.id === updated.id ? updated : d))}
-                        onDelete={() => setLocalDishes(prev => prev.filter(d => d.id !== dish.id))}
+                        onDelete={() => { if (dish.photo) deleteStoragePhoto(dish.photo); setLocalDishes(prev => prev.filter(d => d.id !== dish.id)); }}
                       />
                     ))}
                   </Reorder.Group>
@@ -382,7 +381,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                     <p className="text-[10px] font-medium text-[#8A8A8A] uppercase tracking-wider mb-2">Add a dish</p>
                     <div className="flex items-center gap-2">
                       {/* Photo */}
-                      <input ref={addFileRef} type="file" accept="image/*" className="hidden" onChange={handleAddPhoto} />
+                      <input ref={addFileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleAddPhoto} />
                       {addForm.photo ? (
                         <div className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors relative bg-white">
                           <DraggableImage ref={addImgRef} src={addForm.photo} alt="dish" onReplace={() => addFileRef.current?.click()} size="sm" />

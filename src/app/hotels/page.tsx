@@ -8,6 +8,7 @@ import SortMenu from '@/components/ui/SortMenu';
 import HotelDrawer from '@/components/hotel/HotelDrawer';
 import StarRating from '@/components/ui/StarRating';
 import { HotelLog } from '@/types';
+import { deleteStoragePhotos } from '@/lib/imageUtils';
 
 function nights(checkIn: string, checkOut: string) {
   return Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000);
@@ -111,13 +112,14 @@ export default function HotelsPage() {
   const [selectedHotel, setSelectedHotel] = useState<{ hotel: HotelLog; tripId: string; isStandalone: boolean } | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  function handleDelete(hotelId: string, tripId: string, isStandalone: boolean) {
+  function handleDelete(hotel: HotelLog, tripId: string, isStandalone: boolean) {
+    deleteStoragePhotos(hotel.photos);
     if (isStandalone) {
-      deleteStandaloneHotel(hotelId);
+      deleteStandaloneHotel(hotel.id);
     } else {
       const trip = trips.find(t => t.id === tripId);
       if (!trip) return;
-      updateTrip({ ...trip, hotels: trip.hotels.filter(h => h.id !== hotelId) });
+      updateTrip({ ...trip, hotels: trip.hotels.filter(h => h.id !== hotel.id) });
     }
   }
 
@@ -200,7 +202,7 @@ export default function HotelsPage() {
               <div className="absolute top-3 right-3">
                 <HotelMenu
                   onEdit={() => { setEditTarget({ hotel, tripId: hotel.tripId }); }}
-                  onDelete={() => handleDelete(hotel.id, hotel.tripId, hotel.isStandalone)}
+                  onDelete={() => handleDelete(hotel, hotel.tripId, hotel.isStandalone)}
                 />
               </div>
             </div>
@@ -239,7 +241,7 @@ export default function HotelsPage() {
         }}
         onDelete={() => {
           if (!selectedHotel) return;
-          handleDelete(selectedHotel.hotel.id, selectedHotel.tripId, selectedHotel.isStandalone);
+          handleDelete(selectedHotel.hotel, selectedHotel.tripId, selectedHotel.isStandalone);
           setDrawerOpen(false);
         }}
         onUpdateHotel={(updated) => {

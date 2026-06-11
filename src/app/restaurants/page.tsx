@@ -9,6 +9,7 @@ import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
 import SortMenu from '@/components/ui/SortMenu';
 import DiningDrawer from '@/components/dining/DiningDrawer';
 import { DiningLog } from '@/types';
+import { deleteStoragePhotos } from '@/lib/imageUtils';
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -129,13 +130,14 @@ export default function RestaurantsPage() {
     }
   }
 
-  function handleDelete(diningId: string, tripId: string, isStandalone: boolean) {
+  function handleDelete(dining: DiningLog, tripId: string, isStandalone: boolean) {
+    deleteStoragePhotos([...dining.photos, ...dining.dishes.map(d => d.photo)]);
     if (isStandalone) {
-      deleteStandaloneRestaurant(diningId);
+      deleteStandaloneRestaurant(dining.id);
     } else {
       const trip = trips.find(t => t.id === tripId);
       if (!trip) return;
-      updateTrip({ ...trip, diningLogs: trip.diningLogs.filter(d => d.id !== diningId) });
+      updateTrip({ ...trip, diningLogs: trip.diningLogs.filter(d => d.id !== dining.id) });
     }
   }
 
@@ -224,7 +226,7 @@ export default function RestaurantsPage() {
               <div className="absolute top-3 right-3">
                 <DiningMenu
                   onEdit={() => setEditTarget({ log: dining, tripId: dining.tripId })}
-                  onDelete={() => handleDelete(dining.id, dining.tripId, dining.isStandalone)}
+                  onDelete={() => handleDelete(dining, dining.tripId, dining.isStandalone)}
                 />
               </div>
             </div>
@@ -260,7 +262,7 @@ export default function RestaurantsPage() {
         onClose={() => setDrawerOpen(false)}
         onUpdateLog={handleUpdateLog}
         onEdit={() => selectedDining && selectedMeta && setEditTarget({ log: selectedDining, tripId: selectedMeta.tripId })}
-        onDelete={() => selectedDining && selectedMeta && handleDelete(selectedDining.id, selectedMeta.tripId, selectedMeta.isStandalone)}
+        onDelete={() => selectedDining && selectedMeta && handleDelete(selectedDining, selectedMeta.tripId, selectedMeta.isStandalone)}
       />
     </main>
   );
