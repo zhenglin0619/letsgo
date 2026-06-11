@@ -2,8 +2,12 @@ import { supabase } from './supabase';
 
 const BUCKET = 'photos';
 
+let _demoMode = false;
+export function setDemoMode(v: boolean) { _demoMode = v; }
+
 /** Upload a File directly to Supabase Storage. Falls back to base64 in demo/unauthenticated mode. */
 export async function uploadPhoto(file: File): Promise<string> {
+  if (_demoMode) return fileToDataUrl(file);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return fileToDataUrl(file);
 
@@ -26,6 +30,7 @@ export async function uploadPhoto(file: File): Promise<string> {
  *  If already a storage URL or empty, returns it unchanged. */
 export async function uploadDataUrl(dataUrl: string): Promise<string> {
   if (!dataUrl || !dataUrl.startsWith('data:')) return dataUrl;
+  if (_demoMode) return dataUrl;
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return dataUrl;
@@ -54,7 +59,7 @@ export function deleteStoragePhotos(urls: (string | undefined)[]): void {
 
 /** Delete a photo from Supabase Storage by its public URL. No-op for base64 or non-storage URLs. */
 export async function deleteStoragePhoto(url: string): Promise<void> {
-  if (!url || url.startsWith('data:')) return;
+  if (!url || url.startsWith('data:') || _demoMode) return;
   const marker = `/object/public/${BUCKET}/`;
   const idx = url.indexOf(marker);
   if (idx === -1) return;

@@ -114,7 +114,9 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
     const photo = coverPreview
       ? await uploadDataUrl(imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview)
       : null;
-    if (photo && initialHotel?.hotel.photos[0]) deleteStoragePhoto(initialHotel.hotel.photos[0]);
+    if (photo && initialHotel?.hotel.photos[0] && photo !== initialHotel.hotel.photos[0]) {
+      deleteStoragePhoto(initialHotel.hotel.photos[0]);
+    }
     const trip = trips.find(t => t.id === form.tripId);
 
     let resolvedGeocode = geocoded;

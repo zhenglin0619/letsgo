@@ -5,6 +5,7 @@ import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Trip, DiningLog, HotelLog } from '@/types';
 import { mockTrips, mockStandaloneRestaurants, mockStandaloneHotels } from '@/store/data';
+import { setDemoMode as setImageUtilsDemoMode } from '@/lib/imageUtils';
 
 export interface Collaborator {
   userId: string;
@@ -228,6 +229,7 @@ export function TripsProvider({ children }: { children: ReactNode }) {
   const [collaborators, setCollaborators]       = useState<Collaborator[]>([]);
 
   const [demoMode, setDemoMode]                         = useState(false);
+  useEffect(() => { setImageUtilsDemoMode(demoMode); }, [demoMode]);
   const [demoTrips, setDemoTrips]                       = useState<Trip[]>([...mockTrips]);
   const [demoStandalone, setDemoStandalone]             = useState<DiningLog[]>([...mockStandaloneRestaurants]);
   const [demoStandaloneHotels, setDemoStandaloneHotels] = useState<HotelLog[]>([...mockStandaloneHotels]);

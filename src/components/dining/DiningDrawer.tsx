@@ -7,7 +7,7 @@ import MichelinBadge from '@/components/ui/MichelinBadge';
 import DishRow from './DishRow';
 import { X, MapPin, GripVertical, Trash2, Plus, Check, ImagePlus, Pencil, MoreHorizontal } from 'lucide-react';
 import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
-import { uploadPhoto, uploadDataUrl, deleteStoragePhoto } from '@/lib/imageUtils';
+import { fileToDataUrl, uploadPhoto, uploadDataUrl, deleteStoragePhoto } from '@/lib/imageUtils';
 
 const CATEGORIES: Dish['category'][] = ['Appetizer', 'Mains', 'Dessert', 'Drinks', 'Snack'];
 const emptyDishForm = { name: '', category: '' as Dish['category'], rating: '', notes: '', photo: '' };
@@ -144,8 +144,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
-    if (addForm.photo) deleteStoragePhoto(addForm.photo);
-    uploadPhoto(file).then(url => setAddForm(f => ({ ...f, photo: url })));
+    fileToDataUrl(file).then(url => setAddForm(f => ({ ...f, photo: url })));
   }
 
   useEffect(() => { if (!open) { setEditMode(false); setAddForm(emptyDishForm); setConfirmDelete(false); setSavedToast(false); setMenuOpen(false); } }, [open]);
@@ -176,8 +175,17 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
     setEditMode(true);
   }
 
-  function handleDone() {
-    if (log && onUpdateLog) onUpdateLog({ ...log, dishes: localDishes });
+  async function handleDone() {
+    const uploadedDishes = await Promise.all(
+      localDishes.map(async dish => {
+        if (dish.photo?.startsWith('data:')) {
+          const url = await uploadDataUrl(dish.photo);
+          return { ...dish, photo: url };
+        }
+        return dish;
+      })
+    );
+    if (log && onUpdateLog) onUpdateLog({ ...log, dishes: uploadedDishes });
     setEditMode(false);
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 2000);

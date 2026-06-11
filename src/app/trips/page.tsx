@@ -173,7 +173,7 @@ export default function TripsPage() {
             ) : (
               <>
                 <p className="font-medium text-[#1A1A1A] text-sm">No trips logged yet</p>
-                <p className="text-xs text-[#8A8A8A] mt-1">Add your first trip to get started</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">Click + button to add your first trip</p>
               </>
             )}
           </div>

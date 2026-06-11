@@ -121,7 +121,9 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
     const photo = coverPreview
       ? await uploadDataUrl(imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview)
       : null;
-    if (photo && initialDining?.log.photos[0]) deleteStoragePhoto(initialDining.log.photos[0]);
+    if (photo && initialDining?.log.photos[0] && photo !== initialDining.log.photos[0]) {
+      deleteStoragePhoto(initialDining.log.photos[0]);
+    }
     const trip = trips.find(t => t.id === form.tripId);
 
     let resolvedGeocode = geocoded;

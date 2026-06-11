@@ -7,7 +7,7 @@ import { Trip } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
 import GeoAutocomplete from '@/components/ui/GeoAutocomplete';
 import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
-import { uploadPhoto, uploadDataUrl } from '@/lib/imageUtils';
+import { uploadPhoto, uploadDataUrl, deleteStoragePhoto } from '@/lib/imageUtils';
 
 interface Props {
   open: boolean;
@@ -82,6 +82,9 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
   async function handleSubmit() {
     if (!isValid) return;
     const photo = await uploadDataUrl(imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview);
+    if (isEdit && photo !== initialTrip!.coverPhoto) {
+      deleteStoragePhoto(initialTrip!.coverPhoto);
+    }
     if (isEdit) {
       updateTrip({
         ...initialTrip!,
@@ -134,7 +137,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
           <motion.div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 pointer-events-none">
             <motion.div
               className="bg-white rounded-2xl shadow-2xl pointer-events-auto w-full"
-              style={{ maxWidth: 880 }}
+              style={{ maxWidth: 980 }}
               initial={{ scale: 0.94, opacity: 0, y: 12 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.94, opacity: 0, y: 12 }}
@@ -205,10 +208,36 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                             placement="above"
                           />
                         </div>
+
+                        {/* Highlight Photos — row 4 */}
+                        <input
+                          ref={highlightFileRef}
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
+                          multiple
+                          className="hidden"
+                          onChange={handleHighlightImages}
+                        />
+                        <div>
+                          <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
+                            Highlight Photos <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => highlightPhotos.length < MAX_HIGHLIGHT && highlightFileRef.current?.click()}
+                            disabled={highlightPhotos.length >= MAX_HIGHLIGHT}
+                            className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-[#E8E6E1] hover:border-[#C87A53] transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+                          >
+                            <ImagePlus size={15} className="text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors" />
+                            <span className="text-sm text-[#8A8A8A]">
+                              {highlightPhotos.length > 0 ? `${highlightPhotos.length}/${MAX_HIGHLIGHT} photos added` : 'Click to add photos (0/20)'}
+                            </span>
+                          </button>
+                        </div>
                       </div>
 
                       {/* Right: cover photo upload */}
-                      <div className="w-50 flex-shrink-0 flex flex-col">
+                      <div className="w-72 flex-shrink-0 flex flex-col">
                         <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
                           Cover Photo <span className="normal-case text-[#C0BAB2]">(optional)</span>
                         </label>
@@ -236,32 +265,6 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                           </button>
                         )}
                       </div>
-                    </div>
-
-                    {/* Highlight Photos */}
-                    <input
-                      ref={highlightFileRef}
-                      type="file"
-                      accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
-                      multiple
-                      className="hidden"
-                      onChange={handleHighlightImages}
-                    />
-                    <div className="mt-5">
-                      <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
-                        Highlight Photos <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span>
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => highlightPhotos.length < MAX_HIGHLIGHT && highlightFileRef.current?.click()}
-                        disabled={highlightPhotos.length >= MAX_HIGHLIGHT}
-                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-[#E8E6E1] hover:border-[#C87A53] transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
-                      >
-                        <ImagePlus size={15} className="text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors" />
-                        <span className="text-sm text-[#8A8A8A]">
-                          {highlightPhotos.length > 0 ? `${highlightPhotos.length}/${MAX_HIGHLIGHT} photos added` : 'Add photos'}
-                        </span>
-                      </button>
                     </div>
                   </>
                 )}

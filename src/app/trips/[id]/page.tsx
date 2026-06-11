@@ -224,7 +224,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   >
                     <Images size={32} strokeWidth={1.5} />
                     <p className="text-sm font-medium">Upload trip photos</p>
-                    <p className="text-xs">Click to select · multiple files supported</p>
+                    <p className="text-xs">Click to select · 20 images supported</p>
                   </button>
                 ) : (
                   <div className="columns-3 gap-3 space-y-3">
@@ -267,7 +267,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               <div className="grid grid-cols-2 gap-4">
                 {trip!.diningLogs.length === 0 && (
                   <div className="col-span-2 text-center py-16 text-[#8A8A8A] text-sm">
-                    No restaurants logged yet. Click the edit button to add meals.
+                    No restaurants logged yet. Click + button to add meals.
                   </div>
                 )}
                 {trip!.diningLogs.map((log, i) => (
@@ -290,7 +290,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               <div className="grid grid-cols-2 gap-4">
                 {trip!.hotels.length === 0 && (
                   <div className="col-span-2 text-center py-16 text-[#8A8A8A] text-sm">
-                    No hotels logged yet. Click the edit button to add stays.
+                    No hotels logged yet. Click + button to add stays.
                   </div>
                 )}
                 {trip!.hotels.map((hotel, i) => (

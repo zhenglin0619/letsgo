@@ -171,7 +171,7 @@ export default function HotelsPage() {
             ) : (
               <>
                 <p className="font-medium text-[#1A1A1A] text-sm">No hotels logged yet</p>
-                <p className="text-xs text-[#8A8A8A] mt-1">Add your first stay to get started</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">Click + button to add your first stay</p>
               </>
             )}
           </div>
