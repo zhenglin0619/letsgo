@@ -57,7 +57,7 @@ export default function GeoAutocomplete({ label, placeholder, value, onChange, t
     timer.current = setTimeout(async () => {
       try {
         const res = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(v)}.json?types=${types}&language=en&limit=6&access_token=${TOKEN}`
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(v)}.json?types=${types}&language=en&limit=6&proximity=ip&access_token=${TOKEN}`
         );
         const data = await res.json();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
