@@ -6,6 +6,11 @@ import { supabase } from '@/lib/supabase';
 import { Trip, DiningLog, HotelLog } from '@/types';
 import { mockTrips, mockStandaloneRestaurants, mockStandaloneHotels } from '@/store/data';
 
+export interface Collaborator {
+  userId: string;
+  email: string;
+}
+
 interface TripsContextValue {
   user: User | null;
   authLoading: boolean;
@@ -14,6 +19,9 @@ interface TripsContextValue {
   trips: Trip[];
   standaloneRestaurants: DiningLog[];
   standaloneHotels: HotelLog[];
+  collaborators: Collaborator[];
+  addCollaborator:    (email: string) => Promise<string | null>; // returns error string or null
+  removeCollaborator: (collaboratorUserId: string) => Promise<void>;
   addTrip:                    (t: Trip)        => void;
   updateTrip:                 (t: Trip)        => void;
   deleteTrip:                 (id: string)     => void;
@@ -106,11 +114,29 @@ function rowToHotel(r: HotelRow): HotelLog {
 }
 
 // ── Supabase sync helpers ─────────────────────────────────────────────────────
+
+async function loadCollaborators(userId: string): Promise<Collaborator[]> {
+  const { data: rows } = await supabase
+    .from('collaborators')
+    .select('collaborator_id')
+    .eq('owner_id', userId);
+  if (!rows || rows.length === 0) return [];
+  const ids = rows.map(r => r.collaborator_id as string);
+  const { data: profiles } = await supabase
+    .from('profiles').select('id, email').in('id', ids);
+  return (profiles ?? []).map(p => ({ userId: p.id as string, email: p.email as string }));
+}
+
 async function loadUserData(userId: string) {
+  // Include data from collaborators (users who added current user)
+  const { data: sharedRows } = await supabase
+    .from('collaborators').select('owner_id').eq('collaborator_id', userId);
+  const ownerIds = [userId, ...(sharedRows?.map(r => r.owner_id as string) ?? [])];
+
   const [tripsRes, restRes, hotelRes] = await Promise.all([
-    supabase.from('trips').select('*').eq('user_id', userId),
-    supabase.from('restaurants').select('*').eq('user_id', userId),
-    supabase.from('hotels').select('*').eq('user_id', userId),
+    supabase.from('trips').select('*').in('user_id', ownerIds),
+    supabase.from('restaurants').select('*').in('user_id', ownerIds),
+    supabase.from('hotels').select('*').in('user_id', ownerIds),
   ]);
   const tripRows  = (tripsRes.data  ?? []) as TripRow[];
   const restRows  = (restRes.data   ?? []) as RestaurantRow[];
@@ -137,7 +163,6 @@ async function syncTrip(userId: string, t: Trip): Promise<void> {
     .upsert({ ...tripToRow(t, userId), updated_at: now });
   if (te) { console.warn('[supabase] trip sync:', te.message); return; }
 
-  // Upsert restaurants, then prune any removed from this trip
   if (t.diningLogs.length > 0) {
     const { error: re } = await supabase.from('restaurants')
       .upsert(t.diningLogs.map(d => ({ ...logToRow(d, userId, t.id), updated_at: now })));
@@ -150,7 +175,6 @@ async function syncTrip(userId: string, t: Trip): Promise<void> {
     await supabase.from('restaurants').delete().eq('user_id', userId).eq('trip_id', t.id);
   }
 
-  // Upsert hotels, then prune any removed from this trip
   if (t.hotels.length > 0) {
     const { error: he } = await supabase.from('hotels')
       .upsert(t.hotels.map(h => ({ ...hotelToRow(h, userId, t.id), updated_at: now })));
@@ -165,7 +189,6 @@ async function syncTrip(userId: string, t: Trip): Promise<void> {
 }
 
 function deleteTrip$(userId: string, id: string) {
-  // CASCADE in DB deletes associated restaurants and hotels automatically
   supabase.from('trips').delete().eq('id', id).eq('user_id', userId)
     .then(({ error }) => { if (error) console.warn('[supabase] trip delete:', error.message); });
 }
@@ -177,7 +200,6 @@ function syncRestaurant(userId: string, log: DiningLog, tripId: string | null) {
 }
 
 function deleteRestaurant$(userId: string, id: string) {
-  // Only delete if still standalone (trip_id IS NULL) to avoid race with syncTrip moving it
   supabase.from('restaurants').delete()
     .eq('id', id).eq('user_id', userId).is('trip_id', null)
     .then(({ error }) => { if (error) console.warn('[supabase] restaurant delete:', error.message); });
@@ -203,6 +225,7 @@ export function TripsProvider({ children }: { children: ReactNode }) {
   const [trips, setTrips]                       = useState<Trip[]>([]);
   const [standaloneRestaurants, setStandalone]  = useState<DiningLog[]>([]);
   const [standaloneHotels, setStandaloneHotels] = useState<HotelLog[]>([]);
+  const [collaborators, setCollaborators]       = useState<Collaborator[]>([]);
 
   const [demoMode, setDemoMode]                         = useState(false);
   const [demoTrips, setDemoTrips]                       = useState<Trip[]>([...mockTrips]);
@@ -226,14 +249,23 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         const u = session?.user ?? null;
         setUser(u);
         if (u) {
-          const { trips: t, standalone: s, standaloneHotels: sh } = await loadUserData(u.id);
-          setTrips(t);
-          setStandalone(s);
-          setStandaloneHotels(sh);
+          // Upsert profile so others can find this user by email
+          await supabase.from('profiles')
+            .upsert({ id: u.id, email: u.email }, { onConflict: 'id' });
+
+          const [data, collabs] = await Promise.all([
+            loadUserData(u.id),
+            loadCollaborators(u.id),
+          ]);
+          setTrips(data.trips);
+          setStandalone(data.standalone);
+          setStandaloneHotels(data.standaloneHotels);
+          setCollaborators(collabs);
         } else {
           setTrips([]);
           setStandalone([]);
           setStandaloneHotels([]);
+          setCollaborators([]);
         }
         setAuthLoading(false);
       }
@@ -254,6 +286,50 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       trips:                effectiveTrips,
       standaloneRestaurants: effectiveStandalone,
       standaloneHotels:     effectiveStandaloneHotels,
+      collaborators,
+
+      addCollaborator: async (email) => {
+        if (!user) return 'Not signed in';
+        if (email.toLowerCase() === user.email?.toLowerCase()) return 'Cannot add yourself';
+
+        const { data: profile, error } = await supabase
+          .from('profiles').select('id, email').eq('email', email).single();
+        if (error || !profile) return 'No account found with that email';
+
+        const alreadyAdded = collaborators.some(c => c.userId === profile.id);
+        if (alreadyAdded) return 'Already a collaborator';
+
+        // Bidirectional: both see each other's data
+        const { error: insErr } = await supabase.from('collaborators').insert([
+          { owner_id: user.id,   collaborator_id: profile.id },
+          { owner_id: profile.id, collaborator_id: user.id  },
+        ]);
+        if (insErr) return 'Failed to add collaborator';
+
+        setCollaborators(prev => [...prev, { userId: profile.id as string, email: profile.email as string }]);
+        // Reload data to include collaborator's records
+        loadUserData(user.id).then(data => {
+          setTrips(data.trips);
+          setStandalone(data.standalone);
+          setStandaloneHotels(data.standaloneHotels);
+        });
+        return null;
+      },
+
+      removeCollaborator: async (collaboratorUserId) => {
+        if (!user) return;
+        await supabase.from('collaborators').delete().or(
+          `and(owner_id.eq.${user.id},collaborator_id.eq.${collaboratorUserId}),` +
+          `and(owner_id.eq.${collaboratorUserId},collaborator_id.eq.${user.id})`
+        );
+        setCollaborators(prev => prev.filter(c => c.userId !== collaboratorUserId));
+        // Reload to remove their records from view
+        loadUserData(user.id).then(data => {
+          setTrips(data.trips);
+          setStandalone(data.standalone);
+          setStandaloneHotels(data.standaloneHotels);
+        });
+      },
 
       addTrip: (t) => {
         if (demoMode) { setDemoTrips(p => [t, ...p]); return; }
@@ -305,6 +381,7 @@ export function TripsProvider({ children }: { children: ReactNode }) {
 
       signOut: async () => {
         setDemoMode(false);
+        setCollaborators([]);
         await supabase.auth.signOut();
       },
     }}>
