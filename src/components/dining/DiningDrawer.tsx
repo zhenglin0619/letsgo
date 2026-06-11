@@ -6,6 +6,7 @@ import StarRating from '@/components/ui/StarRating';
 import MichelinBadge from '@/components/ui/MichelinBadge';
 import DishRow from './DishRow';
 import { X, MapPin, GripVertical, Trash2, Plus, Check, ImagePlus, Pencil, MoreHorizontal } from 'lucide-react';
+import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
 
 const CATEGORIES: Dish['category'][] = ['Appetizer', 'Mains', 'Dessert', 'Drinks', 'Snack'];
 const emptyDishForm = { name: '', category: '' as Dish['category'], rating: '', notes: '', photo: '' };
@@ -57,25 +58,28 @@ function DishEditRow({
 
         {/* Photo */}
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors group relative bg-[#F5F2EE]"
-        >
-          {dish.photo ? (
-            <>
-              <img src={dish.photo} alt={dish.name} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <ImagePlus size={14} className="text-white" />
-              </div>
-            </>
-          ) : (
+        {dish.photo ? (
+          <div className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors relative bg-[#F5F2EE]">
+            <DraggableImage
+              src={dish.photo}
+              alt={dish.name}
+              onReplace={() => fileRef.current?.click()}
+              onCrop={url => onChange({ ...dish, photo: url })}
+              size="sm"
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors group relative bg-[#F5F2EE]"
+          >
             <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors">
               <ImagePlus size={16} />
               <span className="text-[9px] font-medium">Photo</span>
             </div>
-          )}
-        </button>
+          </button>
+        )}
 
         {/* Fields */}
         <div className="flex-1 min-w-0 flex flex-col gap-2">
@@ -127,6 +131,7 @@ function DishEditRow({
 export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, onDelete }: Props) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const addFileRef = useRef<HTMLInputElement>(null);
+  const addImgRef = useRef<DraggableImageHandle>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [editMode, setEditMode]           = useState(false);
   const [menuOpen, setMenuOpen]           = useState(false);
@@ -184,15 +189,18 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
     setAddForm(emptyDishForm);
   }
 
-  function handleAddDish() {
+  async function handleAddDish() {
     if (!addForm.name.trim()) return;
+    const photo = addForm.photo
+      ? (addImgRef.current ? await addImgRef.current.getCroppedImage() : addForm.photo)
+      : undefined;
     const newDish: Dish = {
       id: `dish-${Date.now()}`,
       name: addForm.name.trim(),
       category: addForm.category,
       rating: parseFloat(addForm.rating) || 0,
       notes: addForm.notes.trim(),
-      ...(addForm.photo ? { photo: addForm.photo } : {}),
+      ...(photo ? { photo } : {}),
     };
     setLocalDishes(prev => [...prev, newDish]);
     setAddForm(emptyDishForm);
@@ -375,25 +383,22 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                     <div className="flex items-center gap-2">
                       {/* Photo */}
                       <input ref={addFileRef} type="file" accept="image/*" className="hidden" onChange={handleAddPhoto} />
-                      <button
-                        type="button"
-                        onClick={() => addFileRef.current?.click()}
-                        className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors group relative bg-white"
-                      >
-                        {addForm.photo ? (
-                          <>
-                            <img src={addForm.photo} alt="dish" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <ImagePlus size={14} className="text-white" />
-                            </div>
-                          </>
-                        ) : (
+                      {addForm.photo ? (
+                        <div className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors relative bg-white">
+                          <DraggableImage ref={addImgRef} src={addForm.photo} alt="dish" onReplace={() => addFileRef.current?.click()} size="sm" />
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => addFileRef.current?.click()}
+                          className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors group relative bg-white"
+                        >
                           <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors">
                             <ImagePlus size={16} />
                             <span className="text-[9px] font-medium">Photo</span>
                           </div>
-                        )}
-                      </button>
+                        </button>
+                      )}
 
                       {/* Fields */}
                       <div className="flex-1 min-w-0 flex flex-col gap-2">

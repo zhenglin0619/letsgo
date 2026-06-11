@@ -7,6 +7,7 @@ import { useTrips } from '@/store/tripsContext';
 import { HotelLog } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
 import type { LocatedPlace } from '@/components/ui/AddressSearchBox';
+import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
 
 const AddressSearchBox = dynamic(() => import('@/components/ui/AddressSearchBox'), {
   ssr: false,
@@ -50,6 +51,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
   const [step, setStep] = useState<'form' | 'done'>('form');
   const [geocoded, setGeocoded] = useState<{ lat: number; lng: number; city: string; country: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<DraggableImageHandle>(null);
   const isSelectingRef = useRef(false);
 
   const initialHotelRef = useRef(initialHotel);
@@ -109,6 +111,9 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
 
   async function handleSubmit() {
     if (!isValid) return;
+    const photo = coverPreview
+      ? (imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview)
+      : null;
     const trip = trips.find(t => t.id === form.tripId);
 
     let resolvedGeocode = geocoded;
@@ -146,7 +151,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
       pricePerNight: parseFloat(form.expense) || 0,
       currency: form.currency,
       location,
-      photos: coverPreview ? [coverPreview] : (initialHotel?.hotel.photos ?? []),
+      photos: photo ? [photo] : (initialHotel?.hotel.photos ?? []),
       notes: initialHotel?.hotel.notes ?? '',
     };
 
@@ -243,25 +248,22 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                       <div className="flex-1 flex flex-col">
                         <label className={LABEL}>Cover Photo <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span></label>
                         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-                        <button
-                          type="button"
-                          onClick={() => fileRef.current?.click()}
-                          className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors group relative"
-                        >
-                          {coverPreview ? (
-                            <>
-                              <img src={coverPreview} alt="Cover" className="w-full h-full object-cover absolute inset-0" />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <ImagePlus size={18} className="text-white" />
-                              </div>
-                            </>
-                          ) : (
+                        {coverPreview ? (
+                          <div className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
+                            <DraggableImage ref={imgRef} src={coverPreview} alt="Cover" onReplace={() => fileRef.current?.click()} />
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => fileRef.current?.click()}
+                            className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors group relative"
+                          >
                             <div className="flex flex-col items-center justify-center h-full gap-2 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors p-4">
                               <ImagePlus size={22} strokeWidth={1.5} />
                               <span className="text-[11px] font-medium text-center leading-tight">Click to upload</span>
                             </div>
-                          )}
-                        </button>
+                          </button>
+                        )}
                       </div>
                     </div>
 

@@ -6,6 +6,7 @@ import { useTrips } from '@/store/tripsContext';
 import { Trip } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
 import GeoAutocomplete from '@/components/ui/GeoAutocomplete';
+import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
 
 interface Props {
   open: boolean;
@@ -22,6 +23,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
   const [coverPreview, setCoverPreview] = useState<string>('');
   const [step, setStep] = useState<'form' | 'done'>('form');
   const fileRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<DraggableImageHandle>(null);
 
   // Re-initialize form whenever the modal opens (or switches trip)
   useEffect(() => {
@@ -56,8 +58,9 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
 
   const isValid = form.title.trim() && form.country.trim() && form.city.trim() && form.startDate && form.endDate;
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!isValid) return;
+    const photo = imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview;
     if (isEdit) {
       updateTrip({
         ...initialTrip!,
@@ -66,14 +69,14 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
         city:       form.city.trim(),
         startDate:  form.startDate,
         endDate:    form.endDate,
-        coverPhoto: coverPreview,
+        coverPhoto: photo,
       });
     } else {
       const id = `${form.city.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
       addTrip({
         id,
         title:      form.title.trim(),
-        coverPhoto: coverPreview,
+        coverPhoto: photo,
         startDate:  form.startDate,
         endDate:    form.endDate,
         countries:  [form.country.trim()],
@@ -181,7 +184,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                     </div>
 
                     {/* Right: cover photo upload */}
-                    <div className="w-80 flex-shrink-0 flex flex-col">
+                    <div className="w-75 flex-shrink-0 flex flex-col">
                       <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
                         Cover Photo <span className="normal-case text-[#C0BAB2]">(optional)</span>
                       </label>
@@ -192,29 +195,22 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                         className="hidden"
                         onChange={handleImageChange}
                       />
-                      <button
-                        type="button"
-                        onClick={() => fileRef.current?.click()}
-                        className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors group relative"
-                      >
-                        {coverPreview ? (
-                          <>
-                            <img
-                              src={coverPreview}
-                              alt="Cover"
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <ImagePlus size={20} className="text-white" />
-                            </div>
-                          </>
-                        ) : (
+                      {coverPreview ? (
+                        <div className="w-full aspect-[24/25] rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
+                          <DraggableImage ref={imgRef} src={coverPreview} alt="Cover" onReplace={() => fileRef.current?.click()} />
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => fileRef.current?.click()}
+                          className="w-full aspect-[24/25] rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors group relative"
+                        >
                           <div className="flex flex-col items-center justify-center h-full gap-2 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors p-4">
                             <ImagePlus size={24} />
                             <span className="text-[11px] font-medium text-center leading-tight">Click to upload cover</span>
                           </div>
-                        )}
-                      </button>
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
