@@ -23,7 +23,7 @@ interface Props {
 
 const ROOM_TYPES = ['Villa', 'Suite', 'King', 'Queen', 'Twin', 'Studio'] as const;
 const VIEW_TYPES = ['City View', 'Ocean View', 'Lake View', 'River View', 'Mountain View', 'Garden View', 'Park View', 'No View'] as const;
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'HKD', 'SGD', 'AUD', 'CAD', 'CHF', 'KRW'];
+const CURRENCIES = ['USD', 'CNY', 'HKD', 'JPY', 'EUR', 'GBP', 'SGD', 'MYR', 'AUD', 'CAD'];
 
 const INPUT  = 'w-full text-sm border border-[#E8E6E1] rounded-xl px-3 py-2 focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors';
 const LABEL  = 'text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1 block pl-1';

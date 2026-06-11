@@ -22,7 +22,7 @@ interface Props {
 }
 
 const MEAL_OPTIONS = ['Breakfast', 'Brunch', 'Lunch', 'Afternoon Tea', 'Dinner', 'Late Night'] as const;
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'HKD', 'SGD', 'AUD', 'CAD', 'CHF', 'KRW'];
+const CURRENCIES = ['USD', 'CNY', 'HKD', 'JPY', 'EUR', 'GBP', 'SGD', 'MYR', 'AUD', 'CAD'];
 const MICHELIN = [0, 1, 2, 3] as const;
 
 const INPUT = 'w-full text-sm border border-[#E8E6E1] rounded-xl px-3 py-2 focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors';
