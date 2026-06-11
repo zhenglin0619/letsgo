@@ -27,6 +27,76 @@ function toISO(display: string) {
   return isValid(d) ? format(d, 'yyyy-MM-dd') : null;
 }
 
+// ── Custom year dropdown: floating scrollable list (8 items visible) ─────────
+
+type DropdownOption = { value: number; label: string; disabled: boolean };
+
+type DropdownProps = {
+  options?: DropdownOption[];
+  value?: React.SelectHTMLAttributes<HTMLSelectElement>['value'];
+  onChange?: React.ChangeEventHandler<HTMLSelectElement>;
+  className?: string;
+  [key: string]: unknown;
+};
+
+function YearPicker({ options = [], value, onChange }: Pick<DropdownProps, 'options' | 'value' | 'onChange'>) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !listRef.current) return;
+    const sel = listRef.current.querySelector<HTMLElement>('.tt-yr-item-active');
+    sel?.scrollIntoView({ block: 'center' });
+  }, [open]);
+
+  const selectedLabel = options.find(o => String(o.value) === String(value))?.label ?? String(value);
+
+  return (
+    <div ref={rootRef} className="tt-yr-root">
+      <button type="button" className="tt-yr-btn" onClick={() => setOpen(v => !v)}>
+        {selectedLabel}
+        <svg width="8" height="5" viewBox="0 0 10 6" fill="none">
+          <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && (
+        <div ref={listRef} className="tt-yr-list">
+          {options.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              disabled={opt.disabled}
+              className={`tt-yr-item${String(opt.value) === String(value) ? ' tt-yr-item-active' : ''}`}
+              onClick={() => {
+                onChange?.({ target: { value: String(opt.value) } } as React.ChangeEvent<HTMLSelectElement>);
+                setOpen(false);
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CustomDropdown({ options = [], value, onChange }: DropdownProps) {
+  return <YearPicker options={options} value={value} onChange={onChange} />;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function DatePickerInput({ label, value, onChange, min, defaultMonth, placement = 'right' }: Props) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(() => toDisplay(value));
@@ -118,9 +188,10 @@ export default function DatePickerInput({ label, value, onChange, min, defaultMo
             disabled={minDate ? { before: minDate } : undefined}
             defaultMonth={defaultMonthDate ?? selected}
             captionLayout="dropdown"
-            startMonth={new Date(2000, 0)}
+            startMonth={new Date(2005, 0)}
             endMonth={new Date(2035, 11)}
             className="tt-cal"
+            components={{ Dropdown: CustomDropdown as never }}
           />
         </div>
       )}

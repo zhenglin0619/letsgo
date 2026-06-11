@@ -73,6 +73,7 @@ html.dark input, html.dark select, html.dark textarea {
 }
 html.dark input::placeholder, html.dark textarea::placeholder { color: #5A5760 !important; }
 
+
 /* Hover surfaces */
 html.dark [class*="hover:bg-[#F5F2EE]"]:hover { background-color: #2C2A32 !important; }
 html.dark [class*="hover:bg-[#F9F7F4]"]:hover { background-color: #2C2A32 !important; }

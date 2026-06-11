@@ -9,8 +9,8 @@ export const DATE_OPTIONS = [
 
 const ALL_OPTIONS = [
   ...DATE_OPTIONS,
-  { value: 'rate-desc', label: 'Rating Descending' },
-  { value: 'rate-asc',  label: 'Rating Ascending' },
+  { value: 'rate-desc', label: 'Highest Rating' },
+  { value: 'rate-asc',  label: 'Lowest Rating' },
 ];
 
 interface Props {
@@ -48,7 +48,7 @@ export default function SortMenu({ value, onChange, options = ALL_OPTIONS }: Pro
 
       {open && (
         <div
-          className="absolute top-11 right-0 bg-white rounded-2xl border border-[#E8E6E1] py-1.5 w-48 z-30"
+          className="absolute top-11 right-0 bg-white rounded-2xl border border-[#E8E6E1] py-1.5 w-41 z-30"
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}
         >
           <p className="px-4 pt-1.5 pb-2 text-[10px] font-semibold text-[#C0BAB2] uppercase tracking-widest">Sort by</p>

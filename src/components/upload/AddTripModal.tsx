@@ -146,19 +146,19 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
 
                       <div className="grid grid-cols-2 gap-3">
                         <GeoAutocomplete
-                          label="Country"
-                          placeholder="e.g. Japan"
-                          value={form.country}
-                          onChange={v => set('country', v)}
-                          types="country"
-                        />
-                        <GeoAutocomplete
                           label="City"
                           placeholder="e.g. Tokyo"
                           value={form.city}
                           onChange={v => set('city', v)}
                           types="place"
                           onSelectCountry={c => { if (!form.country) set('country', c); }}
+                        />
+                        <GeoAutocomplete
+                          label="Country"
+                          placeholder="e.g. Japan"
+                          value={form.country}
+                          onChange={v => set('country', v)}
+                          types="country"
                         />
                       </div>
 

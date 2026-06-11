@@ -181,6 +181,81 @@
   background: transparent;
 }
 
+/* ── Custom year dropdown ────────────────────────────────────────────────── */
+
+.tt-yr-root {
+  position: relative;
+}
+
+.tt-yr-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  appearance: none;
+  background: #F5F2EE;
+  border: 1px solid #E8E6E1;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1A1A1A;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tt-yr-btn:hover {
+  border-color: #C87A53;
+  background: #FDF8F5;
+}
+
+.tt-yr-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  background: #fff;
+  border: 1px solid #E8E6E1;
+  border-radius: 8px;
+  padding: 4px 0;
+  max-height: 224px; /* 8 items × 28px */
+  overflow-y: auto;
+  min-width: 100%;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  scrollbar-width: thin;
+}
+
+.tt-yr-item {
+  display: block;
+  width: 100%;
+  padding: 5px 12px;
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: #1A1A1A;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+
+.tt-yr-item:hover:not(:disabled) {
+  background: #F5F2EE;
+}
+
+.tt-yr-item-active {
+  color: #C87A53 !important;
+  background: #FDF6F2 !important;
+  font-weight: 600;
+}
+
+.tt-yr-item:disabled {
+  color: #D4CFC6;
+  cursor: not-allowed;
+}
+
 /* ── Night mode ──────────────────────────────────────────────────────────── */
 
 /* Month/year dropdowns */
@@ -244,5 +319,40 @@ html.dark .tt-cal .rdp-outside .rdp-day_button {
 
 /* Disabled */
 html.dark .tt-cal .rdp-disabled .rdp-day_button {
+  color: #3E3B47;
+}
+
+/* Custom year dropdown — dark mode */
+html.dark .tt-yr-btn {
+  background: #2C2A32 !important;
+  border-color: #3E3B47 !important;
+  color: #EAE5DE !important;
+}
+
+html.dark .tt-yr-btn:hover {
+  border-color: #C87A53 !important;
+  background: #333040 !important;
+}
+
+html.dark .tt-yr-list {
+  background: #2C2A32;
+  border-color: #3E3B47;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+}
+
+html.dark .tt-yr-item {
+  color: #EAE5DE;
+}
+
+html.dark .tt-yr-item:hover:not(:disabled) {
+  background: #333040;
+}
+
+html.dark .tt-yr-item-active {
+  color: #D4895E !important;
+  background: #2A2028 !important;
+}
+
+html.dark .tt-yr-item:disabled {
   color: #3E3B47;
 }

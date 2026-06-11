@@ -78,10 +78,10 @@ export default function StatsBento() {
         transition={{ delay: stats.length * 0.07, duration: 0.4 }}
       >
         <div className="flex items-center gap-2">
-          <p className="text-[21px] font-semibold text-[#6B6B6B]">Future Plans</p>
+          <p className="text-[21px] font-semibold text-[#1A1A1A]">Future Plans</p>
           <svg width="33" height="16" viewBox="0 0 28 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <line x1="5" y1="7" x2="24" y2="7" stroke="#6B6B6B" strokeWidth="2" strokeLinecap="round"/>
-            <polyline points="18,2 24,7 18,12" fill="none" stroke="#6B6B6B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <line x1="5" y1="7" x2="24" y2="7" stroke={dark ? '#EAE5DE' : '#1A1A1A'} strokeWidth="2" strokeLinecap="round"/>
+            <polyline points="18,2 24,7 18,12" fill="none" stroke={dark ? '#EAE5DE' : '#1A1A1A'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
       </motion.div>
