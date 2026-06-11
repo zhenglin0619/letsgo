@@ -8,6 +8,7 @@ export const mockTrips: Trip[] = [
     startDate: '2025-07-04',
     endDate: '2025-07-18',
     countries: ['Japan'],
+    city: 'Tokyo',
     hotels: [
       {
         id: 'aman-tokyo',
@@ -87,6 +88,7 @@ export const mockTrips: Trip[] = [
     startDate: '2025-10-01',
     endDate: '2025-10-10',
     countries: ['Italy'],
+    city: 'Amalfi',
     hotels: [
       {
         id: 'belmond-caruso',
@@ -161,6 +163,7 @@ export const mockTrips: Trip[] = [
     startDate: '2024-11-10',
     endDate: '2024-11-18',
     countries: ['Japan'],
+    city: 'Kyoto',
     hotels: [
       {
         id: 'tawaraya-ryokan',

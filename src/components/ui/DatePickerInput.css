@@ -180,3 +180,69 @@
 .tt-cal .rdp-disabled .rdp-day_button:hover {
   background: transparent;
 }
+
+/* ── Night mode ──────────────────────────────────────────────────────────── */
+
+/* Month/year dropdowns */
+html.dark .tt-cal .rdp-months_dropdown,
+html.dark .tt-cal .rdp-years_dropdown {
+  background-color: #2C2A32 !important;
+  border-color: #3E3B47 !important;
+  color: #EAE5DE !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23807B75' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+
+html.dark .tt-cal .rdp-months_dropdown:hover,
+html.dark .tt-cal .rdp-years_dropdown:hover {
+  border-color: #C87A53 !important;
+  background-color: #333040 !important;
+}
+
+/* Dropdown option items */
+html.dark .tt-cal .rdp-months_dropdown option,
+html.dark .tt-cal .rdp-years_dropdown option {
+  background-color: #2C2A32;
+  color: #EAE5DE;
+}
+
+/* Nav buttons */
+html.dark .tt-cal .rdp-button_previous,
+html.dark .tt-cal .rdp-button_next {
+  color: #807B75;
+}
+
+html.dark .tt-cal .rdp-button_previous:hover,
+html.dark .tt-cal .rdp-button_next:hover {
+  background: #2C2A32;
+  color: #EAE5DE;
+}
+
+/* Weekday headers */
+html.dark .tt-cal .rdp-weekday {
+  color: #5A5760;
+}
+
+/* Day buttons */
+html.dark .tt-cal .rdp-day_button {
+  color: #EAE5DE;
+}
+
+html.dark .tt-cal .rdp-day_button:hover {
+  background: #2C2A32;
+}
+
+/* Today */
+html.dark .tt-cal .rdp-today .rdp-day_button {
+  color: #D4895E;
+  border-color: #D4895E;
+}
+
+/* Outside / other month */
+html.dark .tt-cal .rdp-outside .rdp-day_button {
+  color: #3E3B47;
+}
+
+/* Disabled */
+html.dark .tt-cal .rdp-disabled .rdp-day_button {
+  color: #3E3B47;
+}

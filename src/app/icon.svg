@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Background -->
+  <rect width="32" height="32" rx="7" fill="#FBFBFA"/>
+
+  <!-- Globe wireframe, centered at 16,16, radius 10 -->
+
+  <!-- Outer ring -->
+  <circle cx="16" cy="16" r="10" fill="none" stroke="#C87A53" stroke-width="1.0" opacity="0.88"/>
+
+  <!-- Equator -->
+  <line x1="6" y1="16" x2="26" y2="16" stroke="#C87A53" stroke-width="0.6" opacity="0.48"/>
+
+  <!-- Upper latitude arc -->
+  <path d="M7.5 11.8 Q16 9.8 24.5 11.8" fill="none" stroke="#C87A53" stroke-width="0.6" opacity="0.52"/>
+
+  <!-- Lower latitude arc -->
+  <path d="M7.5 20.2 Q16 22.2 24.5 20.2" fill="none" stroke="#C87A53" stroke-width="0.6" opacity="0.52"/>
+
+  <!-- Right meridian -->
+  <path d="M16 6 Q19.5 11 19.5 16 Q19.5 21 16 26" fill="none" stroke="#C87A53" stroke-width="0.6" opacity="0.48"/>
+
+  <!-- Left meridian (fainter) -->
+  <path d="M16 6 Q12.5 11 12.5 16 Q12.5 21 16 26" fill="none" stroke="#C87A53" stroke-width="0.55" opacity="0.22"/>
+</svg>

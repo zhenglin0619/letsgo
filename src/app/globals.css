@@ -88,6 +88,22 @@ html.dark .world-map-header {
   border-bottom-color: var(--border) !important;
 }
 
+/* Leaflet zoom buttons — night mode */
+html.dark .leaflet-control-zoom a {
+  background: #2A2830 !important;
+  color: #EAE5DE !important;
+}
+html.dark .leaflet-control-zoom a:hover {
+  background: #333040 !important;
+}
+html.dark .leaflet-control-zoom-in,
+html.dark .leaflet-control-zoom-out {
+  border-bottom: 1px solid #3E3B47 !important;
+}
+html.dark .leaflet-control-zoom {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.45) !important;
+}
+
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }

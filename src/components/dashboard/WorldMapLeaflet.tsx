@@ -56,21 +56,6 @@ export default function WorldMapLeaflet({ pins }: Props) {
     return () => observer.disconnect();
   }, []);
 
-  // Style Leaflet zoom buttons to match dark/light mode
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !mapReady) return;
-    const btns = container.querySelectorAll<HTMLElement>(
-      '.leaflet-control-zoom-in, .leaflet-control-zoom-out'
-    );
-    btns.forEach(btn => {
-      btn.style.backgroundColor = dark ? '#2A2830' : '#fff';
-      btn.style.color           = dark ? '#EAE5DE' : '#000';
-      btn.style.borderColor     = dark ? '#3E3B47' : '#ccc';
-      btn.onmouseenter = () => { btn.style.backgroundColor = dark ? '#333040' : '#f4f4f4'; };
-      btn.onmouseleave = () => { btn.style.backgroundColor = dark ? '#2A2830' : '#fff'; };
-    });
-  }, [dark, mapReady]);
 
   function handleLocate() {
     if (!navigator.geolocation || !mapRef.current) return;

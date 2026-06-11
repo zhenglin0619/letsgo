@@ -7,7 +7,7 @@ export const DATE_OPTIONS = [
   { value: 'date-asc',  label: 'Oldest Date' },
 ];
 
-export const ALL_OPTIONS = [
+const ALL_OPTIONS = [
   ...DATE_OPTIONS,
   { value: 'rate-desc', label: 'Rating Descending' },
   { value: 'rate-asc',  label: 'Rating Ascending' },
