@@ -2,9 +2,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
-import { MapPin, Plane, BedDouble, Utensils, LogOut, User, Users, Settings, ChevronDown } from 'lucide-react';
+import { MapPin, Plane, BedDouble, Utensils, LogOut, User, Users, Settings, ChevronDown, NotebookPen } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
 import CollaboratorModal from '@/components/ui/CollaboratorModal';
+import FuturePlanModal from '@/components/ui/FuturePlanModal';
 
 function LetsGoLogo() {
   return (
@@ -32,7 +33,8 @@ function UserMenu() {
   const [open, setOpen]               = useState(false);
   const [nightMode, setNightMode]     = useState(false);
   const [collabOpen, setCollabOpen]   = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen]     = useState(false);
+  const [futurePlanOpen, setFuturePlanOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -102,6 +104,15 @@ function UserMenu() {
               Collaborators
             </button>
 
+            {/* Future Plan */}
+            <button
+              onClick={() => { setOpen(false); setFuturePlanOpen(true); }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
+            >
+              <NotebookPen size={14} />
+              Future Plan
+            </button>
+
             {/* Settings */}
             <button
               onClick={() => setSettingsOpen(o => !o)}
@@ -152,6 +163,7 @@ function UserMenu() {
       </div>
 
       <CollaboratorModal open={collabOpen} onClose={() => setCollabOpen(false)} />
+      <FuturePlanModal open={futurePlanOpen} onClose={() => setFuturePlanOpen(false)} />
     </>
   );
 }
