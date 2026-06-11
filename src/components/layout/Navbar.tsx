@@ -8,15 +8,8 @@ import CollaboratorModal from '@/components/ui/CollaboratorModal';
 
 function LetsGoLogo() {
   return (
-    <Link href="/" className="flex items-center gap-0.5 select-none group">
-      <svg width="54" height="54" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="20" cy="20" r="13" fill="none" stroke="#C87A53" strokeWidth="1.3" opacity="0.85"/>
-        <line x1="7" y1="20" x2="33" y2="20" stroke="#C87A53" strokeWidth="0.75" opacity="0.45"/>
-        <path d="M9 14.5 Q20 12 31 14.5" fill="none" stroke="#C87A53" strokeWidth="0.75" opacity="0.5"/>
-        <path d="M9 25.5 Q20 28 31 25.5" fill="none" stroke="#C87A53" strokeWidth="0.75" opacity="0.5"/>
-        <path d="M20 7 Q24.5 13.5 24.5 20 Q24.5 26.5 20 33" fill="none" stroke="#C87A53" strokeWidth="0.75" opacity="0.45"/>
-        <path d="M20 7 Q15.5 13.5 15.5 20 Q15.5 26.5 20 33" fill="none" stroke="#C87A53" strokeWidth="0.65" opacity="0.22"/>
-      </svg>
+    <Link href="/" className="flex items-center gap-2 select-none group">
+      <img src="/logo.png" alt="Logo" width={40} height={40} className="object-contain" />
       <div className="flex flex-col leading-none">
         <span
           className="Helvetica font-black text-[#1A1A1A] tracking-[0.12em] uppercase"
@@ -72,7 +65,7 @@ function UserMenu() {
       <div ref={ref} className="relative pl-5 border-l border-[#E8E6E1]">
         <button
           onClick={() => setOpen(o => !o)}
-          className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#C87A53] transition-all"
+          className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#C87A53] transition-all mt-1.5"
         >
           {avatarUrl ? (
             <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />

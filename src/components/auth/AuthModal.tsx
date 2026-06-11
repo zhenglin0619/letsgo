@@ -52,32 +52,7 @@ export default function AuthModal() {
         {/* Logo area */}
         <div className="pt-10 pb-6 px-8 text-center border-b border-[#F0ECE6]">
           <div className="flex justify-center mb-4">
-            <svg width="52" height="52" viewBox="0 0 40 40" fill="none">
-              <defs>
-                <radialGradient id="auth-bg" cx="35%" cy="30%" r="75%">
-                  <stop offset="0%" stopColor="#2E2E2E"/>
-                  <stop offset="100%" stopColor="#111111"/>
-                </radialGradient>
-                <radialGradient id="auth-glow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#C87A53" stopOpacity="0.18"/>
-                  <stop offset="100%" stopColor="#C87A53" stopOpacity="0"/>
-                </radialGradient>
-              </defs>
-              <rect width="40" height="40" rx="11" fill="url(#auth-bg)"/>
-              <circle cx="20" cy="20" r="14.5" fill="url(#auth-glow)"/>
-              <circle cx="20" cy="20" r="13" fill="none" stroke="#C87A53" strokeWidth="1.3" opacity="0.85"/>
-              <line x1="7" y1="20" x2="33" y2="20" stroke="#C87A53" strokeWidth="0.75" opacity="0.45"/>
-              <path d="M9 14.5 Q20 12 31 14.5" fill="none" stroke="#C87A53" strokeWidth="0.75" opacity="0.5"/>
-              <path d="M9 25.5 Q20 28 31 25.5" fill="none" stroke="#C87A53" strokeWidth="0.75" opacity="0.5"/>
-              <path d="M20 7 Q24.5 13.5 24.5 20 Q24.5 26.5 20 33" fill="none" stroke="#C87A53" strokeWidth="0.75" opacity="0.45"/>
-              <path d="M20 7 Q15.5 13.5 15.5 20 Q15.5 26.5 20 33" fill="none" stroke="#C87A53" strokeWidth="0.65" opacity="0.22"/>
-              <line x1="15" y1="25" x2="25" y2="15" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
-              <path d="M25 15 L20.5 15 M25 15 L25 19.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="14.5" cy="25.5" r="2" fill="#C87A53"/>
-              <circle cx="14.5" cy="25.5" r="0.85" fill="white" opacity="0.6"/>
-              <circle cx="25.5" cy="14.5" r="1.9" fill="white"/>
-              <circle cx="25.5" cy="14.5" r="0.85" fill="#C87A53"/>
-            </svg>
+            <img src="/logo.png" alt="Logo" width={80} height={80} className="object-contain" />
           </div>
           <h1 className="font-black text-[#1A1A1A] tracking-[0.1em] uppercase"
             style={{ fontSize: '18px', WebkitTextStroke: '0.5px #1A1A1A' }}>
