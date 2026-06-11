@@ -24,7 +24,7 @@ function convertToTarget(amount: number, from: string, to: string) {
 }
 
 export default function StatsBento() {
-  const { trips, standaloneRestaurants } = useTrips();
+  const { trips, standaloneRestaurants, standaloneHotels } = useTrips();
   const [dark, setDark] = useState(false);
   useEffect(() => {
     const el = document.documentElement;
@@ -68,9 +68,10 @@ export default function StatsBento() {
     return () => document.removeEventListener('mousedown', handler);
   }, [dropdownOpen]);
 
-  const totalExpense = allDining.reduce((s, d) => {
-    return s + convertToTarget(d.totalExpense ?? 0, d.currency ?? 'USD', currency);
-  }, 0);
+  const allHotels = [...trips.flatMap(t => t.hotels), ...standaloneHotels];
+  const totalExpense =
+    allDining.reduce((s, d) => s + convertToTarget(d.totalExpense ?? 0, d.currency ?? 'USD', currency), 0) +
+    allHotels.reduce((s, h) => s + convertToTarget(h.pricePerNight ?? 0, h.currency ?? 'USD', currency), 0);
   const expenseDisplay = totalExpense >= 1_000_000
     ? `${(totalExpense / 1000).toFixed(0)}k`
     : Math.round(totalExpense).toLocaleString();
