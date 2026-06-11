@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
-import { MapPin, Plane, BedDouble, Utensils, LogOut, User, Users } from 'lucide-react';
+import { MapPin, Plane, BedDouble, Utensils, LogOut, User, Users, Settings, ChevronDown } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
 import CollaboratorModal from '@/components/ui/CollaboratorModal';
 
@@ -32,6 +32,7 @@ function UserMenu() {
   const [open, setOpen]               = useState(false);
   const [nightMode, setNightMode]     = useState(false);
   const [collabOpen, setCollabOpen]   = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -101,29 +102,42 @@ function UserMenu() {
               Collaborators
             </button>
 
-            {/* Dark Mode */}
+            {/* Settings */}
             <button
-              onClick={toggleNightMode}
+              onClick={() => setSettingsOpen(o => !o)}
               className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
             >
-              <span>Dark Mode</span>
-              <div className={`w-8 rounded-full transition-colors flex items-center px-0.5 ${nightMode ? 'bg-[#C87A53]' : 'bg-[#D4CFC8]'}`}
-                style={{ height: '18px' }}>
-                <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${nightMode ? 'translate-x-3.5' : 'translate-x-0'}`} />
-              </div>
+              <span className="flex items-center gap-2.5"><Settings size={14} />Settings</span>
+              <ChevronDown size={14} className={`transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Demo Mode */}
-            <button
-              onClick={toggleDemoMode}
-              className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
-            >
-              <span>Demo Mode</span>
-              <div className={`w-8 rounded-full transition-colors flex items-center px-0.5 ${demoMode ? 'bg-[#C87A53]' : 'bg-[#D4CFC8]'}`}
-                style={{ height: '18px' }}>
-                <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${demoMode ? 'translate-x-3.5' : 'translate-x-0'}`} />
+            {settingsOpen && (
+              <div className="bg-[#F9F7F4]">
+                {/* Night Mode */}
+                <button
+                  onClick={toggleNightMode}
+                  className="w-full flex items-center justify-between pl-8 pr-4 py-2 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F0ECE6] transition-colors"
+                >
+                  <span>Night Mode</span>
+                  <div className={`w-8 rounded-full transition-colors flex items-center px-0.5 ${nightMode ? 'bg-[#C87A53]' : 'bg-[#D4CFC8]'}`}
+                    style={{ height: '18px' }}>
+                    <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${nightMode ? 'translate-x-3.5' : 'translate-x-0'}`} />
+                  </div>
+                </button>
+
+                {/* Demo Mode */}
+                <button
+                  onClick={toggleDemoMode}
+                  className="w-full flex items-center justify-between pl-8 pr-4 py-2 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F0ECE6] transition-colors"
+                >
+                  <span>Demo Mode</span>
+                  <div className={`w-8 rounded-full transition-colors flex items-center px-0.5 ${demoMode ? 'bg-[#C87A53]' : 'bg-[#D4CFC8]'}`}
+                    style={{ height: '18px' }}>
+                    <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${demoMode ? 'translate-x-3.5' : 'translate-x-0'}`} />
+                  </div>
+                </button>
               </div>
-            </button>
+            )}
 
             <div className="mx-4 my-1 h-px bg-[#F0ECE6]" />
             <button
