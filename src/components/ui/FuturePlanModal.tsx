@@ -10,6 +10,7 @@ type PlanType = 'trip' | 'dining' | 'hotel';
 
 interface Plan {
   id: string;
+  user_id: string;
   title: string;
   notes: string;
   type: PlanType;
@@ -80,21 +81,24 @@ export default function FuturePlanModal({ open, onClose }: Props) {
     setAdding(false);
     setEditingId(null);
     setLoading(true);
-    supabase
-      .from('future_plans')
-      .select('id, title, notes, type')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: true })
-      .then(({ data }) => {
-        setPlans((data ?? []) as Plan[]);
-        setLoading(false);
-      });
+    (async () => {
+      const { data: sharedRows } = await supabase
+        .from('collaborators').select('owner_id').eq('collaborator_id', user.id);
+      const ownerIds = [user.id, ...(sharedRows?.map(r => r.owner_id as string) ?? [])];
+      const { data } = await supabase
+        .from('future_plans')
+        .select('id, user_id, title, notes, type')
+        .in('user_id', ownerIds)
+        .order('created_at', { ascending: true });
+      setPlans((data ?? []) as Plan[]);
+      setLoading(false);
+    })();
   }, [open, user]);
 
   async function addPlan() {
     if (!newTitle.trim() || !user) return;
     const row = { id: Date.now().toString(), user_id: user.id, title: newTitle.trim(), notes: newNotes.trim(), type: newType };
-    const { data } = await supabase.from('future_plans').insert(row).select('id, title, notes, type').single();
+    const { data } = await supabase.from('future_plans').insert(row).select('id, user_id, title, notes, type').single();
     if (data) setPlans(prev => [...prev, data as Plan]);
     setNewTitle('');
     setNewNotes('');
