@@ -257,15 +257,13 @@ export function TripsProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+    async function applySession(session: import('@supabase/supabase-js').Session | null) {
+      try {
         const u = session?.user ?? null;
         setUser(u);
         if (u) {
-          // Upsert profile so others can find this user by email
           await supabase.from('profiles')
             .upsert({ id: u.id, email: u.email }, { onConflict: 'id' });
-
           const [data, collabs] = await Promise.all([
             loadUserData(u.id),
             loadCollaborators(u.id),
@@ -280,10 +278,36 @@ export function TripsProvider({ children }: { children: ReactNode }) {
           setStandaloneHotels([]);
           setCollaborators([]);
         }
+      } catch (err) {
+        console.error('[auth] session error:', err);
+      } finally {
         setAuthLoading(false);
       }
+    }
+
+    // Hard timeout: if Supabase never responds (e.g. mobile network can't reach it),
+    // unblock the UI after 5s so the user at least sees the login screen.
+    const timeout = setTimeout(() => setAuthLoading(false), 5000);
+
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        clearTimeout(timeout);
+        applySession(session);
+      })
+      .catch(() => {
+        clearTimeout(timeout);
+        setAuthLoading(false);
+      });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        await applySession(session);
+      }
     );
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const effectiveTrips            = demoMode ? demoTrips            : trips;

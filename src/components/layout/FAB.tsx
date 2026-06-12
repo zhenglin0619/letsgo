@@ -33,7 +33,7 @@ export default function FAB({ onSelect }: FABProps) {
       </AnimatePresence>
 
       {/* FAB + pill menu */}
-      <div className="fixed bottom-8 right-8 z-[9999] flex flex-col items-end gap-3">
+      <div className="fixed bottom-2 md:bottom-8 right-4 md:right-8 z-[9999] flex flex-col items-end gap-3">
         <AnimatePresence>
           {open && (
             <motion.div

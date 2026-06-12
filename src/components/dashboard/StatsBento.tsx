@@ -86,18 +86,18 @@ export default function StatsBento() {
   ];
 
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div className="grid grid-cols-2 gap-3 md:flex md:flex-col md:gap-3 md:h-full">
       {stats.map((s, i) => (
         <motion.div
           key={s.label}
-          className="bento-card p-4 flex-1"
+          className="bento-card p-4 md:flex-1"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.07, duration: 0.4 }}
         >
           <div className="flex items-center justify-between h-full">
             <div>
-              <p className="text-[12px] text-[#8A8A8A] font-medium uppercase tracking-widest mb-1">{s.label}</p>
+              <p className="text-[11px] md:text-[12px] text-[#8A8A8A] font-medium uppercase tracking-[0.08em] md:tracking-widest mb-1 whitespace-nowrap">{s.label}</p>
               <p className="serif text-3xl font-semibold text-[#1A1A1A]">{s.value}</p>
             </div>
             <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -108,14 +108,14 @@ export default function StatsBento() {
         </motion.div>
       ))}
       <motion.div
-        className="bento-card p-4 flex-1"
+        className="col-span-2 bento-card p-4 md:flex-1"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: stats.length * 0.07, duration: 0.4 }}
       >
         <div className="flex items-center justify-between h-full">
           <div>
-            <p className="text-[12px] text-[#8A8A8A] font-medium uppercase tracking-widest mb-1">Total Expense</p>
+            <p className="text-[11px] md:text-[12px] text-[#8A8A8A] font-medium uppercase tracking-[0.08em] md:tracking-widest mb-1 whitespace-nowrap">Total Expense</p>
             <div className="flex items-center gap-2 flex-nowrap">
               <p className="serif text-3xl font-semibold text-[#1A1A1A]">{expenseDisplay}</p>
               <div ref={dropdownRef} className="relative translate-y-1">

@@ -142,30 +142,30 @@ export default function RestaurantsPage() {
   }
 
   return (
-    <main className="pt-24 pb-24 px-8 max-w-7xl mx-auto">
+    <main className="pt-20 md:pt-24 pb-24 px-4 md:px-8 max-w-7xl mx-auto">
       <motion.div
         className="mb-5"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
       >
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
           <div>
             <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Dinings</h1>
             <p className="mt-2 text-[#8A8A8A] text-sm">
               {allRestaurants.length} restaurant{allRestaurants.length !== 1 ? 's' : ''} · across {new Set(allRestaurants.map(r => r.location.city)).size} cities
             </p>
           </div>
-          <div className="flex items-center gap-2 mb-0.5">
+          <div className="flex items-center gap-2 justify-end md:mb-0.5">
             <SortMenu value={sortBy} onChange={setSortBy} />
-            <div className="relative">
+            <div className="relative flex-1 md:flex-none">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A8A] pointer-events-none" />
               <input
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Search restaurants…"
-                className="pl-8 pr-8 py-2 text-sm bg-white border border-[#E8E6E1] rounded-xl focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors w-56"
+                className="pl-8 pr-8 py-2 text-sm bg-white border border-[#E8E6E1] rounded-xl focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors w-full md:w-56"
               />
               {query && (
                 <button onClick={() => setQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#C0BAB2] hover:text-[#8A8A8A] transition-colors">
@@ -177,9 +177,9 @@ export default function RestaurantsPage() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         {filtered.length === 0 && (
-          <div className="col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
+          <div className="col-span-2 md:col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
             style={{ borderColor: '#D4CFC6' }}>
             {query ? (
               <>

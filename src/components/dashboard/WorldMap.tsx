@@ -71,7 +71,7 @@ export default function WorldMap() {
       </div>
 
       {/* Map — always light so CARTO tiles look correct */}
-      <div style={{ height: 520, background: '#fff' }}>
+      <div className="h-[250px] md:h-[520px]" style={{ background: '#fff' }}>
         <WorldMapLeaflet pins={pins} />
       </div>
     </div>
