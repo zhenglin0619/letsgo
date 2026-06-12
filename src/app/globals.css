@@ -59,6 +59,11 @@ html.dark [class*="bg-[#FBFBFA]"]  { background-color: #17161A !important; }
 html.dark [class*="text-[#1A1A1A]"] { color: #EAE5DE !important; }
 html.dark [class*="text-[#8A8A8A]"] { color: #807B75 !important; }
 html.dark [class*="text-[#4A5343]"] { color: #7C8F74 !important; }
+html.dark [class*="text-[#4A4A4A]"] { color: #EAE5DE !important; }
+
+/* Legal pages */
+.legal-body { color: #4A4A4A; }
+html.dark .legal-body { color: #EAE5DE; }
 
 /* Borders */
 html.dark [class*="border-[#E8E6E1]"] { border-color: #2E2C34 !important; }

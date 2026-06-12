@@ -20,7 +20,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   if (authLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center"
-        style={{ background: '#FBF9F6' }}>
+        style={{ background: 'var(--canvas)' }}>
         <div className="flex flex-col items-center gap-3">
           <img src="/logo.png" alt="Logo" width={72} height={72} className="object-contain animate-pulse" />
           <span className="text-xs font-medium tracking-[0.2em] uppercase text-[#C87A53]">Loading</span>

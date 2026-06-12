@@ -49,13 +49,13 @@ function TypePicker({ value, onChange }: { value: PlanType; onChange: (v: PlanTy
   );
 }
 
-function PlanTypeIcon({ type }: { type: PlanType }) {
+function PlanTypeIcon({ type, nightMode }: { type: PlanType; nightMode: boolean }) {
   const match = TYPES.find(t => t.value === type);
   if (!match) return null;
   const { Icon } = match;
   return (
-    <div className="w-7 h-7 rounded-full bg-[#E8E4DC] flex items-center justify-center shrink-0">
-      <Icon size={12} className="text-[#8A8A8A]" />
+    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${nightMode ? 'bg-[#1A1A1A]' : 'bg-[#E8E4DC]'}`}>
+      <Icon size={12} className={nightMode ? 'text-[#C87A53]' : 'text-[#8A8A8A]'} />
     </div>
   );
 }
@@ -73,8 +73,12 @@ export default function FuturePlanModal({ open, onClose }: Props) {
   const [newType, setNewType]       = useState<PlanType>('trip');
   const [mounted, setMounted]       = useState(false);
   const [loading, setLoading]       = useState(false);
+  const [nightMode, setNightMode]   = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    setNightMode(localStorage.getItem('nightMode') === 'true');
+  }, []);
 
   useEffect(() => {
     if (!open || !user) return;
@@ -206,7 +210,7 @@ export default function FuturePlanModal({ open, onClose }: Props) {
                           ) : (
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex items-center gap-2.5 min-w-0">
-                                <PlanTypeIcon type={plan.type ?? 'trip'} />
+                                <PlanTypeIcon type={plan.type ?? 'trip'} nightMode={nightMode} />
                                 <div className="min-w-0">
                                   <p className="text-sm text-[#1A1A1A] font-medium truncate">{plan.title}</p>
                                   {plan.notes && <p className="text-[11px] text-[#8A8A8A] mt-0.5 leading-relaxed">{plan.notes}</p>}

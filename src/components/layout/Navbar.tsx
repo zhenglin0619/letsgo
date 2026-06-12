@@ -3,10 +3,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MapPin, Plane, BedDouble, Utensils, LogOut, User, Users, Settings, ChevronDown, NotebookPen, Menu, X } from 'lucide-react';
+import { MapPin, Plane, BedDouble, Utensils, LogOut, User, Users, Settings, NotebookPen, Menu, X } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
 import CollaboratorModal from '@/components/ui/CollaboratorModal';
 import FuturePlanModal from '@/components/ui/FuturePlanModal';
+import SettingsModal from '@/components/ui/SettingsModal';
 
 function LetsGoLogo({ textDown = false }: { textDown?: boolean }) {
   return (
@@ -46,28 +47,14 @@ function LetsGoLogoTextOnly() {
 }
 
 function UserMenu() {
-  const { user, signOut, demoMode, toggleDemoMode, pendingInvites } = useTrips();
-  const [open, setOpen]               = useState(false);
-  const [nightMode, setNightMode]     = useState(false);
-  const [collabOpen, setCollabOpen]   = useState(false);
+  const { user, signOut, pendingInvites } = useTrips();
+  const [open, setOpen]                     = useState(false);
+  const [collabOpen, setCollabOpen]         = useState(false);
   const [settingsOpen, setSettingsOpen]     = useState(false);
   const [futurePlanOpen, setFuturePlanOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropPos, setDropPos] = useState({ top: 0, right: 0 });
-
-  useEffect(() => {
-    setNightMode(localStorage.getItem('nightMode') === 'true');
-  }, []);
-
-  function toggleNightMode() {
-    setNightMode(prev => {
-      const next = !prev;
-      localStorage.setItem('nightMode', String(next));
-      document.documentElement.classList.toggle('dark', next);
-      return next;
-    });
-  }
 
   function handleOpen() {
     if (btnRef.current) {
@@ -137,37 +124,12 @@ function UserMenu() {
       </button>
 
       <button
-        onClick={() => setSettingsOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
+        onClick={() => { setOpen(false); setSettingsOpen(true); }}
+        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
       >
-        <span className="flex items-center gap-2.5"><Settings size={14} />Settings</span>
-        <ChevronDown size={14} className={`transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`} />
+        <Settings size={14} />
+        Settings
       </button>
-
-      {settingsOpen && (
-        <div className="bg-[#F9F7F4]">
-          <button
-            onClick={toggleNightMode}
-            className="w-full flex items-center justify-between pl-8 pr-4 py-2 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F0ECE6] transition-colors"
-          >
-            <span>Night Mode</span>
-            <div className={`w-8 rounded-full transition-colors flex items-center px-0.5 ${nightMode ? 'bg-[#C87A53]' : 'bg-[#D4CFC8]'}`}
-              style={{ height: '18px' }}>
-              <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${nightMode ? 'translate-x-3.5' : 'translate-x-0'}`} />
-            </div>
-          </button>
-          <button
-            onClick={toggleDemoMode}
-            className="w-full flex items-center justify-between pl-8 pr-4 py-2 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F0ECE6] transition-colors"
-          >
-            <span>Demo Mode</span>
-            <div className={`w-8 rounded-full transition-colors flex items-center px-0.5 ${demoMode ? 'bg-[#C87A53]' : 'bg-[#D4CFC8]'}`}
-              style={{ height: '18px' }}>
-              <div className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${demoMode ? 'translate-x-3.5' : 'translate-x-0'}`} />
-            </div>
-          </button>
-        </div>
-      )}
 
       <div className="mx-4 my-1 h-px bg-[#F0ECE6]" />
       <button
@@ -200,6 +162,7 @@ function UserMenu() {
       {open && createPortal(dropdown, document.body)}
       <CollaboratorModal open={collabOpen} onClose={() => setCollabOpen(false)} />
       <FuturePlanModal open={futurePlanOpen} onClose={() => setFuturePlanOpen(false)} />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>
   );
 }
