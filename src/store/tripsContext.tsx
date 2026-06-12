@@ -12,6 +12,16 @@ export interface Collaborator {
   email: string;
 }
 
+export interface PendingInvite {
+  ownerId: string;
+  ownerEmail: string;
+}
+
+export interface SentInvite {
+  inviteeId: string;
+  inviteeEmail: string;
+}
+
 interface TripsContextValue {
   user: User | null;
   authLoading: boolean;
@@ -21,7 +31,11 @@ interface TripsContextValue {
   standaloneRestaurants: DiningLog[];
   standaloneHotels: HotelLog[];
   collaborators: Collaborator[];
-  addCollaborator:    (email: string) => Promise<string | null>; // returns error string or null
+  pendingInvites: PendingInvite[];
+  sentInvites: SentInvite[];
+  sendInvite:         (email: string) => Promise<string | null>;
+  acceptInvite:       (ownerId: string) => Promise<void>;
+  rejectInvite:       (ownerId: string) => Promise<void>;
   removeCollaborator: (collaboratorUserId: string) => Promise<void>;
   addTrip:                    (t: Trip)        => void;
   updateTrip:                 (t: Trip)        => void;
@@ -64,7 +78,7 @@ interface HotelRow {
 // ── DB ↔ domain converters ────────────────────────────────────────────────────
 function tripToRow(t: Trip, userId: string): TripRow {
   return {
-    id: t.id, user_id: userId, title: t.title, cover_photo: t.coverPhoto,
+    id: t.id, user_id: t.ownerId ?? userId, title: t.title, cover_photo: t.coverPhoto,
     cover_photo_transform: t.coverPhotoTransform ?? null,
     start_date: t.startDate, end_date: t.endDate, countries: t.countries,
     city: t.city ?? null, photos: t.photos ?? [],
@@ -72,7 +86,7 @@ function tripToRow(t: Trip, userId: string): TripRow {
 }
 function rowToTrip(r: TripRow, diningLogs: DiningLog[], hotels: HotelLog[]): Trip {
   return {
-    id: r.id, title: r.title, coverPhoto: r.cover_photo,
+    id: r.id, ownerId: r.user_id, title: r.title, coverPhoto: r.cover_photo,
     ...(r.cover_photo_transform ? { coverPhotoTransform: r.cover_photo_transform } : {}),
     startDate: r.start_date, endDate: r.end_date, countries: r.countries,
     ...(r.city   ? { city:   r.city }   : {}),
@@ -82,7 +96,7 @@ function rowToTrip(r: TripRow, diningLogs: DiningLog[], hotels: HotelLog[]): Tri
 }
 function logToRow(d: DiningLog, userId: string, tripId: string | null): RestaurantRow {
   return {
-    id: d.id, user_id: userId, trip_id: tripId,
+    id: d.id, user_id: d.ownerId ?? userId, trip_id: tripId,
     restaurant_name: d.restaurantName, cuisine: d.cuisine,
     date: d.date, meal_type: d.time, total_expense: d.totalExpense,
     currency: d.currency, overall_rating: d.overallRating,
@@ -93,7 +107,7 @@ function logToRow(d: DiningLog, userId: string, tripId: string | null): Restaura
 }
 function rowToLog(r: RestaurantRow): DiningLog {
   return {
-    id: r.id, restaurantName: r.restaurant_name, cuisine: r.cuisine,
+    id: r.id, ownerId: r.user_id, restaurantName: r.restaurant_name, cuisine: r.cuisine,
     date: r.date, time: r.meal_type as DiningLog['time'],
     totalExpense: r.total_expense, currency: r.currency,
     overallRating: r.overall_rating, location: r.location,
@@ -105,7 +119,7 @@ function rowToLog(r: RestaurantRow): DiningLog {
 }
 function hotelToRow(h: HotelLog, userId: string, tripId: string | null): HotelRow {
   return {
-    id: h.id, user_id: userId, trip_id: tripId,
+    id: h.id, user_id: h.ownerId ?? userId, trip_id: tripId,
     hotel_name: h.hotelName, check_in: h.checkIn, check_out: h.checkOut,
     price_per_night: h.pricePerNight, currency: h.currency, rating: h.rating,
     room_type: h.roomType ?? null, view_type: h.viewType ?? null,
@@ -116,7 +130,7 @@ function hotelToRow(h: HotelLog, userId: string, tripId: string | null): HotelRo
 }
 function rowToHotel(r: HotelRow): HotelLog {
   return {
-    id: r.id, hotelName: r.hotel_name, checkIn: r.check_in, checkOut: r.check_out,
+    id: r.id, ownerId: r.user_id, hotelName: r.hotel_name, checkIn: r.check_in, checkOut: r.check_out,
     pricePerNight: r.price_per_night, currency: r.currency, rating: r.rating,
     location: r.location, photos: r.photos, notes: r.notes,
     ...(r.photo_transform ? { photoTransform: r.photo_transform } : {}),
@@ -130,20 +144,50 @@ function rowToHotel(r: HotelRow): HotelLog {
 async function loadCollaborators(userId: string): Promise<Collaborator[]> {
   const { data: rows } = await supabase
     .from('collaborators')
-    .select('collaborator_id')
-    .eq('owner_id', userId);
+    .select('owner_id, collaborator_id')
+    .eq('status', 'accepted')
+    .or(`owner_id.eq.${userId},collaborator_id.eq.${userId}`);
   if (!rows || rows.length === 0) return [];
-  const ids = rows.map(r => r.collaborator_id as string);
+  const otherIds = [...new Set(rows.map(r =>
+    r.owner_id === userId ? r.collaborator_id : r.owner_id
+  ) as string[])];
   const { data: profiles } = await supabase
-    .from('profiles').select('id, email').in('id', ids);
+    .from('profiles').select('id, email').in('id', otherIds);
   return (profiles ?? []).map(p => ({ userId: p.id as string, email: p.email as string }));
 }
 
+async function loadPendingInvites(userId: string): Promise<PendingInvite[]> {
+  const { data: rows } = await supabase
+    .from('collaborators').select('owner_id')
+    .eq('collaborator_id', userId).eq('status', 'pending');
+  if (!rows || rows.length === 0) return [];
+  const ownerIds = rows.map(r => r.owner_id as string);
+  const { data: profiles } = await supabase
+    .from('profiles').select('id, email').in('id', ownerIds);
+  return (profiles ?? []).map(p => ({ ownerId: p.id as string, ownerEmail: p.email as string }));
+}
+
+async function loadSentInvites(userId: string): Promise<SentInvite[]> {
+  const { data: rows } = await supabase
+    .from('collaborators').select('collaborator_id')
+    .eq('owner_id', userId).eq('status', 'pending');
+  if (!rows || rows.length === 0) return [];
+  const inviteeIds = rows.map(r => r.collaborator_id as string);
+  const { data: profiles } = await supabase
+    .from('profiles').select('id, email').in('id', inviteeIds);
+  return (profiles ?? []).map(p => ({ inviteeId: p.id as string, inviteeEmail: p.email as string }));
+}
+
 async function loadUserData(userId: string) {
-  // Include data from collaborators (users who added current user)
   const { data: sharedRows } = await supabase
-    .from('collaborators').select('owner_id').eq('collaborator_id', userId);
-  const ownerIds = [userId, ...(sharedRows?.map(r => r.owner_id as string) ?? [])];
+    .from('collaborators')
+    .select('owner_id, collaborator_id')
+    .eq('status', 'accepted')
+    .or(`owner_id.eq.${userId},collaborator_id.eq.${userId}`);
+  const otherIds = (sharedRows ?? []).map(r =>
+    r.owner_id === userId ? r.collaborator_id : r.owner_id
+  ) as string[];
+  const ownerIds = [userId, ...new Set(otherIds)];
 
   const [tripsRes, restRes, hotelRes] = await Promise.all([
     supabase.from('trips').select('id,user_id,title,cover_photo,cover_photo_transform,start_date,end_date,countries,city,photos').in('user_id', ownerIds),
@@ -168,35 +212,46 @@ async function loadUserData(userId: string) {
   };
 }
 
-async function syncTrip(userId: string, t: Trip): Promise<void> {
+// editorId = who is saving right now (may differ from ownerId when a collaborator edits)
+async function syncTrip(ownerId: string, t: Trip, editorId: string = ownerId): Promise<void> {
   const now = new Date().toISOString();
 
   const { error: te } = await supabase.from('trips')
-    .upsert({ ...tripToRow(t, userId), updated_at: now });
+    .upsert({ ...tripToRow(t, ownerId), updated_at: now });
   if (te) { console.warn('[supabase] trip sync:', te.message); return; }
+
+  const restIds   = t.diningLogs.map(d => d.id);
+  const hotelIds  = t.hotels.map(h => h.id);
+  const sentinel  = ['00000000-0000-0000-0000-000000000000']; // prevents empty IN()
 
   if (t.diningLogs.length > 0) {
     const { error: re } = await supabase.from('restaurants')
-      .upsert(t.diningLogs.map(d => ({ ...logToRow(d, userId, t.id), updated_at: now })));
+      .upsert(t.diningLogs.map(d => ({ ...logToRow(d, ownerId, t.id), updated_at: now })));
     if (re) console.warn('[supabase] restaurant sync:', re.message);
-    const ids = t.diningLogs.map(d => d.id);
+  }
+  // Delete removed logs for the trip owner
+  await supabase.from('restaurants').delete()
+    .eq('user_id', ownerId).eq('trip_id', t.id)
+    .not('id', 'in', `(${[...restIds, ...sentinel].join(',')})`);
+  // Also delete removed logs the collaborator added themselves
+  if (editorId !== ownerId) {
     await supabase.from('restaurants').delete()
-      .eq('user_id', userId).eq('trip_id', t.id)
-      .not('id', 'in', `(${ids.join(',')})`);
-  } else {
-    await supabase.from('restaurants').delete().eq('user_id', userId).eq('trip_id', t.id);
+      .eq('user_id', editorId).eq('trip_id', t.id)
+      .not('id', 'in', `(${[...restIds, ...sentinel].join(',')})`);
   }
 
   if (t.hotels.length > 0) {
     const { error: he } = await supabase.from('hotels')
-      .upsert(t.hotels.map(h => ({ ...hotelToRow(h, userId, t.id), updated_at: now })));
+      .upsert(t.hotels.map(h => ({ ...hotelToRow(h, ownerId, t.id), updated_at: now })));
     if (he) console.warn('[supabase] hotel sync:', he.message);
-    const ids = t.hotels.map(h => h.id);
+  }
+  await supabase.from('hotels').delete()
+    .eq('user_id', ownerId).eq('trip_id', t.id)
+    .not('id', 'in', `(${[...hotelIds, ...sentinel].join(',')})`);
+  if (editorId !== ownerId) {
     await supabase.from('hotels').delete()
-      .eq('user_id', userId).eq('trip_id', t.id)
-      .not('id', 'in', `(${ids.join(',')})`);
-  } else {
-    await supabase.from('hotels').delete().eq('user_id', userId).eq('trip_id', t.id);
+      .eq('user_id', editorId).eq('trip_id', t.id)
+      .not('id', 'in', `(${[...hotelIds, ...sentinel].join(',')})`);
   }
 }
 
@@ -237,7 +292,9 @@ export function TripsProvider({ children }: { children: ReactNode }) {
   const [trips, setTrips]                       = useState<Trip[]>([]);
   const [standaloneRestaurants, setStandalone]  = useState<DiningLog[]>([]);
   const [standaloneHotels, setStandaloneHotels] = useState<HotelLog[]>([]);
-  const [collaborators, setCollaborators]       = useState<Collaborator[]>([]);
+  const [collaborators, setCollaborators]   = useState<Collaborator[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [sentInvites, setSentInvites]       = useState<SentInvite[]>([]);
 
   const [demoMode, setDemoMode]                         = useState(false);
   useEffect(() => { setImageUtilsDemoMode(demoMode); }, [demoMode]);
@@ -264,19 +321,25 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         if (u) {
           await supabase.from('profiles')
             .upsert({ id: u.id, email: u.email }, { onConflict: 'id' });
-          const [data, collabs] = await Promise.all([
+          const [data, collabs, pending, sent] = await Promise.all([
             loadUserData(u.id),
             loadCollaborators(u.id),
+            loadPendingInvites(u.id),
+            loadSentInvites(u.id),
           ]);
           setTrips(data.trips);
           setStandalone(data.standalone);
           setStandaloneHotels(data.standaloneHotels);
           setCollaborators(collabs);
+          setPendingInvites(pending);
+          setSentInvites(sent);
         } else {
           setTrips([]);
           setStandalone([]);
           setStandaloneHotels([]);
           setCollaborators([]);
+          setPendingInvites([]);
+          setSentInvites([]);
         }
       } catch (err) {
         console.error('[auth] session error:', err);
@@ -310,6 +373,28 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Refresh collaboration data when user returns to the tab so the inviter
+  // automatically sees new trips once their invite is accepted.
+  useEffect(() => {
+    if (!user) return;
+    async function onFocus() {
+      const [collabs, data, pending, sent] = await Promise.all([
+        loadCollaborators(user!.id),
+        loadUserData(user!.id),
+        loadPendingInvites(user!.id),
+        loadSentInvites(user!.id),
+      ]);
+      setCollaborators(collabs);
+      setTrips(data.trips);
+      setStandalone(data.standalone);
+      setStandaloneHotels(data.standaloneHotels);
+      setPendingInvites(pending);
+      setSentInvites(sent);
+    }
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [user?.id]);
+
   const effectiveTrips            = demoMode ? demoTrips            : trips;
   const effectiveStandalone       = demoMode ? demoStandalone       : standaloneRestaurants;
   const effectiveStandaloneHotels = demoMode ? demoStandaloneHotels : standaloneHotels;
@@ -325,32 +410,58 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       standaloneHotels:     effectiveStandaloneHotels,
       collaborators,
 
-      addCollaborator: async (email) => {
+      pendingInvites,
+      sentInvites,
+
+      sendInvite: async (email) => {
         if (!user) return 'Not signed in';
-        if (email.toLowerCase() === user.email?.toLowerCase()) return 'Cannot add yourself';
+        if (email.toLowerCase() === user.email?.toLowerCase()) return 'Cannot invite yourself';
 
         const { data: profile, error } = await supabase
           .from('profiles').select('id, email').eq('email', email).single();
         if (error || !profile) return 'No account found with that email';
 
-        const alreadyAdded = collaborators.some(c => c.userId === profile.id);
-        if (alreadyAdded) return 'Already a collaborator';
+        if (collaborators.some(c => c.userId === profile.id)) return 'Already a collaborator';
+        if (sentInvites.some(s => s.inviteeId === profile.id)) return 'Invite already sent';
 
-        // Bidirectional: both see each other's data
-        const { error: insErr } = await supabase.from('collaborators').insert([
-          { owner_id: user.id,   collaborator_id: profile.id },
-          { owner_id: profile.id, collaborator_id: user.id  },
-        ]);
-        if (insErr) return 'Failed to add collaborator';
+        const { error: insErr } = await supabase.from('collaborators').insert({
+          owner_id: user.id, collaborator_id: profile.id, status: 'pending',
+        });
+        if (insErr) { console.error('[sendInvite]', insErr); return insErr.message; }
 
-        setCollaborators(prev => [...prev, { userId: profile.id as string, email: profile.email as string }]);
-        // Reload data to include collaborator's records
+        setSentInvites(prev => [...prev, { inviteeId: profile.id as string, inviteeEmail: profile.email as string }]);
+        return null;
+      },
+
+      acceptInvite: async (ownerId) => {
+        if (!user) return;
+        const { data: updated, error } = await supabase.from('collaborators')
+          .update({ status: 'accepted' })
+          .eq('owner_id', ownerId)
+          .eq('collaborator_id', user.id)
+          .select();
+        if (error) { console.error('[acceptInvite] error:', error); return; }
+        if (!updated || updated.length === 0) { console.error('[acceptInvite] 0 rows updated — likely RLS blocking UPDATE'); return; }
+
+        const invite = pendingInvites.find(p => p.ownerId === ownerId);
+        setPendingInvites(prev => prev.filter(p => p.ownerId !== ownerId));
+        if (invite) {
+          setCollaborators(prev => [...prev, { userId: ownerId, email: invite.ownerEmail }]);
+        }
         loadUserData(user.id).then(data => {
           setTrips(data.trips);
           setStandalone(data.standalone);
           setStandaloneHotels(data.standaloneHotels);
         });
-        return null;
+      },
+
+      rejectInvite: async (ownerId) => {
+        if (!user) return;
+        await supabase.from('collaborators')
+          .delete()
+          .eq('owner_id', ownerId)
+          .eq('collaborator_id', user.id);
+        setPendingInvites(prev => prev.filter(p => p.ownerId !== ownerId));
       },
 
       removeCollaborator: async (collaboratorUserId) => {
@@ -360,7 +471,7 @@ export function TripsProvider({ children }: { children: ReactNode }) {
           `and(owner_id.eq.${collaboratorUserId},collaborator_id.eq.${user.id})`
         );
         setCollaborators(prev => prev.filter(c => c.userId !== collaboratorUserId));
-        // Reload to remove their records from view
+        setSentInvites(prev => prev.filter(s => s.inviteeId !== collaboratorUserId));
         loadUserData(user.id).then(data => {
           setTrips(data.trips);
           setStandalone(data.standalone);
@@ -371,17 +482,18 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       addTrip: (t) => {
         if (demoMode) { setDemoTrips(p => [t, ...p]); return; }
         setTrips(p => [t, ...p]);
-        if (user) syncTrip(user.id, t).catch(e => console.warn('[supabase]', e));
+        if (user) syncTrip(user.id, t, user.id).catch(e => console.warn('[supabase]', e));
       },
       updateTrip: (t) => {
         if (demoMode) { setDemoTrips(p => p.map(x => x.id === t.id ? t : x)); return; }
         setTrips(p => p.map(x => x.id === t.id ? t : x));
-        if (user) syncTrip(user.id, t).catch(e => console.warn('[supabase]', e));
+        if (user) syncTrip(t.ownerId ?? user.id, t, user.id).catch(e => console.warn('[supabase]', e));
       },
       deleteTrip: (id) => {
         if (demoMode) { setDemoTrips(p => p.filter(x => x.id !== id)); return; }
+        const ownerId = trips.find(t => t.id === id)?.ownerId ?? user?.id ?? '';
         setTrips(p => p.filter(x => x.id !== id));
-        if (user) deleteTrip$(user.id, id);
+        if (user) deleteTrip$(ownerId, id);
       },
 
       addStandaloneRestaurant: (log) => {
@@ -392,12 +504,13 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       updateStandaloneRestaurant: (log) => {
         if (demoMode) { setDemoStandalone(p => p.map(x => x.id === log.id ? log : x)); return; }
         setStandalone(p => p.map(x => x.id === log.id ? log : x));
-        if (user) syncRestaurant(user.id, log, null);
+        if (user) syncRestaurant(log.ownerId ?? user.id, log, null);
       },
       deleteStandaloneRestaurant: (id) => {
         if (demoMode) { setDemoStandalone(p => p.filter(x => x.id !== id)); return; }
+        const ownerId = standaloneRestaurants.find(r => r.id === id)?.ownerId ?? user?.id ?? '';
         setStandalone(p => p.filter(x => x.id !== id));
-        if (user) deleteRestaurant$(user.id, id);
+        if (user) deleteRestaurant$(ownerId, id);
       },
 
       addStandaloneHotel: (h) => {
@@ -408,17 +521,20 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       updateStandaloneHotel: (h) => {
         if (demoMode) { setDemoStandaloneHotels(p => p.map(x => x.id === h.id ? h : x)); return; }
         setStandaloneHotels(p => p.map(x => x.id === h.id ? h : x));
-        if (user) syncHotel(user.id, h, null);
+        if (user) syncHotel(h.ownerId ?? user.id, h, null);
       },
       deleteStandaloneHotel: (id) => {
         if (demoMode) { setDemoStandaloneHotels(p => p.filter(x => x.id !== id)); return; }
+        const ownerId = standaloneHotels.find(h => h.id === id)?.ownerId ?? user?.id ?? '';
         setStandaloneHotels(p => p.filter(x => x.id !== id));
-        if (user) deleteHotel$(user.id, id);
+        if (user) deleteHotel$(ownerId, id);
       },
 
       signOut: async () => {
         setDemoMode(false);
         setCollaborators([]);
+        setPendingInvites([]);
+        setSentInvites([]);
         await supabase.auth.signOut();
       },
     }}>

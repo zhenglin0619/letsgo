@@ -46,7 +46,7 @@ function LetsGoLogoTextOnly() {
 }
 
 function UserMenu() {
-  const { user, signOut, demoMode, toggleDemoMode } = useTrips();
+  const { user, signOut, demoMode, toggleDemoMode, pendingInvites } = useTrips();
   const [open, setOpen]               = useState(false);
   const [nightMode, setNightMode]     = useState(false);
   const [collabOpen, setCollabOpen]   = useState(false);
@@ -114,8 +114,18 @@ function UserMenu() {
         onClick={() => { setOpen(false); setCollabOpen(true); }}
         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
       >
-        <Users size={14} />
+        <div className="relative">
+          <Users size={14} />
+          {pendingInvites.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#C87A53]" />
+          )}
+        </div>
         Collaborators
+        {pendingInvites.length > 0 && (
+          <span className="ml-auto text-[10px] font-semibold text-white bg-[#C87A53] rounded-full px-1.5 py-0.5 leading-none">
+            {pendingInvites.length}
+          </span>
+        )}
       </button>
 
       <button

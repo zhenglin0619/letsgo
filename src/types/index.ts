@@ -16,6 +16,7 @@ export interface Dish {
 
 export interface DiningLog {
   id: string;
+  ownerId?: string;
   restaurantName: string;
   cuisine: string;
   date: string;
@@ -32,6 +33,7 @@ export interface DiningLog {
 
 export interface HotelLog {
   id: string;
+  ownerId?: string;
   hotelName: string;
   checkIn: string;
   checkOut: string;
@@ -48,6 +50,7 @@ export interface HotelLog {
 
 export interface Trip {
   id: string;
+  ownerId?: string;
   title: string;
   coverPhoto: string;
   coverPhotoTransform?: PhotoTransform;

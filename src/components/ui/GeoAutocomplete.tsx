@@ -1,30 +1,12 @@
+/// <reference types="@types/google.maps" />
 'use client';
 import { useState, useRef, useEffect } from 'react';
-
-const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
-
-const COUNTRY_ALIASES: Record<string, string> = {
-  "People's Republic of China": 'China',
-  'Republic of China': 'Taiwan',
-  'United States of America': 'United States',
-  'United Kingdom of Great Britain and Northern Ireland': 'United Kingdom',
-  'Democratic People\'s Republic of Korea': 'North Korea',
-  'Republic of Korea': 'South Korea',
-  'Russian Federation': 'Russia',
-  'Islamic Republic of Iran': 'Iran',
-  'Syrian Arab Republic': 'Syria',
-  'Lao People\'s Democratic Republic': 'Laos',
-  'Plurinational State of Bolivia': 'Bolivia',
-  'Bolivarian Republic of Venezuela': 'Venezuela',
-};
-
-function normalizeCountry(name: string) {
-  return COUNTRY_ALIASES[name] ?? name;
-}
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 
 interface Suggestion {
   name: string;
-  country: string;
+  secondaryText: string;
+  prediction: google.maps.places.PlacePrediction;
 }
 
 interface Props {
@@ -33,7 +15,16 @@ interface Props {
   value: string;
   onChange: (v: string) => void;
   types: 'country' | 'place';
-  onSelectCountry?: (country: string) => void; // city search: also fills country
+  onSelectCountry?: (country: string) => void;
+}
+
+let placesLibPromise: Promise<google.maps.PlacesLibrary> | null = null;
+function ensurePlaces(): Promise<google.maps.PlacesLibrary> {
+  if (!placesLibPromise) {
+    setOptions({ key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '', v: 'weekly' });
+    placesLibPromise = importLibrary('places');
+  }
+  return placesLibPromise;
 }
 
 export default function GeoAutocomplete({ label, placeholder, value, onChange, types, onSelectCountry }: Props) {
@@ -41,6 +32,13 @@ export default function GeoAutocomplete({ label, placeholder, value, onChange, t
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionToken = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+
+  useEffect(() => {
+    ensurePlaces().then(({ AutocompleteSessionToken }) => {
+      sessionToken.current = new AutocompleteSessionToken();
+    });
+  }, []);
 
   useEffect(() => {
     function onOutside(e: MouseEvent) {
@@ -53,19 +51,28 @@ export default function GeoAutocomplete({ label, placeholder, value, onChange, t
   function handleChange(v: string) {
     onChange(v);
     if (timer.current) clearTimeout(timer.current);
-    if (!v.trim() || !TOKEN) { setSuggestions([]); setOpen(false); return; }
+    if (!v.trim()) { setSuggestions([]); setOpen(false); return; }
     timer.current = setTimeout(async () => {
+      const { AutocompleteSuggestion, AutocompleteSessionToken } = await ensurePlaces();
+      if (!sessionToken.current) sessionToken.current = new AutocompleteSessionToken();
       try {
-        const res = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(v)}.json?types=${types}&language=en&limit=6&proximity=ip&access_token=${TOKEN}`
-        );
-        const data = await res.json();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const items: Suggestion[] = (data.features ?? []).map((f: any) => ({
-          name: normalizeCountry(f.text ?? ''),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          country: normalizeCountry(f.context?.find((c: any) => c.id?.startsWith('country'))?.text ?? (types === 'country' ? f.text : '')),
-        })).filter((s: Suggestion) => s.name);
+        const includedPrimaryTypes = types === 'country'
+          ? ['country']
+          : ['locality', 'sublocality_level_1', 'administrative_area_level_1'];
+        const { suggestions: raw } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          input: v,
+          sessionToken: sessionToken.current,
+          language: 'en',
+          includedPrimaryTypes,
+        });
+        const items: Suggestion[] = raw
+          .filter(s => s.placePrediction != null)
+          .map(s => ({
+            name: s.placePrediction!.mainText?.toString() ?? '',
+            secondaryText: s.placePrediction!.secondaryText?.toString() ?? '',
+            prediction: s.placePrediction!,
+          }))
+          .filter(s => s.name);
         setSuggestions(items);
         setOpen(items.length > 0);
       } catch {
@@ -75,11 +82,28 @@ export default function GeoAutocomplete({ label, placeholder, value, onChange, t
     }, 250);
   }
 
-  function handleSelect(s: Suggestion) {
+  async function handleSelect(s: Suggestion) {
     onChange(s.name);
-    if (types === 'place' && s.country) onSelectCountry?.(s.country);
     setSuggestions([]);
     setOpen(false);
+
+    const { AutocompleteSessionToken } = await ensurePlaces();
+
+    if (types === 'place' && onSelectCountry) {
+      try {
+        const place = s.prediction.toPlace();
+        await place.fetchFields({ fields: ['addressComponents'] });
+        const comps = place.addressComponents ?? [];
+        const country = comps.find(c => c.types?.includes('country'))?.longText ?? '';
+        if (country) onSelectCountry(country);
+      } catch {
+        // fallback: last segment of secondary text is usually the country
+        const parts = s.secondaryText.split(', ');
+        if (parts.length > 0) onSelectCountry(parts[parts.length - 1]);
+      }
+    }
+
+    sessionToken.current = new AutocompleteSessionToken();
   }
 
   return (
@@ -105,8 +129,8 @@ export default function GeoAutocomplete({ label, placeholder, value, onChange, t
                 className="w-full text-left px-4 py-2.5 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
                 <span>{s.name}</span>
-                {s.country && s.country !== s.name && (
-                  <span className="text-[#8A8A8A] ml-1.5 text-xs">{s.country}</span>
+                {s.secondaryText && s.secondaryText !== s.name && (
+                  <span className="text-[#8A8A8A] ml-1.5 text-xs">{s.secondaryText}</span>
                 )}
               </button>
             </li>
