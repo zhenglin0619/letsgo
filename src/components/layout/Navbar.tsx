@@ -179,7 +179,7 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="navbar-glass fixed top-0 inset-x-0 z-[9999] flex items-center justify-between pl-2 pr-8 py-[9px]">
+    <header className="navbar-glass fixed top-0 inset-x-0 z-[9999] flex items-center justify-between pl-4 pr-8 py-[9px]">
       <LetsGoLogo />
       <nav className="flex items-center gap-6">
         {links.map(({ href, label, icon: Icon }) => {
