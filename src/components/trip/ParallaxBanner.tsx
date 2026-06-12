@@ -25,7 +25,15 @@ export default function ParallaxBanner({ trip }: Props) {
       {/* Parallax image layer */}
       <div ref={imgRef} className="absolute inset-0 scale-110" style={{ willChange: 'transform' }}>
         {trip.coverPhoto
-          ? <img src={trip.coverPhoto} alt={trip.title} className="w-full h-full object-cover" />
+          ? <img
+              src={trip.coverPhoto}
+              alt={trip.title}
+              className="w-full h-full object-cover"
+              style={trip.coverPhotoTransform ? {
+                transform: `translate(${trip.coverPhotoTransform.x}%, ${trip.coverPhotoTransform.y}%) scale(${trip.coverPhotoTransform.scale})`,
+                transformOrigin: 'center',
+              } : undefined}
+            />
           : <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/40 via-[#D4CFC6] to-[#4A5343]/30" />
         }
       </div>

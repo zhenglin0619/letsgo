@@ -209,6 +209,10 @@ export default function RestaurantsPage() {
                   src={dining.photos[0]}
                   alt={dining.restaurantName}
                   className="w-full h-full object-cover"
+                  style={dining.photoTransform ? {
+                    transform: `translate(${dining.photoTransform.x}%, ${dining.photoTransform.y}%) scale(${dining.photoTransform.scale})`,
+                    transformOrigin: 'center',
+                  } : undefined}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/30 via-[#E8E4DC] to-[#4A5343]/20" />

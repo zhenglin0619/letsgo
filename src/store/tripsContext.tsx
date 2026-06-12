@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { Trip, DiningLog, HotelLog } from '@/types';
+import { Trip, DiningLog, HotelLog, PhotoTransform } from '@/types';
 import { mockTrips, mockStandaloneRestaurants, mockStandaloneHotels } from '@/store/data';
 import { setDemoMode as setImageUtilsDemoMode } from '@/lib/imageUtils';
 
@@ -40,6 +40,7 @@ const TripsContext = createContext<TripsContextValue | null>(null);
 // ── DB row shapes ──────────────────────────────────────────────────────────────
 interface TripRow {
   id: string; user_id: string; title: string; cover_photo: string;
+  cover_photo_transform?: PhotoTransform | null;
   start_date: string; end_date: string; countries: string[];
   city: string | null; photos?: string[];
 }
@@ -48,20 +49,23 @@ interface RestaurantRow {
   restaurant_name: string; cuisine: string; date: string;
   meal_type: string; total_expense: number; currency: string;
   overall_rating: number; location: DiningLog['location'];
-  photos: string[]; dishes: DiningLog['dishes']; michelin_stars: number;
+  photos: string[]; photo_transform?: PhotoTransform | null;
+  dishes: DiningLog['dishes']; michelin_stars: number;
 }
 interface HotelRow {
   id: string; user_id: string; trip_id: string | null;
   hotel_name: string; check_in: string; check_out: string;
   price_per_night: number; currency: string; rating: number;
   room_type: string | null; view_type: string | null;
-  location: HotelLog['location']; photos: string[]; notes: string;
+  location: HotelLog['location']; photos: string[];
+  photo_transform?: PhotoTransform | null; notes: string;
 }
 
 // ── DB ↔ domain converters ────────────────────────────────────────────────────
 function tripToRow(t: Trip, userId: string): TripRow {
   return {
     id: t.id, user_id: userId, title: t.title, cover_photo: t.coverPhoto,
+    cover_photo_transform: t.coverPhotoTransform ?? null,
     start_date: t.startDate, end_date: t.endDate, countries: t.countries,
     city: t.city ?? null, photos: t.photos ?? [],
   };
@@ -69,6 +73,7 @@ function tripToRow(t: Trip, userId: string): TripRow {
 function rowToTrip(r: TripRow, diningLogs: DiningLog[], hotels: HotelLog[]): Trip {
   return {
     id: r.id, title: r.title, coverPhoto: r.cover_photo,
+    ...(r.cover_photo_transform ? { coverPhotoTransform: r.cover_photo_transform } : {}),
     startDate: r.start_date, endDate: r.end_date, countries: r.countries,
     ...(r.city   ? { city:   r.city }   : {}),
     ...(r.photos?.length ? { photos: r.photos } : {}),
@@ -81,8 +86,9 @@ function logToRow(d: DiningLog, userId: string, tripId: string | null): Restaura
     restaurant_name: d.restaurantName, cuisine: d.cuisine,
     date: d.date, meal_type: d.time, total_expense: d.totalExpense,
     currency: d.currency, overall_rating: d.overallRating,
-    location: d.location, photos: d.photos, dishes: d.dishes,
-    michelin_stars: d.michelinStars ?? 0,
+    location: d.location, photos: d.photos,
+    photo_transform: d.photoTransform ?? null,
+    dishes: d.dishes, michelin_stars: d.michelinStars ?? 0,
   };
 }
 function rowToLog(r: RestaurantRow): DiningLog {
@@ -91,7 +97,9 @@ function rowToLog(r: RestaurantRow): DiningLog {
     date: r.date, time: r.meal_type as DiningLog['time'],
     totalExpense: r.total_expense, currency: r.currency,
     overallRating: r.overall_rating, location: r.location,
-    photos: r.photos, dishes: r.dishes,
+    photos: r.photos,
+    ...(r.photo_transform ? { photoTransform: r.photo_transform } : {}),
+    dishes: r.dishes,
     ...(r.michelin_stars > 0 ? { michelinStars: r.michelin_stars as 1 | 2 | 3 } : {}),
   };
 }
@@ -101,7 +109,9 @@ function hotelToRow(h: HotelLog, userId: string, tripId: string | null): HotelRo
     hotel_name: h.hotelName, check_in: h.checkIn, check_out: h.checkOut,
     price_per_night: h.pricePerNight, currency: h.currency, rating: h.rating,
     room_type: h.roomType ?? null, view_type: h.viewType ?? null,
-    location: h.location, photos: h.photos, notes: h.notes,
+    location: h.location, photos: h.photos,
+    photo_transform: h.photoTransform ?? null,
+    notes: h.notes,
   };
 }
 function rowToHotel(r: HotelRow): HotelLog {
@@ -109,6 +119,7 @@ function rowToHotel(r: HotelRow): HotelLog {
     id: r.id, hotelName: r.hotel_name, checkIn: r.check_in, checkOut: r.check_out,
     pricePerNight: r.price_per_night, currency: r.currency, rating: r.rating,
     location: r.location, photos: r.photos, notes: r.notes,
+    ...(r.photo_transform ? { photoTransform: r.photo_transform } : {}),
     ...(r.room_type  ? { roomType:  r.room_type }  : {}),
     ...(r.view_type  ? { viewType:  r.view_type }  : {}),
   };
@@ -135,7 +146,7 @@ async function loadUserData(userId: string) {
   const ownerIds = [userId, ...(sharedRows?.map(r => r.owner_id as string) ?? [])];
 
   const [tripsRes, restRes, hotelRes] = await Promise.all([
-    supabase.from('trips').select('id,user_id,title,cover_photo,start_date,end_date,countries,city').in('user_id', ownerIds),
+    supabase.from('trips').select('id,user_id,title,cover_photo,cover_photo_transform,start_date,end_date,countries,city,photos').in('user_id', ownerIds),
     supabase.from('restaurants').select('*').in('user_id', ownerIds),
     supabase.from('hotels').select('*').in('user_id', ownerIds),
   ]);

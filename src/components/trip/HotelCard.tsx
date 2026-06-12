@@ -95,7 +95,15 @@ export default function HotelCard({ hotel, index, onClick, onEdit, onDelete }: P
     >
       <div className="relative h-48 overflow-hidden">
         {hotel.photos[0] ? (
-          <img src={hotel.photos[0]} alt={hotel.hotelName} className="w-full h-full object-cover" />
+          <img
+            src={hotel.photos[0]}
+            alt={hotel.hotelName}
+            className="w-full h-full object-cover"
+            style={hotel.photoTransform ? {
+              transform: `translate(${hotel.photoTransform.x}%, ${hotel.photoTransform.y}%) scale(${hotel.photoTransform.scale})`,
+              transformOrigin: 'center',
+            } : undefined}
+          />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#4A5343]/30 via-[#E8E4DC] to-[#C87A53]/20" />
         )}

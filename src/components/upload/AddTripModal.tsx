@@ -7,7 +7,8 @@ import { Trip } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
 import GeoAutocomplete from '@/components/ui/GeoAutocomplete';
 import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
-import { uploadPhoto, uploadDataUrl, deleteStoragePhoto } from '@/lib/imageUtils';
+import { uploadPhoto, deleteStoragePhoto } from '@/lib/imageUtils';
+import type { PhotoTransform } from '@/types';
 
 interface Props {
   open: boolean;
@@ -22,11 +23,13 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
   const isEdit = !!initialTrip;
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState<string>('');
+  const [coverTransform, setCoverTransform] = useState<PhotoTransform | undefined>(undefined);
   const [highlightPhotos, setHighlightPhotos] = useState<string[]>([]);
   const [step, setStep] = useState<'form' | 'done'>('form');
   const fileRef = useRef<HTMLInputElement>(null);
   const highlightFileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<DraggableImageHandle>(null);
+  const coverFileRef = useRef<File | null>(null);
 
   // Re-initialize form whenever the modal opens (or switches trip)
   useEffect(() => {
@@ -40,10 +43,13 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
         endDate:   initialTrip.endDate,
       });
       setCoverPreview(initialTrip.coverPhoto || '');
+      setCoverTransform(initialTrip.coverPhotoTransform);
       setHighlightPhotos(initialTrip.photos ?? []);
     } else {
       setForm(emptyForm);
       setCoverPreview('');
+      setCoverTransform(undefined);
+      coverFileRef.current = null;
       setHighlightPhotos([]);
     }
     setStep('form');
@@ -56,6 +62,8 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    coverFileRef.current = file;
+    setCoverTransform(undefined);
     const reader = new FileReader();
     reader.onload = () => setCoverPreview(reader.result as string);
     reader.readAsDataURL(file);
@@ -81,34 +89,41 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
 
   async function handleSubmit() {
     if (!isValid) return;
-    const photo = await uploadDataUrl(imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview);
-    if (isEdit && photo !== initialTrip!.coverPhoto) {
+    // Upload original file if the user just picked a new photo; keep URL for existing ones
+    let photoUrl = coverPreview;
+    if (coverPreview.startsWith('data:') && coverFileRef.current) {
+      photoUrl = await uploadPhoto(coverFileRef.current);
+    }
+    const transform = imgRef.current?.getTransform();
+    if (isEdit && photoUrl !== initialTrip!.coverPhoto) {
       deleteStoragePhoto(initialTrip!.coverPhoto);
     }
     if (isEdit) {
       updateTrip({
         ...initialTrip!,
-        title:      form.title.trim(),
-        countries:  [form.country.trim()],
-        city:       form.city.trim(),
-        startDate:  form.startDate,
-        endDate:    form.endDate,
-        coverPhoto: photo,
-        photos:     highlightPhotos,
+        title:               form.title.trim(),
+        countries:           [form.country.trim()],
+        city:                form.city.trim(),
+        startDate:           form.startDate,
+        endDate:             form.endDate,
+        coverPhoto:          photoUrl,
+        coverPhotoTransform: transform,
+        photos:              highlightPhotos,
       });
     } else {
       const id = `${form.city.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
       addTrip({
         id,
-        title:      form.title.trim(),
-        coverPhoto: photo,
-        startDate:  form.startDate,
-        endDate:    form.endDate,
-        countries:  [form.country.trim()],
-        city:       form.city.trim(),
-        photos:     highlightPhotos,
-        hotels:     [],
-        diningLogs: [],
+        title:               form.title.trim(),
+        coverPhoto:          photoUrl,
+        coverPhotoTransform: transform,
+        startDate:           form.startDate,
+        endDate:             form.endDate,
+        countries:           [form.country.trim()],
+        city:                form.city.trim(),
+        photos:              highlightPhotos,
+        hotels:              [],
+        diningLogs:          [],
       });
     }
     setStep('done');
@@ -250,7 +265,14 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                         />
                         {coverPreview ? (
                           <div className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
-                            <DraggableImage ref={imgRef} src={coverPreview} alt="Cover" onReplace={() => fileRef.current?.click()} />
+                            <DraggableImage
+                              ref={imgRef}
+                              src={coverPreview}
+                              alt="Cover"
+                              onReplace={() => fileRef.current?.click()}
+                              initialTransform={coverTransform}
+                              onTransformChange={t => setCoverTransform(t)}
+                            />
                           </div>
                         ) : (
                           <button

@@ -1,3 +1,9 @@
+export interface PhotoTransform {
+  x: number;     // translate X as % of element width (0 = centered)
+  y: number;     // translate Y as % of element height (0 = centered)
+  scale: number; // zoom level (1 = no zoom)
+}
+
 export interface Dish {
   id: string;
   name: string;
@@ -5,6 +11,7 @@ export interface Dish {
   rating: number; // 0–5
   notes: string;
   photo?: string;
+  photoTransform?: PhotoTransform;
 }
 
 export interface DiningLog {
@@ -18,6 +25,7 @@ export interface DiningLog {
   overallRating: number; // 0–5
   location: { lat: number; lng: number; city: string; country: string; address?: string };
   photos: string[];
+  photoTransform?: PhotoTransform;
   dishes: Dish[];
   michelinStars?: 1 | 2 | 3;
 }
@@ -32,6 +40,7 @@ export interface HotelLog {
   viewType?: string;
   location: { lat: number; lng: number; city: string; country: string; address?: string };
   photos: string[];
+  photoTransform?: PhotoTransform;
   notes: string;
   pricePerNight: number;
   currency: string;
@@ -41,6 +50,7 @@ export interface Trip {
   id: string;
   title: string;
   coverPhoto: string;
+  coverPhotoTransform?: PhotoTransform;
   startDate: string;
   endDate: string;
   countries: string[];

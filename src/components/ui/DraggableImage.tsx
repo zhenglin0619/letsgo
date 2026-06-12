@@ -2,49 +2,47 @@
 
 import { forwardRef, useRef, useState, useCallback, useEffect, useImperativeHandle } from 'react'
 import { ImagePlus, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react'
+import type { PhotoTransform } from '@/types'
 
 const MIN = 1, MAX = 4, STEP = 0.15
-const EXPORT_DPR = 2
 
 export interface DraggableImageHandle {
-  getCroppedImage(): Promise<string>
+  getTransform(): PhotoTransform
 }
 
 interface Props {
   src: string
   alt: string
   onReplace: () => void
-  /** Called after drag/zoom ends with a canvas-rendered data URL of the visible area. */
-  onCrop?: (dataUrl: string) => void
+  /** Called after drag/zoom ends with the current normalized transform. */
+  onTransformChange?: (t: PhotoTransform) => void
+  /** Restore a previously saved transform when this image loads. */
+  initialTransform?: PhotoTransform
   size?: 'sm' | 'lg'
 }
 
 const DraggableImage = forwardRef<DraggableImageHandle, Props>(
-  function DraggableImage({ src, alt, onReplace, onCrop, size = 'lg' }, ref) {
+  function DraggableImage({ src, alt, onReplace, onTransformChange, initialTransform, size = 'lg' }, ref) {
     const containerRef = useRef<HTMLDivElement>(null)
     const [isDragging, setIsDragging] = useState(false)
     const [scale, setScale] = useState(1)
     const [pos, setPos] = useState({ x: 0, y: 0 })
 
-    // All mutable interaction state; avoids stale closures in imperative listeners
+    // All mutable interaction state lives here to avoid stale closures
     const s = useRef({ scale: 1, pos: { x: 0, y: 0 }, dragging: false, startMouse: { x: 0, y: 0 }, startPos: { x: 0, y: 0 }, lastDist: 0 })
     s.current.scale = scale
     s.current.pos = pos
 
-    // Callback refs — always point to the latest value without re-running effects
-    const srcRef = useRef(src)
-    srcRef.current = src
-    const onCropRef = useRef(onCrop)
-    onCropRef.current = onCrop
+    // Callback refs — always current, no re-run needed
+    const onTransformChangeRef = useRef(onTransformChange)
+    onTransformChangeRef.current = onTransformChange
+    const initialTransformRef = useRef(initialTransform)
+    initialTransformRef.current = initialTransform
 
-    // Track the last URL we produced via canvas so we don't reset the transform
-    // when that exact URL is fed back as the new `src` by the parent.
-    const lastCroppedRef = useRef<string | null>(null)
+    // Debounce timer
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    // Debounce timer for zoom-button and wheel crops
-    const cropTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-    // ── clamp helper (reads from stable ref) ──────────────────────────────────
+    // ── clamp helper ──────────────────────────────────────────────────────────
     const clampFn = useRef((x: number, y: number, sc: number) => {
       const el = containerRef.current
       if (!el) return { x, y }
@@ -54,70 +52,58 @@ const DraggableImage = forwardRef<DraggableImageHandle, Props>(
       return { x: Math.max(-mx, Math.min(mx, x)), y: Math.max(-my, Math.min(my, y)) }
     })
 
-    // ── canvas crop ───────────────────────────────────────────────────────────
-    const cropToDataURL = (sc: number, p: { x: number; y: number }): Promise<string> => {
-      const currentSrc = srcRef.current
+    // ── pixel ↔ percentage conversions ───────────────────────────────────────
+    function toTransform(pos: { x: number; y: number }, sc: number): PhotoTransform {
       const el = containerRef.current
-
-      // canvas.toDataURL() throws "operation is insecure" for cross-origin images.
-      // FileReader uploads are always data: URLs (safe); external https: URLs would
-      // taint the canvas, so we skip cropping and return the original URL as-is.
-      if (!el || (sc === 1 && p.x === 0 && p.y === 0) || !currentSrc.startsWith('data:')) {
-        return Promise.resolve(currentSrc)
-      }
-
-      const { width: cw, height: ch } = el.getBoundingClientRect()
-      return new Promise<string>(resolve => {
-        const img = new Image()
-        img.onload = () => {
-          try {
-            const canvas = document.createElement('canvas')
-            canvas.width = Math.round(cw * EXPORT_DPR)
-            canvas.height = Math.round(ch * EXPORT_DPR)
-            const ctx = canvas.getContext('2d')!
-            // Replicate object-cover centering, then apply user transform
-            const coverScale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight)
-            const drawW = img.naturalWidth * coverScale
-            const drawH = img.naturalHeight * coverScale
-            ctx.scale(EXPORT_DPR, EXPORT_DPR)
-            ctx.translate(cw / 2 + p.x, ch / 2 + p.y)
-            ctx.scale(sc, sc)
-            ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH)
-            resolve(canvas.toDataURL('image/jpeg', 0.9))
-          } catch {
-            resolve(currentSrc)
-          }
-        }
-        img.onerror = () => resolve(currentSrc)
-        img.src = currentSrc
-      })
+      if (!el) return { x: 0, y: 0, scale: sc }
+      const { width: w, height: h } = el.getBoundingClientRect()
+      if (w === 0 || h === 0) return { x: 0, y: 0, scale: sc }
+      return { x: pos.x / w * 100, y: pos.y / h * 100, scale: sc }
     }
 
-    // Expose imperative API so modals can call getCroppedImage() at submit time
-    useImperativeHandle(ref, () => ({
-      getCroppedImage: () => cropToDataURL(s.current.scale, s.current.pos),
-    }), []) // stable — reads everything through refs
+    function fromTransform(t: PhotoTransform): { x: number; y: number } {
+      const el = containerRef.current
+      if (!el) return { x: 0, y: 0 }
+      const { width: w, height: h } = el.getBoundingClientRect()
+      return { x: t.x * w / 100, y: t.y * h / 100 }
+    }
 
-    // ── schedule a debounced onCrop ───────────────────────────────────────────
-    const scheduleOnCrop = (sc: number, p: { x: number; y: number }, delay = 0) => {
-      if (!onCropRef.current) return
-      if (cropTimerRef.current) clearTimeout(cropTimerRef.current)
-      cropTimerRef.current = setTimeout(() => {
-        cropToDataURL(sc, p).then(url => {
-          lastCroppedRef.current = url
-          onCropRef.current?.(url)
-        })
+    // ── expose imperative handle ──────────────────────────────────────────────
+    useImperativeHandle(ref, () => ({
+      getTransform: () => toTransform(s.current.pos, s.current.scale),
+    }), [])
+
+    // ── schedule debounced onTransformChange ──────────────────────────────────
+    const scheduleChange = (sc: number, p: { x: number; y: number }, delay = 0) => {
+      if (!onTransformChangeRef.current) return
+      if (timerRef.current) clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => {
+        const t = toTransform(p, sc)
+        onTransformChangeRef.current?.(t)
       }, delay)
     }
 
-    // ── reset src only when it's a genuinely new image, not our own crop ──────
+    // ── restore saved transform when src changes ──────────────────────────────
     useEffect(() => {
-      if (src === lastCroppedRef.current) return
-      setScale(1)
-      setPos({ x: 0, y: 0 })
-      s.current.scale = 1
-      s.current.pos = { x: 0, y: 0 }
-    }, [src])
+      const t = initialTransformRef.current
+      if (!t || (t.scale === 1 && t.x === 0 && t.y === 0)) {
+        s.current.scale = 1
+        s.current.pos = { x: 0, y: 0 }
+        setScale(1)
+        setPos({ x: 0, y: 0 })
+        return
+      }
+      // Use rAF so the container has its layout dimensions before we convert
+      const raf = requestAnimationFrame(() => {
+        const pxPos = fromTransform(t)
+        const clamped = clampFn.current(pxPos.x, pxPos.y, t.scale)
+        s.current.scale = t.scale
+        s.current.pos = clamped
+        setScale(t.scale)
+        setPos(clamped)
+      })
+      return () => cancelAnimationFrame(raf)
+    }, [src]) // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── imperative pointer/wheel listeners ────────────────────────────────────
     useEffect(() => {
@@ -146,7 +132,7 @@ const DraggableImage = forwardRef<DraggableImageHandle, Props>(
         if (!s.current.dragging) return
         s.current.dragging = false
         setIsDragging(false)
-        scheduleOnCrop(s.current.scale, s.current.pos)
+        scheduleChange(s.current.scale, s.current.pos)
       }
       const onWheel = (e: WheelEvent) => {
         e.preventDefault()
@@ -156,7 +142,7 @@ const DraggableImage = forwardRef<DraggableImageHandle, Props>(
         s.current.pos = newPos
         setScale(newScale)
         setPos({ ...newPos })
-        scheduleOnCrop(newScale, newPos, 500) // debounced — fires after scrolling stops
+        scheduleChange(newScale, newPos, 500)
       }
       const onTouchStart = (e: TouchEvent) => {
         if (e.touches.length === 1) {
@@ -202,7 +188,7 @@ const DraggableImage = forwardRef<DraggableImageHandle, Props>(
         s.current.dragging = false
         s.current.lastDist = 0
         setIsDragging(false)
-        scheduleOnCrop(s.current.scale, s.current.pos)
+        scheduleChange(s.current.scale, s.current.pos)
       }
 
       el.addEventListener('mousedown', onMouseDown)
@@ -231,7 +217,7 @@ const DraggableImage = forwardRef<DraggableImageHandle, Props>(
       s.current.pos = newPos
       setScale(newScale)
       setPos({ ...newPos })
-      scheduleOnCrop(newScale, newPos, 300) // debounced — fires after button mashing stops
+      scheduleChange(newScale, newPos, 300)
     }, [])
 
     const reset = useCallback(() => {
@@ -239,6 +225,7 @@ const DraggableImage = forwardRef<DraggableImageHandle, Props>(
       s.current.pos = { x: 0, y: 0 }
       setScale(1)
       setPos({ x: 0, y: 0 })
+      scheduleChange(1, { x: 0, y: 0 })
     }, [])
 
     const isDefault = scale === 1 && pos.x === 0 && pos.y === 0

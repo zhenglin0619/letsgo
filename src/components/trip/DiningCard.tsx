@@ -93,6 +93,10 @@ export default function DiningCard({ log, index, onClick, onEdit, onDelete }: Pr
             src={log.photos[0]}
             alt={log.restaurantName}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            style={log.photoTransform ? {
+              transform: `translate(${log.photoTransform.x}%, ${log.photoTransform.y}%) scale(${log.photoTransform.scale})`,
+              transformOrigin: 'center',
+            } : undefined}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/30 via-[#E8E4DC] to-[#4A5343]/20" />

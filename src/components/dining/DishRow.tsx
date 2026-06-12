@@ -30,7 +30,15 @@ export default function DishRow({ dish, index }: Props) {
         <div className="flex-shrink-0 w-[80px] h-[80px] rounded-lg overflow-hidden bg-[#F0ECE6]">
           {dish.photo ? (
             <button onClick={() => setLightbox(true)} className="w-full h-full relative group/img block">
-              <img src={dish.photo} alt={dish.name} className="w-full h-full object-cover dish-thumb" />
+              <img
+                src={dish.photo}
+                alt={dish.name}
+                className="w-full h-full object-cover dish-thumb"
+                style={dish.photoTransform ? {
+                  transform: `translate(${dish.photoTransform.x}%, ${dish.photoTransform.y}%) scale(${dish.photoTransform.scale})`,
+                  transformOrigin: 'center',
+                } : undefined}
+              />
               <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
                 <ZoomIn size={16} className="text-white" />
               </div>

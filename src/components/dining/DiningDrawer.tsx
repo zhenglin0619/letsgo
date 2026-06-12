@@ -41,7 +41,7 @@ function DishEditRow({
     if (!file) return;
     e.target.value = '';
     if (dish.photo) deleteStoragePhoto(dish.photo);
-    uploadPhoto(file).then(url => onChange({ ...dish, photo: url }));
+    uploadPhoto(file).then(url => onChange({ ...dish, photo: url, photoTransform: undefined }));
   }
 
   return (
@@ -64,7 +64,8 @@ function DishEditRow({
               src={dish.photo}
               alt={dish.name}
               onReplace={() => fileRef.current?.click()}
-              onCrop={url => onChange({ ...dish, photo: url })}
+              onTransformChange={t => onChange({ ...dish, photoTransform: t })}
+              initialTransform={dish.photoTransform}
               size="sm"
             />
           </div>
@@ -132,6 +133,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
   const drawerRef = useRef<HTMLDivElement>(null);
   const addFileRef = useRef<HTMLInputElement>(null);
   const addImgRef = useRef<DraggableImageHandle>(null);
+  const addPhotoFileRef = useRef<File | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [editMode, setEditMode]           = useState(false);
   const [menuOpen, setMenuOpen]           = useState(false);
@@ -144,10 +146,11 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
+    addPhotoFileRef.current = file;
     fileToDataUrl(file).then(url => setAddForm(f => ({ ...f, photo: url })));
   }
 
-  useEffect(() => { if (!open) { setEditMode(false); setAddForm(emptyDishForm); setConfirmDelete(false); setSavedToast(false); setMenuOpen(false); } }, [open]);
+  useEffect(() => { if (!open) { setEditMode(false); setAddForm(emptyDishForm); addPhotoFileRef.current = null; setConfirmDelete(false); setSavedToast(false); setMenuOpen(false); } }, [open]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -198,9 +201,13 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
 
   async function handleAddDish() {
     if (!addForm.name.trim()) return;
-    const photo = addForm.photo
-      ? await uploadDataUrl(addImgRef.current ? await addImgRef.current.getCroppedImage() : addForm.photo)
-      : undefined;
+    let photo: string | undefined;
+    if (addForm.photo) {
+      photo = addPhotoFileRef.current
+        ? await uploadPhoto(addPhotoFileRef.current)
+        : await uploadDataUrl(addForm.photo); // fallback for any existing data URL
+    }
+    const photoTransform = photo ? addImgRef.current?.getTransform() : undefined;
     const newDish: Dish = {
       id: `dish-${Date.now()}`,
       name: addForm.name.trim(),
@@ -208,9 +215,11 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
       rating: parseFloat(addForm.rating) || 0,
       notes: addForm.notes.trim(),
       ...(photo ? { photo } : {}),
+      ...(photoTransform ? { photoTransform } : {}),
     };
     setLocalDishes(prev => [...prev, newDish]);
     setAddForm(emptyDishForm);
+    addPhotoFileRef.current = null;
   }
 
   if (!log) return null;
@@ -255,7 +264,15 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
               {/* Cover photo */}
               <div className="h-52 overflow-hidden relative">
                 {log.photos[0] ? (
-                  <img src={log.photos[0]} alt={log.restaurantName} className="w-full h-full object-cover" />
+                  <img
+                    src={log.photos[0]}
+                    alt={log.restaurantName}
+                    className="w-full h-full object-cover"
+                    style={log.photoTransform ? {
+                      transform: `translate(${log.photoTransform.x}%, ${log.photoTransform.y}%) scale(${log.photoTransform.scale})`,
+                      transformOrigin: 'center',
+                    } : undefined}
+                  />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/30 via-[#E8E4DC] to-[#4A5343]/20 flex items-end px-6 pb-4">
                     <div>

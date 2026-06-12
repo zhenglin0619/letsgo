@@ -8,7 +8,8 @@ import { DiningLog } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
 import type { LocatedPlace } from '@/components/ui/AddressSearchBox';
 import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
-import { uploadDataUrl, deleteStoragePhoto } from '@/lib/imageUtils';
+import { uploadPhoto, deleteStoragePhoto } from '@/lib/imageUtils';
+import type { PhotoTransform } from '@/types';
 
 const AddressSearchBox = dynamic(() => import('@/components/ui/AddressSearchBox'), {
   ssr: false,
@@ -52,10 +53,12 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
   const isEdit = !!initialDining;
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState('');
+  const [coverTransform, setCoverTransform] = useState<PhotoTransform | undefined>(undefined);
   const [step, setStep] = useState<'form' | 'done'>('form');
   const [geocoded, setGeocoded] = useState<{ lat: number; lng: number; city: string; country: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<DraggableImageHandle>(null);
+  const coverFileRef = useRef<File | null>(null);
   const isSelectingRef = useRef(false);
 
   const initialDiningRef = useRef(initialDining);
@@ -64,7 +67,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
   defaultTripIdRef.current = defaultTripId;
 
   useEffect(() => {
-    if (!open) { setForm(emptyForm); setCoverPreview(''); setStep('form'); setGeocoded(null); return; }
+    if (!open) { setForm(emptyForm); setCoverPreview(''); setCoverTransform(undefined); coverFileRef.current = null; setStep('form'); setGeocoded(null); return; }
     const init = initialDiningRef.current;
     if (init) {
       const { log, tripId } = init;
@@ -83,10 +86,13 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
         tripId,
       });
       setCoverPreview(log.photos[0] ?? '');
+      setCoverTransform(log.photoTransform);
       setGeocoded({ lat: log.location.lat, lng: log.location.lng, city: log.location.city, country: log.location.country });
     } else {
       setForm({ ...emptyForm, tripId: defaultTripIdRef.current ?? '' });
       setCoverPreview('');
+      setCoverTransform(undefined);
+      coverFileRef.current = null;
       setGeocoded(null);
     }
     setStep('form');
@@ -100,6 +106,8 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    coverFileRef.current = file;
+    setCoverTransform(undefined);
     const reader = new FileReader();
     reader.onload = () => setCoverPreview(reader.result as string);
     reader.readAsDataURL(file);
@@ -118,9 +126,13 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
 
   async function handleSubmit() {
     if (!isValid) return;
-    const photo = coverPreview
-      ? await uploadDataUrl(imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview)
-      : null;
+    let photo: string | null = null;
+    if (coverPreview) {
+      photo = coverPreview.startsWith('data:') && coverFileRef.current
+        ? await uploadPhoto(coverFileRef.current)
+        : coverPreview;
+    }
+    const transform = imgRef.current?.getTransform();
     if (photo && initialDining?.log.photos[0] && photo !== initialDining.log.photos[0]) {
       deleteStoragePhoto(initialDining.log.photos[0]);
     }
@@ -161,6 +173,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
       overallRating: parseFloat(form.rating) || 0,
       location,
       photos: photo ? [photo] : (initialDining?.log.photos ?? []),
+      photoTransform: transform,
       dishes: initialDining?.log.dishes ?? [],
       ...(form.michelinStars > 0 ? { michelinStars: form.michelinStars as 1 | 2 | 3 } : {}),
     };
@@ -261,7 +274,14 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                         <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleImageChange} />
                         {coverPreview ? (
                           <div className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
-                            <DraggableImage ref={imgRef} src={coverPreview} alt="Cover" onReplace={() => fileRef.current?.click()} />
+                            <DraggableImage
+                              ref={imgRef}
+                              src={coverPreview}
+                              alt="Cover"
+                              onReplace={() => fileRef.current?.click()}
+                              initialTransform={coverTransform}
+                              onTransformChange={t => setCoverTransform(t)}
+                            />
                           </div>
                         ) : (
                           <button

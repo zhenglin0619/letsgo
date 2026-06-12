@@ -191,7 +191,15 @@ export default function TripsPage() {
                 {/* Cover */}
                 <div className="relative h-100 overflow-hidden">
                   {trip.coverPhoto
-                    ? <img src={trip.coverPhoto} alt={trip.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    ? <img
+                        src={trip.coverPhoto}
+                        alt={trip.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        style={trip.coverPhotoTransform ? {
+                          transform: `translate(${trip.coverPhotoTransform.x}%, ${trip.coverPhotoTransform.y}%) scale(${trip.coverPhotoTransform.scale})`,
+                          transformOrigin: 'center',
+                        } : undefined}
+                      />
                     : <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/30 via-[#E8E4DC] to-[#4A5343]/20" />
                   }
                   <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />

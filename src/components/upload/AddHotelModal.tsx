@@ -8,7 +8,8 @@ import { HotelLog } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
 import type { LocatedPlace } from '@/components/ui/AddressSearchBox';
 import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
-import { uploadDataUrl, deleteStoragePhoto } from '@/lib/imageUtils';
+import { uploadPhoto, deleteStoragePhoto } from '@/lib/imageUtils';
+import type { PhotoTransform } from '@/types';
 
 const AddressSearchBox = dynamic(() => import('@/components/ui/AddressSearchBox'), {
   ssr: false,
@@ -45,14 +46,16 @@ const emptyForm = {
 };
 
 export default function AddHotelModal({ open, onClose, defaultTripId, initialHotel }: Props) {
-  const { trips, updateTrip, addStandaloneHotel, updateStandaloneHotel } = useTrips();
+  const { trips, updateTrip, addStandaloneHotel, updateStandaloneHotel, deleteStandaloneHotel } = useTrips();
   const isEdit = !!initialHotel;
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState('');
+  const [coverTransform, setCoverTransform] = useState<PhotoTransform | undefined>(undefined);
   const [step, setStep] = useState<'form' | 'done'>('form');
   const [geocoded, setGeocoded] = useState<{ lat: number; lng: number; city: string; country: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<DraggableImageHandle>(null);
+  const coverFileRef = useRef<File | null>(null);
   const isSelectingRef = useRef(false);
 
   const initialHotelRef = useRef(initialHotel);
@@ -61,7 +64,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
   defaultTripIdRef.current = defaultTripId;
 
   useEffect(() => {
-    if (!open) { setForm(emptyForm); setCoverPreview(''); setStep('form'); setGeocoded(null); return; }
+    if (!open) { setForm(emptyForm); setCoverPreview(''); setCoverTransform(undefined); coverFileRef.current = null; setStep('form'); setGeocoded(null); return; }
     const init = initialHotelRef.current;
     if (init) {
       const { hotel, tripId } = init;
@@ -78,10 +81,13 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
         tripId,
       });
       setCoverPreview(hotel.photos[0] ?? '');
+      setCoverTransform(hotel.photoTransform);
       setGeocoded({ lat: hotel.location.lat, lng: hotel.location.lng, city: hotel.location.city, country: hotel.location.country });
     } else {
       setForm({ ...emptyForm, tripId: defaultTripIdRef.current ?? '' });
       setCoverPreview('');
+      setCoverTransform(undefined);
+      coverFileRef.current = null;
       setGeocoded(null);
     }
     setStep('form');
@@ -95,6 +101,8 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    coverFileRef.current = file;
+    setCoverTransform(undefined);
     const reader = new FileReader();
     reader.onload = () => setCoverPreview(reader.result as string);
     reader.readAsDataURL(file);
@@ -111,9 +119,13 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
 
   async function handleSubmit() {
     if (!isValid) return;
-    const photo = coverPreview
-      ? await uploadDataUrl(imgRef.current ? await imgRef.current.getCroppedImage() : coverPreview)
-      : null;
+    let photo: string | null = null;
+    if (coverPreview) {
+      photo = coverPreview.startsWith('data:') && coverFileRef.current
+        ? await uploadPhoto(coverFileRef.current)
+        : coverPreview;
+    }
+    const transform = imgRef.current?.getTransform();
     if (photo && initialHotel?.hotel.photos[0] && photo !== initialHotel.hotel.photos[0]) {
       deleteStoragePhoto(initialHotel.hotel.photos[0]);
     }
@@ -155,6 +167,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
       currency: form.currency,
       location,
       photos: photo ? [photo] : (initialHotel?.hotel.photos ?? []),
+      photoTransform: transform,
       notes: initialHotel?.hotel.notes ?? '',
     };
 
@@ -166,10 +179,12 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
         } else {
           updateTrip({ ...oldTrip, hotels: oldTrip.hotels.filter(h => h.id !== hotel.id) });
           if (trip) updateTrip({ ...trip, hotels: [...trip.hotels, hotel] });
-          else updateStandaloneHotel(hotel);
+          else addStandaloneHotel(hotel);
         }
       } else {
         if (trip) {
+          // Was standalone — remove from standaloneHotels before adding to the trip
+          if (!initialHotel.tripId) deleteStandaloneHotel(hotel.id);
           updateTrip({ ...trip, hotels: [...trip.hotels, hotel] });
         } else {
           updateStandaloneHotel(hotel);
@@ -253,7 +268,14 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                         <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleImageChange} />
                         {coverPreview ? (
                           <div className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
-                            <DraggableImage ref={imgRef} src={coverPreview} alt="Cover" onReplace={() => fileRef.current?.click()} />
+                            <DraggableImage
+                              ref={imgRef}
+                              src={coverPreview}
+                              alt="Cover"
+                              onReplace={() => fileRef.current?.click()}
+                              initialTransform={coverTransform}
+                              onTransformChange={t => setCoverTransform(t)}
+                            />
                           </div>
                         ) : (
                           <button
