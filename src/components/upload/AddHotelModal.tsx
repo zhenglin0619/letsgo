@@ -46,7 +46,7 @@ const emptyForm = {
 };
 
 export default function AddHotelModal({ open, onClose, defaultTripId, initialHotel }: Props) {
-  const { trips, updateTrip, addStandaloneHotel, updateStandaloneHotel, deleteStandaloneHotel } = useTrips();
+  const { trips, updateTrip, addStandaloneHotel, updateStandaloneHotel, deleteStandaloneHotel, detachStandaloneHotel } = useTrips();
   const isEdit = !!initialHotel;
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState('');
@@ -157,6 +157,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
 
     const hotel: HotelLog = {
       id: initialHotel?.hotel.id ?? `hotel-${Date.now()}`,
+      ...(initialHotel?.hotel.ownerId ? { ownerId: initialHotel.hotel.ownerId } : {}),
       hotelName: form.hotelName.trim(),
       checkIn: form.checkIn,
       checkOut: form.checkOut,
@@ -184,7 +185,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
       } else {
         if (trip) {
           // Was standalone — remove from standaloneHotels before adding to the trip
-          if (!initialHotel.tripId) deleteStandaloneHotel(hotel.id);
+          if (!initialHotel.tripId) detachStandaloneHotel(hotel.id);
           updateTrip({ ...trip, hotels: [...trip.hotels, hotel] });
         } else {
           updateStandaloneHotel(hotel);

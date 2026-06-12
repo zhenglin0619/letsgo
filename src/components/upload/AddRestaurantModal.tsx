@@ -49,7 +49,7 @@ const emptyForm = {
 
 
 export default function AddRestaurantModal({ open, onClose, initialDining, defaultTripId }: Props) {
-  const { trips, updateTrip, addStandaloneRestaurant, updateStandaloneRestaurant, deleteStandaloneRestaurant } = useTrips();
+  const { trips, updateTrip, addStandaloneRestaurant, updateStandaloneRestaurant, deleteStandaloneRestaurant, detachStandaloneRestaurant } = useTrips();
   const isEdit = !!initialDining;
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState('');
@@ -164,6 +164,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
 
     const log: DiningLog = {
       id: initialDining?.log.id ?? `dining-${Date.now()}`,
+      ...(initialDining?.log.ownerId ? { ownerId: initialDining.log.ownerId } : {}),
       restaurantName: form.restaurantName.trim(),
       cuisine: form.cuisine.trim(),
       date: form.date,
@@ -186,7 +187,8 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
       if (wasStandalone && isNowStandalone) {
         updateStandaloneRestaurant(log);
       } else if (wasStandalone && !isNowStandalone) {
-        deleteStandaloneRestaurant(initialDining.log.id);
+        // Detach from local state only; syncTrip UPDATE will change trip_id in DB
+        detachStandaloneRestaurant(initialDining.log.id);
         if (trip) updateTrip({ ...trip, diningLogs: [...trip.diningLogs, log] });
       } else if (!wasStandalone && isNowStandalone) {
         if (oldTrip) updateTrip({ ...oldTrip, diningLogs: oldTrip.diningLogs.filter(d => d.id !== log.id) });

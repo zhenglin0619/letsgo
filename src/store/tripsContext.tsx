@@ -43,9 +43,11 @@ interface TripsContextValue {
   addStandaloneRestaurant:    (log: DiningLog) => void;
   updateStandaloneRestaurant: (log: DiningLog) => void;
   deleteStandaloneRestaurant: (id: string)     => void;
+  detachStandaloneRestaurant: (id: string)     => void;
   addStandaloneHotel:         (h: HotelLog)    => void;
   updateStandaloneHotel:      (h: HotelLog)    => void;
   deleteStandaloneHotel:      (id: string)     => void;
+  detachStandaloneHotel:      (id: string)     => void;
   signOut: () => Promise<void>;
 }
 
@@ -279,9 +281,11 @@ function deleteTrip$(userId: string, id: string) {
 }
 
 function syncRestaurant(userId: string, log: DiningLog, tripId: string | null) {
-  supabase.from('restaurants')
-    .upsert({ ...logToRow(log, userId, tripId), updated_at: new Date().toISOString() })
-    .then(({ error }) => { if (error) console.warn('[supabase] restaurant sync:', error.message); });
+  const row = { ...logToRow(log, userId, tripId), updated_at: new Date().toISOString() };
+  const op = log.ownerId
+    ? supabase.from('restaurants').update(row).eq('id', log.id)
+    : supabase.from('restaurants').insert(row);
+  op.then(({ error }) => { if (error) console.warn('[supabase] restaurant sync:', error.message); });
 }
 
 function deleteRestaurant$(userId: string, id: string) {
@@ -291,9 +295,11 @@ function deleteRestaurant$(userId: string, id: string) {
 }
 
 function syncHotel(userId: string, hotel: HotelLog, tripId: string | null) {
-  supabase.from('hotels')
-    .upsert({ ...hotelToRow(hotel, userId, tripId), updated_at: new Date().toISOString() })
-    .then(({ error }) => { if (error) console.warn('[supabase] hotel sync:', error.message); });
+  const row = { ...hotelToRow(hotel, userId, tripId), updated_at: new Date().toISOString() };
+  const op = hotel.ownerId
+    ? supabase.from('hotels').update(row).eq('id', hotel.id)
+    : supabase.from('hotels').insert(row);
+  op.then(({ error }) => { if (error) console.warn('[supabase] hotel sync:', error.message); });
 }
 
 function deleteHotel$(userId: string, id: string) {
@@ -530,6 +536,10 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         setStandalone(p => p.filter(x => x.id !== id));
         if (user) deleteRestaurant$(ownerId, id);
       },
+      // Local state only — no DB delete. Use when moving to a trip (syncTrip UPDATE changes trip_id).
+      detachStandaloneRestaurant: (id) => {
+        setStandalone(p => p.filter(x => x.id !== id));
+      },
 
       addStandaloneHotel: (h) => {
         if (demoMode) { setDemoStandaloneHotels(p => [h, ...p]); return; }
@@ -546,6 +556,10 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         const ownerId = standaloneHotels.find(h => h.id === id)?.ownerId ?? user?.id ?? '';
         setStandaloneHotels(p => p.filter(x => x.id !== id));
         if (user) deleteHotel$(ownerId, id);
+      },
+      // Local state only — no DB delete. Use when moving to a trip (syncTrip UPDATE changes trip_id).
+      detachStandaloneHotel: (id) => {
+        setStandaloneHotels(p => p.filter(x => x.id !== id));
       },
 
       signOut: async () => {
