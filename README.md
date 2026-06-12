@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Foodprint
+
+A travel memory app for documenting dining experiences and hotel stays across your trips. Log restaurants, dishes, and hotels, visualize your journeys on an interactive globe, and share trips with collaborators.
+
+## Features
+
+- **Trip management** — Create trips with cover photos and country tags; add dining and hotel entries to each
+- **Restaurant logging** — Track restaurants with dishes, ratings, Michelin stars, and photos
+- **Hotel logging** — Record hotel stays with room details and check-in/out dates
+- **World map dashboard** — Visualize all your trips on a 3D interactive globe
+- **Photo uploads** — Drag-and-drop with HEIC support and EXIF metadata extraction
+- **Collaborator sharing** — Invite others to view or contribute to a trip
+- **Demo mode** — Explore the app with mock data before signing in
+
+## Tech Stack
+
+- **Framework** — Next.js 16 (App Router, Turbopack)
+- **Backend** — Supabase (PostgreSQL + Auth + Storage)
+- **Maps** — Leaflet, Mapbox GL, Google Maps API, react-globe.gl
+- **UI** — Tailwind CSS v4, Radix UI, Framer Motion, Lucide icons
+- **Image handling** — react-dropzone, heic2any, exif-js
 
 ## Getting Started
 
-First, run the development server:
+1. Copy `.env.local.example` to `.env.local` and fill in your keys:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_MAPBOX_TOKEN=
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies and start the dev server:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+  app/           # Next.js routes (/, /trips, /trips/[id], /restaurants, /hotels)
+  components/    # Feature components (auth, dashboard, dining, hotel, trip, upload, ui)
+  store/         # Global state via React Context + mock data for demo mode
+  utils/         # Supabase client and data converters (camelCase ↔ snake_case)
+```
