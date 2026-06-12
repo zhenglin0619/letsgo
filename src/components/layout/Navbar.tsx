@@ -13,7 +13,7 @@ function LetsGoLogo({ textDown = false }: { textDown?: boolean }) {
   return (
     <Link href="/" className="flex items-center gap-2 select-none group">
       <img src="/logo.png" alt="Logo" width={40} height={40} className="object-contain" />
-      <div className={`flex flex-col leading-none${textDown ? ' mt-2' : ''}`}>
+      <div className={`flex flex-col leading-none${textDown ? ' mt-2' : ''}`} style={{ transform: 'translateY(3px)' }}>
         <span
           className="Helvetica font-black text-[#1A1A1A] tracking-[0.12em] uppercase"
           style={{ fontSize: '17px', letterSpacing: '0.1em', WebkitTextStroke: '0.5px #1A1A1A' }}
