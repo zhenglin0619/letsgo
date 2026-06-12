@@ -213,37 +213,55 @@ async function loadUserData(userId: string) {
 }
 
 // editorId = who is saving right now (may differ from ownerId when a collaborator edits)
-async function syncTrip(ownerId: string, t: Trip, editorId: string = ownerId): Promise<void> {
+// isNew    = true when creating a new trip (INSERT), false when updating (UPDATE)
+async function syncTrip(ownerId: string, t: Trip, editorId: string = ownerId, isNew = false): Promise<void> {
   const now = new Date().toISOString();
+  const tripRow = { ...tripToRow(t, ownerId), updated_at: now };
 
-  const { error: te } = await supabase.from('trips')
-    .upsert({ ...tripToRow(t, ownerId), updated_at: now });
-  if (te) { console.warn('[supabase] trip sync:', te.message); return; }
+  // Use INSERT for new trips, UPDATE for existing — avoids upsert checking INSERT policy
+  // on collaborative updates where auth.uid() !== user_id.
+  const tripResult = isNew
+    ? await supabase.from('trips').insert(tripRow)
+    : await supabase.from('trips').update(tripRow).eq('id', t.id);
+  if (tripResult.error) { console.warn('[supabase] trip sync:', tripResult.error.message); return; }
 
-  const restIds   = t.diningLogs.map(d => d.id);
-  const hotelIds  = t.hotels.map(h => h.id);
-  const sentinel  = ['00000000-0000-0000-0000-000000000000']; // prevents empty IN()
+  const restIds  = t.diningLogs.map(d => d.id);
+  const hotelIds = t.hotels.map(h => h.id);
+  const sentinel = ['00000000-0000-0000-0000-000000000000'];
 
-  if (t.diningLogs.length > 0) {
-    const { error: re } = await supabase.from('restaurants')
-      .upsert(t.diningLogs.map(d => ({ ...logToRow(d, ownerId, t.id), updated_at: now })));
-    if (re) console.warn('[supabase] restaurant sync:', re.message);
+  // Separate new logs (no ownerId → INSERT) from existing (ownerId → UPDATE)
+  const newLogs = t.diningLogs.filter(d => !d.ownerId);
+  const existingLogs = t.diningLogs.filter(d => !!d.ownerId);
+  if (newLogs.length > 0) {
+    const { error } = await supabase.from('restaurants')
+      .insert(newLogs.map(d => ({ ...logToRow(d, editorId, t.id), updated_at: now })));
+    if (error) console.warn('[supabase] restaurant insert:', error.message);
   }
-  // Delete removed logs for the trip owner
+  for (const d of existingLogs) {
+    const { error } = await supabase.from('restaurants')
+      .update({ ...logToRow(d, ownerId, t.id), updated_at: now }).eq('id', d.id);
+    if (error) console.warn('[supabase] restaurant update:', error.message);
+  }
   await supabase.from('restaurants').delete()
     .eq('user_id', ownerId).eq('trip_id', t.id)
     .not('id', 'in', `(${[...restIds, ...sentinel].join(',')})`);
-  // Also delete removed logs the collaborator added themselves
   if (editorId !== ownerId) {
     await supabase.from('restaurants').delete()
       .eq('user_id', editorId).eq('trip_id', t.id)
       .not('id', 'in', `(${[...restIds, ...sentinel].join(',')})`);
   }
 
-  if (t.hotels.length > 0) {
-    const { error: he } = await supabase.from('hotels')
-      .upsert(t.hotels.map(h => ({ ...hotelToRow(h, ownerId, t.id), updated_at: now })));
-    if (he) console.warn('[supabase] hotel sync:', he.message);
+  const newHotels = t.hotels.filter(h => !h.ownerId);
+  const existingHotels = t.hotels.filter(h => !!h.ownerId);
+  if (newHotels.length > 0) {
+    const { error } = await supabase.from('hotels')
+      .insert(newHotels.map(h => ({ ...hotelToRow(h, editorId, t.id), updated_at: now })));
+    if (error) console.warn('[supabase] hotel insert:', error.message);
+  }
+  for (const h of existingHotels) {
+    const { error } = await supabase.from('hotels')
+      .update({ ...hotelToRow(h, ownerId, t.id), updated_at: now }).eq('id', h.id);
+    if (error) console.warn('[supabase] hotel update:', error.message);
   }
   await supabase.from('hotels').delete()
     .eq('user_id', ownerId).eq('trip_id', t.id)
@@ -482,12 +500,12 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       addTrip: (t) => {
         if (demoMode) { setDemoTrips(p => [t, ...p]); return; }
         setTrips(p => [t, ...p]);
-        if (user) syncTrip(user.id, t, user.id).catch(e => console.warn('[supabase]', e));
+        if (user) syncTrip(user.id, t, user.id, true).catch(e => console.warn('[supabase]', e));
       },
       updateTrip: (t) => {
         if (demoMode) { setDemoTrips(p => p.map(x => x.id === t.id ? t : x)); return; }
         setTrips(p => p.map(x => x.id === t.id ? t : x));
-        if (user) syncTrip(t.ownerId ?? user.id, t, user.id).catch(e => console.warn('[supabase]', e));
+        if (user) syncTrip(t.ownerId ?? user.id, t, user.id, false).catch(e => console.warn('[supabase]', e));
       },
       deleteTrip: (id) => {
         if (demoMode) { setDemoTrips(p => p.filter(x => x.id !== id)); return; }
