@@ -113,6 +113,13 @@ html.dark .leaflet-control-zoom {
 }
 
 
+/* Prevent iOS auto-zoom on input focus (triggered when font-size < 16px) */
+@media screen and (max-width: 767px) {
+  html body input,
+  html body select,
+  html body textarea { font-size: 16px !important; }
+}
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 

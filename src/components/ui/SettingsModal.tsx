@@ -176,7 +176,7 @@ export default function SettingsModal({ open, onClose }: Props) {
                       <select
                         value={language}
                         onChange={e => handleLanguageChange(e.target.value)}
-                        className="text-[12px] text-[#8A8A8A] bg-[#EDEAE5] border-none rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-[#C87A53] cursor-pointer"
+                        className="text-base md:text-[12px] text-[#8A8A8A] bg-[#EDEAE5] border-none rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-[#C87A53] cursor-pointer"
                       >
                         {LANGUAGES.map(l => (
                           <option key={l.code} value={l.code}>{l.label}</option>
