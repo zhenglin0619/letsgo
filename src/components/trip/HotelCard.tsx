@@ -94,7 +94,7 @@ export default function HotelCard({ hotel, index, onClick, onEdit, onDelete }: P
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08 }}
     >
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative h-32 md:h-48 overflow-hidden">
         {hotel.photos[0] ? (
           <img
             src={hotel.photos[0]}
@@ -109,24 +109,36 @@ export default function HotelCard({ hotel, index, onClick, onEdit, onDelete }: P
           <div className="w-full h-full bg-gradient-to-br from-[#4A5343]/30 via-[#E8E4DC] to-[#C87A53]/20" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-        <div className="absolute bottom-3 left-4 text-white">
-          <h2 className="serif font-semibold text-lg leading-tight">{hotel.hotelName}</h2>
+        <div className="absolute bottom-2 left-2 md:bottom-3 md:left-4 text-white">
+          <h2 className="serif font-semibold text-sm md:text-lg leading-tight">{hotel.hotelName}</h2>
         </div>
         <div className="absolute top-3 right-3">
           <HotelMenu onEdit={onEdit} onDelete={onDelete} />
         </div>
       </div>
 
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
-            <MapPin size={11} />{hotel.location.city}, {fmtCountry(hotel.location.country)}
+      <div className="px-2.5 pt-2 pb-1 md:p-4">
+        {hotel.rating > 0 && (
+          <div className="md:hidden mb-1">
+            <StarRating value={hotel.rating} readonly size="sm" />
+          </div>
+        )}
+        <div className="flex items-center justify-between mb-1 md:mb-3">
+          <span className="flex items-center gap-1 text-[10.5px] md:text-xs text-[#8A8A8A]">
+            <MapPin size={10} className="md:w-[11px] md:h-[11px]" />{hotel.location.city}, {fmtCountry(hotel.location.country)}
           </span>
           {hotel.rating > 0 && (
-            <StarRating value={hotel.rating} readonly size="sm" />
+            <span className="hidden md:block">
+              <StarRating value={hotel.rating} readonly size="sm" />
+            </span>
           )}
         </div>
-        <div className="flex items-center justify-between">
+        <div className="md:hidden mb-1">
+          <span className="flex items-center gap-1 text-[10.5px] text-[#8A8A8A]">
+            <Calendar size={10} />{formatDate(hotel.checkIn)} – {formatDate(hotel.checkOut)}
+          </span>
+        </div>
+        <div className="hidden md:flex items-center justify-between">
           <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
             <Calendar size={11} />{formatDate(hotel.checkIn)} – {formatDate(hotel.checkOut)} · {n} night{n !== 1 ? 's' : ''}
           </span>

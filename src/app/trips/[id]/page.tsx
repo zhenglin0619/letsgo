@@ -17,7 +17,7 @@ import { DiningLog, HotelLog } from '@/types';
 import { uploadPhoto, deleteStoragePhoto, deleteStoragePhotos } from '@/lib/imageUtils';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BedDouble, Utensils, Images, MoreHorizontal, Pencil, Trash2, Plus, X, ChevronLeft, ChevronRight, Plane } from 'lucide-react';
+import { BedDouble, Utensils, Images, MoreHorizontal, Pencil, Trash2, Plus, ChevronLeft, ChevronRight, Plane } from 'lucide-react';
 
 // ── Edit / Delete menu ────────────────────────────────────────────────────────
 function TripMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
@@ -164,10 +164,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       {/* Banner + menu button */}
       <div className="relative">
         <ParallaxBanner trip={trip!} />
-        <Link href="/trips" className="absolute top-25 left-8 z-10 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/35 transition-colors flex items-center justify-center">
+        <Link href="/trips" className="absolute top-20 left-4 md:top-25 md:left-8 z-10 w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/35 transition-colors flex items-center justify-center">
           <ChevronLeft size={16} className="text-white" />
         </Link>
-        <div className="absolute top-25 right-8 z-10">
+        <div className="absolute top-20 right-4 md:top-25 md:right-8 z-10">
           <TripMenu
             onEdit={() => setEditTripOpen(true)}
             onDelete={handleDelete}
@@ -175,16 +175,16 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto pl-0 pr-0 py-10">
+      <div className="max-w-7xl mx-auto pl-0 pr-0 py-5 md:py-10">
         <div className="grid grid-cols-3 gap-6">
           {/* Left — map */}
-          <div className="col-span-1 sticky top-24 self-start">
+          <div className="hidden md:block col-span-1 sticky top-24 self-start">
             <TripMap trip={trip!} />
           </div>
 
           {/* Right — tabs */}
-          <div className="col-span-2">
-            <div className="flex gap-1 mb-5 bg-[#F0ECE6] p-1 rounded-xl w-fit">
+          <div className="col-span-3 md:col-span-2">
+            <div className="mx-4 md:mx-0 flex gap-0.5 md:gap-1 mb-5 bg-[#F0ECE6] p-0.5 md:p-1 rounded-xl md:w-fit">
               {([
                 { key: 'highlights',  label: 'Highlights',  icon: <Images size={13} />,   count: photos.length },
                 { key: 'restaurants', label: 'Restaurants', icon: <Utensils size={13} />, count: trip!.diningLogs.length },
@@ -193,13 +193,13 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 <button
                   key={key}
                   onClick={() => setTab(key)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex-1 md:flex-none flex items-center justify-center gap-1 md:gap-1.5 px-2 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
                     tab === key ? 'bg-white text-[#1A1A1A] shadow-sm' : 'text-[#8A8A8A] hover:text-[#1A1A1A]'
                   }`}
                 >
                   {icon}
                   {label}
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === key ? 'bg-[#C87A53] text-white' : 'bg-[#E8E4DC] text-[#8A8A8A]'}`}>
+                  <span className={`text-[10px] md:text-xs px-1 md:px-1.5 py-0.5 rounded-full ${tab === key ? 'bg-[#C87A53] text-white' : 'bg-[#E8E4DC] text-[#8A8A8A]'}`}>
                     {count}
                   </span>
                 </button>
@@ -218,16 +218,18 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 />
 
                 {photos.length === 0 ? (
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full border-2 border-dashed border-[#D8D4CC] rounded-2xl py-20 flex flex-col items-center gap-3 text-[#8A8A8A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors"
-                  >
-                    <Images size={32} strokeWidth={1.5} />
-                    <p className="text-sm font-medium">Upload trip photos</p>
-                    <p className="text-xs">Click to select · 20 images supported</p>
-                  </button>
+                  <div className="mx-4 md:mx-0">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full border-2 border-dashed border-[#D8D4CC] rounded-2xl py-20 flex flex-col items-center gap-3 text-[#8A8A8A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors"
+                    >
+                      <Images size={32} strokeWidth={1.5} />
+                      <p className="text-sm font-medium">Upload trip photos</p>
+                      <p className="text-xs">Click to select · 20 images supported</p>
+                    </button>
+                  </div>
                 ) : (
-                  <div className="columns-3 gap-3 space-y-3">
+                  <div className="columns-3 gap-3 space-y-3 mx-4 md:mx-0">
                     {photos.map((src, i) => (
                       <div
                         key={i}
@@ -242,9 +244,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors" />
                         <button
                           onClick={e => { e.stopPropagation(); removePhoto(i); }}
-                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
                         >
-                          <X size={12} />
+                          <Trash2 size={12} />
                         </button>
                       </div>
                     ))}
@@ -264,7 +266,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {tab === 'restaurants' && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4 mx-4 md:mx-0">
                 {trip!.diningLogs.length === 0 && (
                   <div className="col-span-2 text-center py-16 text-[#8A8A8A] text-sm">
                     No restaurants logged yet. Click + button to add meals.
@@ -287,7 +289,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {tab === 'hotels' && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4 mx-4 md:mx-0">
                 {trip!.hotels.length === 0 && (
                   <div className="col-span-2 text-center py-16 text-[#8A8A8A] text-sm">
                     No hotels logged yet. Click + button to add stays.
@@ -423,18 +425,12 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
       {lightboxIndex !== null && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          className="fixed inset-0 z-[10002] bg-black/90 flex items-center justify-center"
           onClick={() => setLightboxIndex(null)}
         >
-          <button
-            className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 transition-colors flex items-center justify-center text-white"
-            onClick={() => setLightboxIndex(null)}
-          >
-            <X size={18} />
-          </button>
           {lightboxIndex > 0 && (
             <button
-              className="absolute left-5 w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 transition-colors flex items-center justify-center text-white"
+              className="absolute left-5 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/50 md:bg-white/15 border border-white/30 hover:bg-black/70 md:hover:bg-white/30 transition-colors flex items-center justify-center text-white"
               onClick={e => { e.stopPropagation(); setLightboxIndex(lightboxIndex - 1); }}
             >
               <ChevronLeft size={20} />
@@ -442,18 +438,25 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           )}
           {lightboxIndex < photos.length - 1 && (
             <button
-              className="absolute right-5 w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 transition-colors flex items-center justify-center text-white"
+              className="absolute right-5 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/50 md:bg-white/15 border border-white/30 hover:bg-black/70 md:hover:bg-white/30 transition-colors flex items-center justify-center text-white"
               onClick={e => { e.stopPropagation(); setLightboxIndex(lightboxIndex + 1); }}
             >
               <ChevronRight size={20} />
             </button>
           )}
-          <img
-            src={photos[lightboxIndex]}
-            alt={`Photo ${lightboxIndex + 1}`}
-            className="max-h-[88vh] max-w-[88vw] object-contain rounded-xl shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          />
+          <div className="relative" onClick={e => e.stopPropagation()}>
+            <img
+              src={photos[lightboxIndex]}
+              alt={`Photo ${lightboxIndex + 1}`}
+              className="max-h-[88vh] max-w-[88vw] object-contain rounded-xl shadow-2xl"
+            />
+            <button
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 hover:bg-red-500/90 transition-colors flex items-center justify-center text-white"
+              onClick={() => removePhoto(lightboxIndex)}
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
           <p className="absolute bottom-5 text-white/50 text-sm">{lightboxIndex + 1} / {photos.length}</p>
         </div>
       )}
