@@ -203,7 +203,7 @@ export default function RestaurantsPage() {
             transition={{ delay: i * 0.1, duration: 0.45 }}
             onClick={() => openDining(dining)}
           >
-            <div className="relative h-45 overflow-hidden">
+            <div className="relative h-45 md:h-50 overflow-hidden">
               {dining.photos[0] ? (
                 <img
                   src={dining.photos[0]}

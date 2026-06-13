@@ -39,18 +39,20 @@ export default function StatsBento() {
     ...standaloneRestaurants,
   ];
 
+  const allHotels  = [...trips.flatMap(t => t.hotels), ...standaloneHotels];
   const tripCount  = trips.length;
   const countries  = new Set([
     ...trips.flatMap(t => t.countries),
     ...allDining.map(d => d.location.country).filter(Boolean),
+    ...standaloneHotels.map(h => h.location.country).filter(Boolean),
   ]).size;
   const cities     = new Set([
     ...trips.map(t => t.city).filter(Boolean),
-    ...trips.flatMap(t => t.hotels.map(h => h.location.city)).filter(Boolean),
+    ...allHotels.map(h => h.location.city).filter(Boolean),
     ...allDining.map(d => d.location.city).filter(Boolean),
   ]).size;
-  const hotelCount = trips.flatMap(t => t.hotels).length;
-  const nightCount = trips.flatMap(t => t.hotels).reduce((s, h) => s + nightsBetween(h.checkIn, h.checkOut), 0);
+  const hotelCount = allHotels.length;
+  const nightCount = allHotels.reduce((s, h) => s + nightsBetween(h.checkIn, h.checkOut), 0);
   const restCount  = allDining.length;
 
   const [currency, setCurrency] = useState<string>('USD');
@@ -68,7 +70,6 @@ export default function StatsBento() {
     return () => document.removeEventListener('mousedown', handler);
   }, [dropdownOpen]);
 
-  const allHotels = [...trips.flatMap(t => t.hotels), ...standaloneHotels];
   const totalExpense =
     allDining.reduce((s, d) => s + convertToTarget(d.totalExpense ?? 0, d.currency ?? 'USD', currency), 0) +
     allHotels.reduce((s, h) => s + convertToTarget(h.pricePerNight ?? 0, h.currency ?? 'USD', currency), 0);

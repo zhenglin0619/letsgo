@@ -152,7 +152,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
           <motion.div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 pointer-events-none">
             <motion.div
               className="bg-white rounded-2xl shadow-2xl pointer-events-auto w-full"
-              style={{ maxWidth: 980 }}
+              style={{ maxWidth: 720 }}
               initial={{ scale: 0.94, opacity: 0, y: 12 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.94, opacity: 0, y: 12 }}

@@ -226,7 +226,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
           <motion.div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 pointer-events-none">
             <motion.div
               className="bg-white rounded-2xl shadow-2xl pointer-events-auto w-full"
-              style={{ maxWidth: 880 }}
+              style={{ maxWidth: 720 }}
               initial={{ scale: 0.94, opacity: 0, y: 12 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.94, opacity: 0, y: 12 }}
@@ -301,7 +301,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                     </div>
 
                     {/* Row 2: Rating | Expense | Michelin Stars | Add to Trip */}
-                    <div className="grid grid-cols-8 gap-3 items-end">
+                    <div className="grid grid-cols-11 gap-3 items-end">
                       <div className="col-span-2">
                         <label className={LABEL}>Rating <span className="normal-case font-normal text-[#C0BAB2]">(0–5)</span></label>
                         <input type="text" inputMode="decimal" placeholder="e.g. 4.5"
@@ -309,7 +309,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                           onChange={e => { const v = e.target.value; if (/^([0-4](\.\d?)?|5(\.0?)?)?$/.test(v)) set('rating', v); }}
                           className={INPUT} />
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-3">
                         <label className={LABEL}>Total Expense</label>
                         <div className="flex gap-1.5">
                           <input type="text" inputMode="decimal" placeholder="0" value={form.expense}
@@ -320,7 +320,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                           </select>
                         </div>
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-3">
                         <label className={LABEL}>Michelin Stars</label>
                         <div className="flex gap-1.5">
                           {MICHELIN.map(n => (
@@ -338,7 +338,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                           ))}
                         </div>
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-3">
                         <label className={LABEL}>Add to Trip <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span></label>
                         <select value={form.tripId} onChange={e => set('tripId', e.target.value)} className={`${SELECT} ${form.tripId === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
                           <option value="">Select a trip…</option>
