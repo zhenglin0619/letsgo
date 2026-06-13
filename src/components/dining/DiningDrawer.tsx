@@ -59,7 +59,7 @@ function DishEditRow({
         {/* Photo */}
         <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handlePhoto} />
         {dish.photo ? (
-          <div className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors relative bg-[#F5F2EE]">
+          <div className="flex-shrink-0 w-[104px] h-[104px] md:w-28 md:h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors relative bg-[#F5F2EE]">
             <DraggableImage
               src={dish.photo}
               alt={dish.name}
@@ -73,7 +73,7 @@ function DishEditRow({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors group relative bg-[#F5F2EE]"
+            className="flex-shrink-0 w-[104px] h-[104px] md:w-28 md:h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors group relative bg-[#F5F2EE]"
           >
             <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors">
               <ImagePlus size={16} />
@@ -84,6 +84,7 @@ function DishEditRow({
 
         {/* Fields */}
         <div className="flex-1 min-w-0 flex flex-col gap-2">
+          {/* Row 1: name (mobile) / name + category + rating (desktop) */}
           <div className="flex items-center gap-2">
             <input
               className={`${INPUT} flex-1 min-w-0`}
@@ -92,7 +93,7 @@ function DishEditRow({
               onChange={e => onChange({ ...dish, name: e.target.value })}
             />
             <select
-              className={`${INPUT} w-19 flex-shrink-0 appearance-none`}
+              className={`${INPUT} hidden md:block w-19 flex-shrink-0 appearance-none`}
               value={dish.category}
               onChange={e => onChange({ ...dish, category: e.target.value as Dish['category'] })}
             >
@@ -100,7 +101,25 @@ function DishEditRow({
             </select>
             <input
               type="text" inputMode="decimal"
-              className={`${INPUT} w-10 flex-shrink-0`}
+              className={`${INPUT} hidden md:block w-10 flex-shrink-0`}
+              value={ratingStr}
+              placeholder="0"
+              onChange={e => { const v = e.target.value; if (/^([0-4](\.\d?)?|5(\.0?)?)?$/.test(v)) setRatingStr(v); }}
+              onBlur={() => { const n = parseFloat(ratingStr) || 0; onChange({ ...dish, rating: n }); setRatingStr(n === 0 ? '' : String(n)); }}
+            />
+          </div>
+          {/* Row 2 mobile only: category + rating */}
+          <div className="flex md:hidden items-center gap-2">
+            <select
+              className={`${INPUT} flex-1 min-w-0 appearance-none`}
+              value={dish.category}
+              onChange={e => onChange({ ...dish, category: e.target.value as Dish['category'] })}
+            >
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <input
+              type="text" inputMode="decimal"
+              className={`${INPUT} flex-1 min-w-0`}
               value={ratingStr}
               placeholder="0"
               onChange={e => { const v = e.target.value; if (/^([0-4](\.\d?)?|5(\.0?)?)?$/.test(v)) setRatingStr(v); }}
@@ -108,8 +127,8 @@ function DishEditRow({
             />
           </div>
           <textarea
-            rows={3}
-            className={`${INPUT} w-full resize-none`}
+            rows={1}
+            className={`${INPUT} w-full resize-none md:min-h-[4.5rem]`}
             value={dish.notes}
             placeholder="Notes (optional)"
             onChange={e => onChange({ ...dish, notes: e.target.value })}
@@ -402,20 +421,29 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                   </Reorder.Group>
 
                   {/* Add new dish */}
-                  <div className="bg-[#F9F7F4] rounded-xl border border-dashed border-[#D4CFC8] p-3 mt-2">
-                    <p className="text-[10px] font-medium text-[#8A8A8A] uppercase tracking-wider mb-2">Add a dish</p>
-                    <div className="flex items-center gap-2">
+                  <div className="bg-[#F9F7F4] rounded-xl border border-dashed border-[#D4CFC8] px-2 pt-2 pb-1 md:p-3 mt-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[10px] font-medium text-[#8A8A8A] uppercase tracking-wider">Add a dish</p>
+                      <button
+                        onClick={handleAddDish}
+                        disabled={!addForm.name.trim()}
+                        className="flex items-center gap-0.5 text-[10px] font-medium text-[#C87A53] border border-[#C87A53] px-2 py-1 rounded-lg hover:bg-[#C87A53] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Plus size={10} /> Add
+                      </button>
+                    </div>
+                    <div className="flex items-start md:items-center gap-1.5 md:gap-2">
                       {/* Photo */}
                       <input ref={addFileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleAddPhoto} />
                       {addForm.photo ? (
-                        <div className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors relative bg-white">
+                        <div className="flex-shrink-0 w-[104px] h-[104px] md:w-28 md:h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors relative bg-white">
                           <DraggableImage ref={addImgRef} src={addForm.photo} alt="dish" onReplace={() => addFileRef.current?.click()} size="sm" />
                         </div>
                       ) : (
                         <button
                           type="button"
                           onClick={() => addFileRef.current?.click()}
-                          className="flex-shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors group relative bg-white"
+                          className="flex-shrink-0 w-[104px] h-[104px] md:w-28 md:h-28 rounded-lg overflow-hidden border border-[#E8E6E1] hover:border-[#C87A53] transition-colors group relative bg-white"
                         >
                           <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors">
                             <ImagePlus size={16} />
@@ -426,15 +454,15 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
 
                       {/* Fields */}
                       <div className="flex-1 min-w-0 flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <input
-                            className="flex-1 min-w-0 text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white text-[#1A1A1A] placeholder:text-[#C0BAB2]"
+                            className="basis-full md:flex-1 md:basis-auto md:min-w-0 text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white text-[#1A1A1A] placeholder:text-[#C0BAB2]"
                             placeholder="Dish name"
                             value={addForm.name}
                             onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
                           />
                           <select
-                            className="text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white appearance-none w-20 flex-shrink-0"
+                            className="flex-1 min-w-0 md:flex-none md:w-20 md:flex-shrink-0 text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white appearance-none"
                             style={{ color: addForm.category ? '#1A1A1A' : '#C0BAB2' }}
                             value={addForm.category}
                             onChange={e => setAddForm(f => ({ ...f, category: e.target.value as Dish['category'] }))}
@@ -444,27 +472,18 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                           </select>
                           <input
                             type="text" inputMode="decimal" placeholder="0–5"
-                            className="w-10 flex-shrink-0 text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white text-[#1A1A1A] placeholder:text-[#C0BAB2]"
+                            className="flex-1 min-w-0 md:flex-none md:w-10 md:flex-shrink-0 text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white text-[#1A1A1A] placeholder:text-[#C0BAB2]"
                             value={addForm.rating}
                             onChange={e => { const v = e.target.value; if (/^([0-4](\.\d?)?|5(\.0?)?)?$/.test(v)) setAddForm(f => ({ ...f, rating: v })); }}
                           />
                         </div>
-                        <div className="flex items-end gap-2">
-                          <textarea
-                            rows={3}
-                            className="flex-1 text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white text-[#1A1A1A] placeholder:text-[#C0BAB2] resize-none"
-                            placeholder="Notes (optional)"
-                            value={addForm.notes}
-                            onChange={e => setAddForm(f => ({ ...f, notes: e.target.value }))}
-                          />
-                          <button
-                            onClick={handleAddDish}
-                            disabled={!addForm.name.trim()}
-                            className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-[#C87A53] border border-[#C87A53] px-3 py-1.5 rounded-lg hover:bg-[#C87A53] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            <Plus size={12} /> Add
-                          </button>
-                        </div>
+                        <textarea
+                          rows={1}
+                          className="w-full text-xs border border-[#E8E6E1] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C87A53] bg-white text-[#1A1A1A] placeholder:text-[#C0BAB2] resize-none md:min-h-[4.5rem]"
+                          placeholder="Notes (optional)"
+                          value={addForm.notes}
+                          onChange={e => setAddForm(f => ({ ...f, notes: e.target.value }))}
+                        />
                       </div>
                     </div>
                   </div>

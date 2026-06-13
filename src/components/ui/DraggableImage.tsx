@@ -251,7 +251,7 @@ const DraggableImage = forwardRef<DraggableImageHandle, Props>(
         />
 
         {/* Hover controls */}
-        <div className="absolute inset-0 pointer-events-none opacity-0 group-hover/di:opacity-100 transition-opacity duration-150">
+        <div className="absolute inset-0 pointer-events-none opacity-100 md:opacity-0 md:group-hover/di:opacity-100 transition-opacity duration-150">
           {/* Replace photo */}
           <button
             type="button"
