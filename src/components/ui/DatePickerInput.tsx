@@ -120,10 +120,32 @@ export default function DatePickerInput({ label, value, onChange, min, defaultMo
   function handleToggle() {
     if (!open && ref.current) {
       const rect = ref.current.getBoundingClientRect();
-      setPopupStyle(placement === 'above'
-        ? { position: 'fixed', bottom: window.innerHeight - rect.top + 8, left: rect.left, zIndex: 10200 }
-        : { position: 'fixed', top: rect.top, left: rect.right + 8, zIndex: 10200 }
-      );
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const popupW = 292; // 260px calendar + 2×16px padding
+
+      let style: React.CSSProperties;
+
+      if (vw < 768) {
+        // Mobile: position below (or above if no room), clamped to viewport
+        const spaceBelow = vh - rect.bottom - 8;
+        const spaceAbove = rect.top - 8;
+        let left = Math.max(8, Math.min(rect.left, vw - popupW - 8));
+
+        const maxH = Math.max(spaceBelow, spaceAbove) - 8;
+        if (spaceBelow >= spaceAbove) {
+          style = { position: 'fixed', top: rect.bottom + 8, left, zIndex: 10200, maxHeight: maxH, overflowY: 'auto' };
+        } else {
+          style = { position: 'fixed', bottom: vh - rect.top + 8, left, zIndex: 10200, maxHeight: maxH, overflowY: 'auto' };
+        }
+      } else {
+        // Desktop: original logic
+        style = placement === 'above'
+          ? { position: 'fixed', bottom: vh - rect.top + 8, left: rect.left, zIndex: 10200 }
+          : { position: 'fixed', top: rect.top, left: rect.right + 8, zIndex: 10200 };
+      }
+
+      setPopupStyle(style);
     }
     setOpen(v => !v);
   }

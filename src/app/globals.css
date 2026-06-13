@@ -2,6 +2,8 @@
 
 @import "tailwindcss";
 
+/* v1 */
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
@@ -112,13 +114,6 @@ html.dark .leaflet-control-zoom {
   box-shadow: 0 2px 8px rgba(0,0,0,0.45) !important;
 }
 
-
-/* Prevent iOS auto-zoom on input focus (triggered when font-size < 16px) */
-@media screen and (max-width: 767px) {
-  html body input,
-  html body select,
-  html body textarea { font-size: 16px !important; }
-}
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }

@@ -148,7 +148,7 @@ function UserMenu() {
         <button
           ref={btnRef}
           onClick={handleOpen}
-          className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#C87A53] transition-all mt-1.5"
+          className="w-[34px] h-[34px] md:w-8 md:h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#C87A53] transition-all mt-1.5"
         >
           {avatarUrl ? (
             <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -180,7 +180,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="navbar-glass fixed top-0 inset-x-0 z-[9999] flex items-center justify-between pl-4 pr-8 py-[9px]">
+      <header className="navbar-glass fixed top-0 inset-x-0 z-[9999] flex items-center justify-between pl-4 pr-6 md:pr-8 py-[9px]">
         {/* Left side: hamburger (mobile) + logo */}
         <div className="flex items-center gap-3">
           <button
