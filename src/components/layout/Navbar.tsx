@@ -15,7 +15,7 @@ function LetsGoLogo({ textDown = false }: { textDown?: boolean }) {
       <img src="/logo.png" alt="Logo" width={40} height={40} className="object-contain" />
       <div className={`flex flex-col leading-none${textDown ? ' mt-2' : ''}`} style={{ transform: 'translateY(3px)' }}>
         <span
-          className="Helvetica font-black text-[#1A1A1A] tracking-[0.12em] uppercase"
+          className="Helvetica font-black text-[#1A1A1A] dark:text-[#EAE5DE] tracking-[0.12em] uppercase"
           style={{ fontSize: '17px', letterSpacing: '0.1em', WebkitTextStroke: '0.5px #1A1A1A' }}
         >
           Let&rsquo;s Go
@@ -144,7 +144,7 @@ function UserMenu() {
 
   return (
     <>
-      <div className="pl-5 border-l border-[#E8E6E1]">
+      <div className="md:pl-5 md:border-l border-[#E8E6E1]">
         <button
           ref={btnRef}
           onClick={handleOpen}
@@ -222,14 +222,14 @@ export default function Navbar() {
 
       {/* Mobile drawer */}
       <div
-        className={`md:hidden fixed top-0 left-0 h-full w-64 z-[99999] bg-[#FBF9F6] shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`md:hidden fixed top-0 left-0 h-full w-64 z-[99999] bg-[#FBF9F6] dark:bg-[#1C1C1C] shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         {/* Drawer header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E6E1]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E6E1] dark:border-[#2A2A2A]">
           <LetsGoLogo textDown />
           <button
             onClick={() => setDrawerOpen(false)}
-            className="w-8 h-8 flex items-center justify-center text-[#8A8A8A]"
+            className="w-8 h-8 flex items-center justify-center text-[#8A8A8A] dark:text-[#6A6A6A]"
             aria-label="Close menu"
           >
             <X size={20} />
@@ -245,7 +245,7 @@ export default function Navbar() {
                 key={href}
                 href={href}
                 onClick={() => setDrawerOpen(false)}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors ${active ? 'text-[#C87A53] bg-[#F5EDE6]' : 'text-[#4A4A4A] hover:bg-[#F0ECE6]'}`}
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors ${active ? 'text-[#C87A53] bg-[#F5EDE6] dark:bg-[#3A2518]' : 'text-[#4A4A4A] dark:text-[#EAE5DE] hover:bg-[#F0ECE6] dark:hover:bg-[#2A2A2A]'}`}
               >
                 <Icon size={18} />
                 {label}

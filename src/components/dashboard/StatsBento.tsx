@@ -101,9 +101,9 @@ export default function StatsBento() {
               <p className="text-[11px] md:text-[12px] text-[#8A8A8A] font-medium uppercase tracking-[0.08em] md:tracking-widest mb-1 whitespace-nowrap">{s.label}</p>
               <p className="serif text-3xl font-semibold text-[#1A1A1A]">{s.value}</p>
             </div>
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{ background: `${iconColor}18` }}>
-              <s.icon size={20} style={{ color: iconColor }} />
+              <s.icon className="w-4 h-4 md:w-5 md:h-5" style={{ color: iconColor }} />
             </div>
           </div>
         </motion.div>
@@ -117,7 +117,7 @@ export default function StatsBento() {
         <div className="flex items-center justify-between h-full">
           <div>
             <p className="text-[11px] md:text-[12px] text-[#8A8A8A] font-medium uppercase tracking-[0.08em] md:tracking-widest mb-1 whitespace-nowrap">Total Expense</p>
-            <div className="flex items-center gap-2 flex-nowrap">
+            <div className="flex items-center gap-4 flex-nowrap">
               <p className="serif text-3xl font-semibold text-[#1A1A1A]">{expenseDisplay}</p>
               <div ref={dropdownRef} className="relative translate-y-1">
                 <button
@@ -153,9 +153,9 @@ export default function StatsBento() {
               </div>
             </div>
           </div>
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center flex-shrink-0"
             style={{ background: `${iconColor}18` }}>
-            <Wallet size={20} style={{ color: iconColor }} />
+            <Wallet className="w-4 h-4 md:w-5 md:h-5" style={{ color: iconColor }} />
           </div>
         </div>
       </motion.div>

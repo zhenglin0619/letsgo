@@ -48,7 +48,7 @@ export default function SortMenu({ value, onChange, options = ALL_OPTIONS }: Pro
 
       {open && (
         <div
-          className="absolute top-11 right-0 bg-white rounded-2xl border border-[#E8E6E1] py-1.5 w-41 z-30"
+          className="absolute top-11 left-0 md:left-auto md:right-0 bg-white rounded-2xl border border-[#E8E6E1] py-1.5 w-41 z-30"
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}
         >
           <p className="px-4 pt-1.5 pb-2 text-[10px] font-semibold text-[#C0BAB2] uppercase tracking-widest">Sort by</p>

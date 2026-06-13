@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HotelLog } from '@/types';
 import StarRating from '@/components/ui/StarRating';
 import { X, MapPin, BedDouble, Eye, Pencil, Trash2, Check, MoreHorizontal } from 'lucide-react';
+import { fmtCountry } from '@/lib/formatUtils';
 
 interface Props {
   hotel: HotelLog | null;
@@ -94,11 +95,11 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
             transition={{ type: 'spring', damping: 28, stiffness: 260 }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E1]">
+            <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-[#E8E6E1]">
               <div className="flex-1 min-w-0">
                 <h2 className="serif text-xl font-semibold text-[#1A1A1A] truncate">{hotel.hotelName}</h2>
                 <p className="text-xs text-[#8A8A8A] mt-0.5 flex items-center gap-1">
-                  <MapPin size={10} />{hotel.location.city}, {hotel.location.country}
+                  <MapPin size={10} />{hotel.location.city}, {fmtCountry(hotel.location.country)}
                 </p>
               </div>
               <button onClick={onClose}
@@ -109,7 +110,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
 
             <div className="flex-1 overflow-y-auto">
               {/* Cover photo */}
-              <div className="h-52 overflow-hidden relative">
+              <div className="h-60 md:h-65 overflow-hidden relative">
                 {hotel.photos[0] ? (
                   <img
                     src={hotel.photos[0]}
@@ -174,7 +175,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
               </div>
 
               {/* Meta info */}
-              <div className="px-6 py-4 border-b border-[#F0ECE6]">
+              <div className="px-4 py-3 md:px-6 md:py-4 border-b border-[#F0ECE6]">
                 {hotel.rating > 0 && (
                   <div className="mb-3">
                     <StarRating value={hotel.rating} readonly size="md" />
@@ -186,7 +187,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 md:gap-3">
                   <div className="bg-[#FBFBFA] rounded-lg p-3">
                     <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">Check-in</p>
                     <p className="text-xs font-medium text-[#1A1A1A]">{formatDate(hotel.checkIn)}</p>
@@ -201,7 +202,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                   </div>
                   <div className="bg-[#FBFBFA] rounded-lg p-3">
                     <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">Total Expense</p>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-0.5 md:gap-0">
                       <p className="text-xs font-medium text-[#1A1A1A]">{hotel.currency} {hotel.pricePerNight.toLocaleString()}</p>
                       <p className="text-xs text-[#8A8A8A]">{hotel.currency} {perNight.toLocaleString()} / night</p>
                     </div>
@@ -226,7 +227,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
               </div>
 
               {/* Notes */}
-              <div className="px-6 py-4">
+              <div className="px-4 py-3 md:px-6 md:py-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="serif text-base font-semibold text-[#1A1A1A]">Notes</h3>
                   {onUpdateHotel && !editingNote && (

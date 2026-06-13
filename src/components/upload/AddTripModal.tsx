@@ -160,7 +160,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E1]">
+              <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-[#E8E6E1]">
                 <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{isEdit ? 'Edit Trip' : 'Add a Trip'}</h2>
                 <button
                   onClick={handleClose}
@@ -170,12 +170,12 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                 </button>
               </div>
 
-              <div className="p-6">
+              <div className="p-3 md:p-6">
                 {step === 'form' && (
                   <>
-                    <div className="flex gap-5">
+                    <div className="flex flex-col md:flex-row gap-3 md:gap-5">
                       {/* Left: form fields */}
-                      <div className="flex-1 space-y-5 min-w-0">
+                      <div className="flex-1 space-y-3 md:space-y-5 min-w-0 order-last md:order-none">
                         <div>
                           <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
                             Trip Name
@@ -252,7 +252,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                       </div>
 
                       {/* Right: cover photo upload */}
-                      <div className="w-72 flex-shrink-0 flex flex-col">
+                      <div className="w-full md:w-72 md:flex-shrink-0 flex flex-col order-first md:order-none">
                         <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
                           Cover Photo <span className="normal-case text-[#C0BAB2]">(optional)</span>
                         </label>
@@ -264,7 +264,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                           onChange={handleImageChange}
                         />
                         {coverPreview ? (
-                          <div className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
+                          <div className="w-full aspect-video md:aspect-auto md:flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
                             <DraggableImage
                               ref={imgRef}
                               src={coverPreview}
@@ -278,7 +278,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                           <button
                             type="button"
                             onClick={() => fileRef.current?.click()}
-                            className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors group relative"
+                            className="w-full aspect-video md:aspect-auto md:flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors group relative"
                           >
                             <div className="flex flex-col items-center justify-center h-full gap-2 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors p-4">
                               <ImagePlus size={24} />
@@ -308,7 +308,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
               </div>
 
               {step === 'form' && (
-                <div className="px-6 pb-6 pt-0 flex justify-end">
+                <div className="px-3 pb-3 pt-0 md:px-6 md:pb-6 flex justify-end">
                   <button
                     onClick={handleSubmit}
                     disabled={!isValid}

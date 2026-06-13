@@ -246,7 +246,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
             transition={{ type: 'spring', damping: 28, stiffness: 260 }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E1]">
+            <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-[#E8E6E1]">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="serif text-xl font-semibold text-[#1A1A1A] truncate">{log.restaurantName}</h2>
@@ -262,7 +262,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
 
             <div className="flex-1 overflow-y-auto">
               {/* Cover photo */}
-              <div className="h-52 overflow-hidden relative">
+              <div className="h-60 md:h-60 overflow-hidden relative">
                 {log.photos[0] ? (
                   <img
                     src={log.photos[0]}
@@ -333,7 +333,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
               </div>
 
               {/* Meta info */}
-              <div className="px-6 py-4 border-b border-[#F0ECE6]">
+              <div className="px-4 py-3 md:px-6 md:py-4 border-b border-[#F0ECE6]">
                 <div className="mb-3">
                   <StarRating value={log.overallRating} readonly size="md" />
                   {log.location.address && (
@@ -342,7 +342,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                     </div>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-[5fr_4fr] md:grid-cols-2 gap-2 md:gap-3">
                   <div className="bg-[#FBFBFA] rounded-lg p-3">
                     <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">Date & Time</p>
                     <div className="flex items-center justify-between gap-2">
@@ -358,7 +358,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
               </div>
 
               {/* Our Dishes header */}
-              <div className="px-6 pt-4 pb-2">
+              <div className="px-4 pt-3 pb-2 md:px-6 md:pt-4">
                 <div className="flex items-center justify-between">
                   <h3 className="serif text-base font-semibold text-[#1A1A1A]">Our Dishes</h3>
                   {onUpdateLog && !editMode && (
@@ -389,7 +389,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
 
               {/* Edit mode: draggable list + add form */}
               {editMode ? (
-                <div className="px-5 pb-5 space-y-2">
+                <div className="px-3 pb-3 md:px-5 md:pb-5 space-y-2">
                   <Reorder.Group axis="y" values={localDishes} onReorder={setLocalDishes} className="space-y-2">
                     {localDishes.map(dish => (
                       <DishEditRow

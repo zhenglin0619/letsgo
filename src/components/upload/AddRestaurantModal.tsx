@@ -234,20 +234,20 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E1]">
+              <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-[#E8E6E1]">
                 <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{isEdit ? 'Edit Restaurant' : 'Add a Restaurant'}</h2>
                 <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#F0ECE6] flex items-center justify-center hover:bg-[#E8E4DC] transition-colors">
                   <X size={16} />
                 </button>
               </div>
 
-              <div className="p-5 max-h-[70vh] overflow-y-auto">
+              <div className="p-3 md:p-5 max-h-[70vh] overflow-y-auto">
                 {step === 'form' && (
                   <div className="space-y-3">
 
                     {/* Row 1: Name / Cuisine / Meal / Date + Cover photo */}
-                    <div className="flex gap-5">
-                      <div className="flex-1 space-y-3 min-w-0">
+                    <div className="flex flex-col md:flex-row gap-3 md:gap-5">
+                      <div className="flex-1 space-y-3 min-w-0 order-last md:order-none">
                         <div>
                           <label className={LABEL}>Restaurant Name</label>
                           <input type="text" placeholder="e.g. Izumo Ikebukuro" value={form.restaurantName}
@@ -271,11 +271,11 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                       </div>
 
                       {/* Cover photo — aligned with the top block only */}
-                      <div className="flex-1 flex flex-col">
+                      <div className="w-full md:flex-1 flex flex-col order-first md:order-none">
                         <label className={LABEL}>Cover Photo <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span></label>
                         <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleImageChange} />
                         {coverPreview ? (
-                          <div className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
+                          <div className="w-full aspect-[16/9] md:aspect-auto md:flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
                             <DraggableImage
                               ref={imgRef}
                               src={coverPreview}
@@ -289,7 +289,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                           <button
                             type="button"
                             onClick={() => fileRef.current?.click()}
-                            className="w-full flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors group relative"
+                            className="w-full aspect-[2/1] md:aspect-auto md:flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors group relative"
                           >
                             <div className="flex flex-col items-center justify-center h-full gap-2 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors p-4">
                               <ImagePlus size={22} strokeWidth={1.5} />
@@ -301,15 +301,15 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                     </div>
 
                     {/* Row 2: Rating | Expense | Michelin Stars | Add to Trip */}
-                    <div className="grid grid-cols-11 gap-3 items-end">
-                      <div className="col-span-2">
+                    <div className="grid grid-cols-2 md:grid-cols-11 gap-3 items-end">
+                      <div className="col-span-1 md:col-span-2">
                         <label className={LABEL}>Rating <span className="normal-case font-normal text-[#C0BAB2]">(0–5)</span></label>
                         <input type="text" inputMode="decimal" placeholder="e.g. 4.5"
                           value={form.rating}
                           onChange={e => { const v = e.target.value; if (/^([0-4](\.\d?)?|5(\.0?)?)?$/.test(v)) set('rating', v); }}
                           className={INPUT} />
                       </div>
-                      <div className="col-span-3">
+                      <div className="col-span-1 md:col-span-3">
                         <label className={LABEL}>Total Expense</label>
                         <div className="flex gap-1.5">
                           <input type="text" inputMode="decimal" placeholder="0" value={form.expense}
@@ -320,7 +320,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                           </select>
                         </div>
                       </div>
-                      <div className="col-span-3">
+                      <div className="col-span-1 md:col-span-3">
                         <label className={LABEL}>Michelin Stars</label>
                         <div className="flex gap-1.5">
                           {MICHELIN.map(n => (
@@ -338,7 +338,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                           ))}
                         </div>
                       </div>
-                      <div className="col-span-3">
+                      <div className="col-span-1 md:col-span-3">
                         <label className={LABEL}>Add to Trip <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span></label>
                         <select value={form.tripId} onChange={e => set('tripId', e.target.value)} className={`${SELECT} ${form.tripId === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
                           <option value="">Select a trip…</option>

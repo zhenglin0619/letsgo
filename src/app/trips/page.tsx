@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { Calendar, MapPin, BedDouble, Utensils, ArrowRight, MoreHorizontal, Pencil, Trash2, Search, X } from 'lucide-react';
 import AddTripModal from '@/components/upload/AddTripModal';
 import SortMenu, { DATE_OPTIONS } from '@/components/ui/SortMenu';
+import { fmtCountries } from '@/lib/formatUtils';
 
 function formatRange(start: string, end: string) {
   const s = new Date(start);
@@ -212,7 +213,7 @@ export default function TripsPage() {
                 <div className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-4 text-xs md:text-xs text-[#8A8A8A] mb-2 md:mb-3">
                     <span className="flex items-center gap-1"><Calendar size={12} />{formatRange(trip.startDate, trip.endDate)}</span>
-                    <span className="flex items-center gap-1"><MapPin size={12} />{trip.countries.join(', ')}</span>
+                    <span className="flex items-center gap-1"><MapPin size={12} />{fmtCountries(trip.countries)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex gap-2 md:gap-4 text-xs md:text-xs text-[#4A5343]">

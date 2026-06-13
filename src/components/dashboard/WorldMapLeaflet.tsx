@@ -112,9 +112,12 @@ export default function WorldMapLeaflet({ pins }: Props) {
     const container = containerRef.current;
     if (!container || mapRef.current) return;
 
+    const isMobile = window.innerWidth < 768;
+    const defaultZoom = isMobile ? 0.6 : 1.8;
+
     const map = L.map(container, {
       center: [22, 12],
-      zoom: 1.8,
+      zoom: defaultZoom,
       zoomSnap: 0,
       zoomControl: false,
       attributionControl: true,
@@ -242,7 +245,7 @@ export default function WorldMapLeaflet({ pins }: Props) {
         )}
       </button>
       <button
-        onClick={() => mapRef.current?.flyTo([22, 12], 1.8, { animate: true, duration: 1.2 })}
+        onClick={() => mapRef.current?.flyTo([22, 12], window.innerWidth < 768 ? 0.6 : 1.8, { animate: true, duration: 1.2 })}
         title="Reset view"
         style={{
           position: 'absolute', top: 52, right: 12, zIndex: 1000,

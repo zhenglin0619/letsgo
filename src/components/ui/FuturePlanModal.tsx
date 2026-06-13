@@ -77,8 +77,11 @@ export default function FuturePlanModal({ open, onClose }: Props) {
 
   useEffect(() => {
     setMounted(true);
-    setNightMode(localStorage.getItem('nightMode') === 'true');
   }, []);
+
+  useEffect(() => {
+    setNightMode(document.documentElement.classList.contains('dark'));
+  }, [open]);
 
   useEffect(() => {
     if (!open || !user) return;
@@ -139,7 +142,7 @@ export default function FuturePlanModal({ open, onClose }: Props) {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
           />
-          <motion.div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 pointer-events-none">
+          <motion.div className="fixed inset-0 z-[10001] flex items-start md:items-center justify-center pt-40 md:pt-0 p-4 pointer-events-none">
             <motion.div
               className="bg-white rounded-2xl shadow-2xl pointer-events-auto w-full flex flex-col"
               style={{ maxWidth: 440, maxHeight: '80vh' }}

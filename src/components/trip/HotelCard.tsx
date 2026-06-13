@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { HotelLog } from '@/types';
 import { MapPin, Calendar, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { fmtCountry } from '@/lib/formatUtils';
 import StarRating from '@/components/ui/StarRating';
 
 interface Props {
@@ -119,7 +120,7 @@ export default function HotelCard({ hotel, index, onClick, onEdit, onDelete }: P
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
-            <MapPin size={11} />{hotel.location.city}, {hotel.location.country}
+            <MapPin size={11} />{hotel.location.city}, {fmtCountry(hotel.location.country)}
           </span>
           {hotel.rating > 0 && (
             <StarRating value={hotel.rating} readonly size="sm" />

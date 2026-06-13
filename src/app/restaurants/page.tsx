@@ -10,6 +10,7 @@ import SortMenu from '@/components/ui/SortMenu';
 import DiningDrawer from '@/components/dining/DiningDrawer';
 import { DiningLog } from '@/types';
 import { deleteStoragePhotos } from '@/lib/imageUtils';
+import { fmtCountry } from '@/lib/formatUtils';
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -203,7 +204,7 @@ export default function RestaurantsPage() {
             transition={{ delay: i * 0.1, duration: 0.45 }}
             onClick={() => openDining(dining)}
           >
-            <div className="relative h-45 md:h-50 overflow-hidden">
+            <div className="relative h-32 md:h-50 overflow-hidden">
               {dining.photos[0] ? (
                 <img
                   src={dining.photos[0]}
@@ -218,9 +219,9 @@ export default function RestaurantsPage() {
                 <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/30 via-[#E8E4DC] to-[#4A5343]/20" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-              <div className="absolute bottom-3 left-4 text-white">
-                <h2 className="serif font-semibold text-lg leading-tight">{dining.restaurantName}</h2>
-                <p className="text-xs text-white/70 mt-0.5">{dining.cuisine}</p>
+              <div className="absolute bottom-2 left-2 md:left-4 text-white">
+                <h2 className="serif font-semibold text-sm md:text-lg leading-tight">{dining.restaurantName}</h2>
+                <p className="text-[10px] md:text-xs text-white/70 mt-0.5">{dining.cuisine}</p>
               </div>
               {dining.michelinStars && (
                 <div className="absolute top-3 left-3">
@@ -235,19 +236,21 @@ export default function RestaurantsPage() {
               </div>
             </div>
 
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3 text-xs text-[#8A8A8A]">
-                  <span className="flex items-center gap-1"><MapPin size={11} />{dining.location.city}, {dining.location.country}</span>
-                  <span className="flex items-center gap-1"><Clock size={11} />{dining.time}</span>
+            <div className="px-2.5 pt-2 pb-1.5 md:p-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-1 md:mb-2 gap-1 md:gap-0">
+                <div className="order-first md:order-last">
+                  <StarRating value={dining.overallRating} readonly size="sm" />
                 </div>
-                <StarRating value={dining.overallRating} readonly size="sm" />
+                <div className="flex items-center gap-2 md:gap-3 text-xs text-[#8A8A8A] order-last md:order-first">
+                  <span className="flex items-center gap-1"><MapPin size={11} />{dining.location.city}, {fmtCountry(dining.location.country)}</span>
+                  <span className="hidden md:flex items-center gap-1"><Clock size={11} />{dining.time}</span>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-[#8A8A8A]">{formatDate(dining.date)}</span>
                 <span className="text-xs text-[#8A8A8A]">{dining.currency} {dining.totalExpense.toLocaleString()}</span>
               </div>
-              <p className="text-[10px] text-[#C87A53] font-medium mt-2 uppercase tracking-wider">{dining.tripTitle}</p>
+              <p className="text-[10px] text-[#C87A53] font-medium mt-1 md:mt-2 uppercase tracking-wider">{dining.tripTitle}</p>
             </div>
           </motion.div>
         ))}
