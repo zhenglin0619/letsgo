@@ -272,7 +272,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     No restaurants logged yet. Click + button to add meals.
                   </div>
                 )}
-                {trip!.diningLogs.map((log, i) => (
+                {trip!.diningLogs.slice().sort((a, b) => {
+                    const mealRank: Record<string, number> = { 'Breakfast': 0, 'Brunch': 1, 'Lunch': 2, 'Afternoon Tea': 3, 'Dinner': 4, 'Late Night': 5 };
+                    const dateDiff = b.date.localeCompare(a.date);
+                    return dateDiff !== 0 ? dateDiff : (mealRank[b.time] ?? 0) - (mealRank[a.time] ?? 0);
+                  }).map((log, i) => (
                   <DiningCard
                     key={log.id}
                     log={log}
@@ -295,7 +299,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     No hotels logged yet. Click + button to add stays.
                   </div>
                 )}
-                {trip!.hotels.map((hotel, i) => (
+                {trip!.hotels.slice().sort((a, b) => b.checkIn.localeCompare(a.checkIn)).map((hotel, i) => (
                   <HotelCard
                     key={hotel.id}
                     hotel={hotel}

@@ -94,7 +94,7 @@ export default function HotelCard({ hotel, index, onClick, onEdit, onDelete }: P
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08 }}
     >
-      <div className="relative h-32 md:h-48 overflow-hidden">
+      <div className="relative h-32 md:h-60 overflow-hidden">
         {hotel.photos[0] ? (
           <img
             src={hotel.photos[0]}

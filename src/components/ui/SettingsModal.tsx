@@ -244,7 +244,7 @@ export default function SettingsModal({ open, onClose }: Props) {
                 <p className="text-[10px] text-[#4A4A4A] tracking-wide flex items-center gap-1">
                   by CX <Heart size={10} className="text-[#C87A53] fill-[#C87A53]" /> ZW
                 </p>
-                <p className="text-[10px] text-[#4A4A4A] tracking-widest">version 1.1.0</p>
+                <p className="text-[10px] text-[#4A4A4A] tracking-widest">version 1.1.2</p>
               </div>
             </motion.div>
           </motion.div>

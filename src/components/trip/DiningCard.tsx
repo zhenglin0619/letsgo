@@ -88,7 +88,7 @@ export default function DiningCard({ log, index, onClick, onEdit, onDelete }: Pr
       onClick={onClick}
     >
       {/* Cover */}
-      <div className="relative h-32 md:h-44 overflow-hidden">
+      <div className="relative h-32 md:h-50 overflow-hidden">
         {log.photos[0] ? (
           <img
             src={log.photos[0]}
