@@ -18,7 +18,10 @@ const DISPLAY = 'MM/dd/yyyy';
 
 function toDisplay(iso: string) {
   if (!iso) return '';
-  try { return format(parseISO(iso), DISPLAY); } catch { return ''; }
+  try {
+    const [y, m, d] = iso.split('-').map(Number);
+    return format(new Date(y, m - 1, d), DISPLAY);
+  } catch { return ''; }
 }
 
 function toISO(display: string) {
@@ -103,9 +106,10 @@ export default function DatePickerInput({ label, value, onChange, min, defaultMo
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
   const ref = useRef<HTMLDivElement>(null);
 
-  const selected         = value        ? (() => { try { return parseISO(value);        } catch { return undefined; } })() : undefined;
-  const minDate          = min          ? (() => { try { return parseISO(min);          } catch { return undefined; } })() : undefined;
-  const defaultMonthDate = defaultMonth ? (() => { try { return parseISO(defaultMonth); } catch { return undefined; } })() : undefined;
+  function isoToLocal(s: string) { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); }
+  const selected         = value        ? isoToLocal(value)        : undefined;
+  const minDate          = min          ? isoToLocal(min)          : undefined;
+  const defaultMonthDate = defaultMonth ? isoToLocal(defaultMonth) : undefined;
 
   useEffect(() => { setText(toDisplay(value)); }, [value]);
 

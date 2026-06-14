@@ -5,6 +5,7 @@ import { DiningLog } from '@/types';
 import StarRating from '@/components/ui/StarRating';
 import MichelinBadge from '@/components/ui/MichelinBadge';
 import { MapPin, Clock, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { parseLocalDate } from '@/lib/formatUtils';
 
 interface Props {
   log: DiningLog;
@@ -76,7 +77,7 @@ function CardMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => vo
 
 export default function DiningCard({ log, index, onClick, onEdit, onDelete }: Props) {
   const fmtDate = (d: string) =>
-    new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    parseLocalDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
     <motion.div

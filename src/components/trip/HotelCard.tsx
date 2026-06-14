@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { HotelLog } from '@/types';
 import { MapPin, Calendar, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { fmtCountry } from '@/lib/formatUtils';
+import { fmtCountry, parseLocalDate } from '@/lib/formatUtils';
 import StarRating from '@/components/ui/StarRating';
 
 interface Props {
@@ -19,7 +19,7 @@ function nights(checkIn: string, checkOut: string) {
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return parseLocalDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function HotelMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {

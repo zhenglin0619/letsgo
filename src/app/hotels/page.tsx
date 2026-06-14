@@ -9,14 +9,14 @@ import HotelDrawer from '@/components/hotel/HotelDrawer';
 import StarRating from '@/components/ui/StarRating';
 import { HotelLog } from '@/types';
 import { deleteStoragePhotos } from '@/lib/imageUtils';
-import { fmtCountry } from '@/lib/formatUtils';
+import { fmtCountry, parseLocalDate } from '@/lib/formatUtils';
 
 function nights(checkIn: string, checkOut: string) {
   return Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000);
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return parseLocalDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function HotelMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {

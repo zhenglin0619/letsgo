@@ -9,11 +9,11 @@ import { supabase } from '@/lib/supabase';
 import { Calendar, MapPin, BedDouble, Utensils, ArrowRight, MoreHorizontal, Pencil, Trash2, Search, X } from 'lucide-react';
 import AddTripModal from '@/components/upload/AddTripModal';
 import SortMenu, { DATE_OPTIONS } from '@/components/ui/SortMenu';
-import { fmtCountries } from '@/lib/formatUtils';
+import { fmtCountries, parseLocalDate } from '@/lib/formatUtils';
 
 function formatRange(start: string, end: string) {
-  const s = new Date(start);
-  const e = new Date(end);
+  const s = parseLocalDate(start);
+  const e = parseLocalDate(end);
   const sStr = s.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const eStr = e.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   return `${sStr} – ${eStr}`;

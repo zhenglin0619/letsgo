@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useId } from 'react';
 
 interface StarRatingProps {
   value: number; // 0–5
@@ -10,6 +10,7 @@ interface StarRatingProps {
 
 export default function StarRating({ value, onChange, readonly = false, size = 'md' }: StarRatingProps) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const uid = useId();
   const stars = 5;
   const filled = hovered !== null ? hovered : value;
 
@@ -20,6 +21,7 @@ export default function StarRating({ value, onChange, readonly = false, size = '
       {Array.from({ length: stars }).map((_, i) => {
         const isFull = filled >= i + 1;
         const isHalf = !isFull && filled >= i + 0.5;
+        const gradId = `${uid}-half-${i}`;
         return (
           <button
             key={i}
@@ -32,19 +34,19 @@ export default function StarRating({ value, onChange, readonly = false, size = '
             aria-label={`${i + 1} star`}
           >
             <svg viewBox="0 0 24 24" className="w-full h-full">
-              <path
-                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                fill={isFull ? '#C87A53' : isHalf ? 'url(#half)' : '#E0DBD4'}
-                stroke="none"
-              />
               {isHalf && (
                 <defs>
-                  <linearGradient id="half">
+                  <linearGradient id={gradId}>
                     <stop offset="50%" stopColor="#C87A53" />
                     <stop offset="50%" stopColor="#E0DBD4" />
                   </linearGradient>
                 </defs>
               )}
+              <path
+                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                fill={isFull ? '#C87A53' : isHalf ? `url(#${gradId})` : '#E0DBD4'}
+                stroke="none"
+              />
             </svg>
           </button>
         );

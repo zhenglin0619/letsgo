@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HotelLog } from '@/types';
 import StarRating from '@/components/ui/StarRating';
 import { X, MapPin, BedDouble, Eye, Pencil, Trash2, Check, MoreHorizontal } from 'lucide-react';
-import { fmtCountry } from '@/lib/formatUtils';
+import { fmtCountry, parseLocalDate } from '@/lib/formatUtils';
 
 interface Props {
   hotel: HotelLog | null;
@@ -20,7 +20,7 @@ function nights(checkIn: string, checkOut: string) {
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  return parseLocalDate(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, onUpdateHotel }: Props) {

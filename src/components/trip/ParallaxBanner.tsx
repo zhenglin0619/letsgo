@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { Trip } from '@/types';
 import { Calendar, Globe } from 'lucide-react';
+import { parseLocalDate } from '@/lib/formatUtils';
 
 interface Props { trip: Trip }
 
@@ -18,7 +19,7 @@ export default function ParallaxBanner({ trip }: Props) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const fmt = (d: string) => parseLocalDate(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   return (
     <div className="relative h-[50vh] md:h-[70vh] overflow-hidden">

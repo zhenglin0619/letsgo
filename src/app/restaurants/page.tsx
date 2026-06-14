@@ -10,10 +10,10 @@ import SortMenu from '@/components/ui/SortMenu';
 import DiningDrawer from '@/components/dining/DiningDrawer';
 import { DiningLog } from '@/types';
 import { deleteStoragePhotos } from '@/lib/imageUtils';
-import { fmtCountry } from '@/lib/formatUtils';
+import { fmtCountry, parseLocalDate } from '@/lib/formatUtils';
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return parseLocalDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function DiningMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
@@ -86,6 +86,10 @@ export default function RestaurantsPage() {
     ...standaloneRestaurants.map(log => ({ ...log, tripTitle: '', tripId: '', isStandalone: true })),
   ].sort((a, b) => b.date.localeCompare(a.date));
 
+  const TIME_ORDER: Record<string, number> = {
+    Breakfast: 0, Brunch: 1, Lunch: 2, 'Afternoon Tea': 3, Dinner: 4, 'Late Night': 5,
+  };
+
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('date-desc');
 
@@ -101,9 +105,12 @@ export default function RestaurantsPage() {
       })
     : allRestaurants;
 
+  const byTime = (a: typeof base[0], b: typeof base[0]) =>
+    (TIME_ORDER[a.time] ?? 0) - (TIME_ORDER[b.time] ?? 0);
+
   const filtered = [...base].sort((a, b) => {
-    if (sortBy === 'date-desc') return b.date.localeCompare(a.date);
-    if (sortBy === 'date-asc')  return a.date.localeCompare(b.date);
+    if (sortBy === 'date-desc') { const c = b.date.localeCompare(a.date); return c !== 0 ? c : byTime(b, a); }
+    if (sortBy === 'date-asc')  { const c = a.date.localeCompare(b.date); return c !== 0 ? c : byTime(a, b); }
     if (sortBy === 'rate-desc') return b.overallRating - a.overallRating;
     if (sortBy === 'rate-asc')  return a.overallRating - b.overallRating;
     return 0;

@@ -8,6 +8,7 @@ import DishRow from './DishRow';
 import { X, MapPin, GripVertical, Trash2, Plus, Check, ImagePlus, Pencil, MoreHorizontal } from 'lucide-react';
 import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
 import { fileToDataUrl, uploadPhoto, uploadDataUrl, deleteStoragePhoto } from '@/lib/imageUtils';
+import { parseLocalDate } from '@/lib/formatUtils';
 
 const CATEGORIES: Dish['category'][] = ['Appetizer', 'Mains', 'Dessert', 'Drinks', 'Snack'];
 const emptyDishForm = { name: '', category: '' as Dish['category'], rating: '', notes: '', photo: '' };
@@ -243,7 +244,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
 
   if (!log) return null;
 
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const fmtDate = (d: string) => parseLocalDate(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   const displayDishes = editMode ? localDishes : log.dishes;
 
