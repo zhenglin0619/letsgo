@@ -8,12 +8,14 @@ import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
 import AddHotelModal from '@/components/upload/AddHotelModal';
 import AuthModal from '@/components/auth/AuthModal';
 import { TripsProvider, useTrips } from '@/store/tripsContext';
+import { getAuthDebugLog } from '@/lib/authDebug';
 
 function Shell({ children }: { children: React.ReactNode }) {
   const { user, authLoading } = useTrips();
   const [addTripOpen, setAddTripOpen]           = useState(false);
   const [addRestaurantOpen, setAddRestaurantOpen] = useState(false);
   const [addHotelOpen, setAddHotelOpen]         = useState(false);
+  const [stuck, setStuck]                       = useState(false);
   const pathname = usePathname();
   const hideFAB  = /^\/trips\/.+/.test(pathname);
   const mountedAtRef = useRef(Date.now());
@@ -40,13 +42,38 @@ function Shell({ children }: { children: React.ReactNode }) {
     };
   }, [authLoading]);
 
+  // Surface a manual way out (and what got logged) if the splash sits for
+  // too long on its own — covers the case where the recovery listeners above
+  // never fire because the tab stays visible/focused the whole time and the
+  // bootstrap itself is what's hanging, not a freeze/resume gap.
+  useEffect(() => {
+    if (!authLoading) { setStuck(false); return; }
+    const id = setTimeout(() => setStuck(true), 8000);
+    return () => clearTimeout(id);
+  }, [authLoading]);
+
   if (authLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center"
         style={{ background: 'var(--canvas)' }}>
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 max-w-sm px-6 text-center">
           <img src="/logo.png" alt="Logo" width={72} height={72} className="object-contain animate-pulse" />
           <span className="text-xs font-medium tracking-[0.2em] uppercase text-[#C87A53]">Loading</span>
+          {stuck && (
+            <div className="mt-4 flex flex-col items-center gap-3">
+              <p className="text-xs text-[#8A8A8A]">This is taking longer than expected.</p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="bg-[#1A1A1A] text-white text-xs font-medium px-4 py-2 rounded-full hover:bg-[#333] transition-colors"
+              >
+                Reload
+              </button>
+              <pre className="mt-2 text-left text-[9px] leading-tight text-[#C0BAB2] bg-[#F5F2EE] rounded-lg p-2 max-h-32 overflow-y-auto w-full whitespace-pre-wrap">
+                {getAuthDebugLog().join('\n') || '(no debug log captured)'}
+              </pre>
+            </div>
+          )}
         </div>
       </div>
     );

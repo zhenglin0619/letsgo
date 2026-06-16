@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Trip, DiningLog, HotelLog, PhotoTransform } from '@/types';
 import { mockTrips, mockStandaloneRestaurants, mockStandaloneHotels } from '@/store/data';
 import { setDemoMode as setImageUtilsDemoMode } from '@/lib/imageUtils';
+import { logAuthEvent } from '@/lib/authDebug';
 
 export interface ItemInvite {
   id: string;
@@ -310,7 +311,9 @@ export function TripsProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    logAuthEvent('effect:mount');
     async function applySession(session: import('@supabase/supabase-js').Session | null) {
+      logAuthEvent(`applySession:start user=${!!session?.user}`);
       try {
         const u = session?.user ?? null;
         setUser(u);
@@ -331,8 +334,10 @@ export function TripsProvider({ children }: { children: ReactNode }) {
           setStandaloneHotels([]);
           setPendingItemInvites([]);
         }
+        logAuthEvent('applySession:done');
       } catch (err) {
         console.error('[auth] session error:', err);
+        logAuthEvent(`applySession:error ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         setAuthLoading(false);
       }
@@ -340,7 +345,10 @@ export function TripsProvider({ children }: { children: ReactNode }) {
 
     // Hard timeout: if Supabase never responds (e.g. mobile network can't reach it),
     // unblock the UI after 5s so the user at least sees the login screen.
-    const timeout = setTimeout(() => setAuthLoading(false), 5000);
+    const timeout = setTimeout(() => {
+      logAuthEvent('timeout:fired');
+      setAuthLoading(false);
+    }, 5000);
 
     // Use onAuthStateChange only — getSession() can return a stale cached session
     // with an already-expired access token, causing RLS to silently return empty
@@ -352,21 +360,30 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     // screen until a manual reload happened to win the race.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === 'INITIAL_SESSION' && session) {
-          const nowSec = Math.floor(Date.now() / 1000);
-          if (session.expires_at && session.expires_at < nowSec) {
-            const { data, error } = await supabase.auth.refreshSession();
-            if (error) console.warn('[auth] refresh failed:', error.message);
-            clearTimeout(timeout);
-            await applySession(error ? null : data.session);
-            return;
+        logAuthEvent(`event:${event} session=${!!session} expires_at=${session?.expires_at ?? 'n/a'}`);
+        try {
+          if (event === 'INITIAL_SESSION' && session) {
+            const nowSec = Math.floor(Date.now() / 1000);
+            if (session.expires_at && session.expires_at < nowSec) {
+              logAuthEvent('refresh:start (expired initial session)');
+              const { data, error } = await supabase.auth.refreshSession();
+              logAuthEvent(error ? `refresh:error ${error.message}` : 'refresh:ok');
+              clearTimeout(timeout);
+              await applySession(error ? null : data.session);
+              return;
+            }
           }
+          clearTimeout(timeout);
+          await applySession(session);
+        } catch (err) {
+          logAuthEvent(`listener:error ${err instanceof Error ? err.message : String(err)}`);
+          clearTimeout(timeout);
+          setAuthLoading(false);
         }
-        clearTimeout(timeout);
-        await applySession(session);
       }
     );
     return () => {
+      logAuthEvent('effect:cleanup');
       subscription.unsubscribe();
       clearTimeout(timeout);
     };
