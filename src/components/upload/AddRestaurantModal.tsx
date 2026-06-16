@@ -46,6 +46,14 @@ const emptyForm = {
   michelinStars: 0 as 0 | 1 | 2 | 3,
   tripId: '',
 };
+const DRAFT_KEY = 'foodprint-draft-restaurant';
+
+interface RestaurantDraft {
+  form: typeof emptyForm;
+  coverPreview: string;
+  coverTransform?: PhotoTransform;
+  geocoded: { lat: number; lng: number; city: string; country: string } | null;
+}
 
 
 export default function AddRestaurantModal({ open, onClose, initialDining, defaultTripId }: Props) {
@@ -54,8 +62,9 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState('');
   const [coverTransform, setCoverTransform] = useState<PhotoTransform | undefined>(undefined);
-  const [step, setStep] = useState<'form' | 'done'>('form');
+  const [step, setStep] = useState<'form' | 'done' | 'draft-saved'>('form');
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [geocoded, setGeocoded] = useState<{ lat: number; lng: number; city: string; country: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<DraggableImageHandle>(null);
@@ -75,7 +84,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
       setForm({
         restaurantName: log.restaurantName,
         cuisine: log.cuisine,
-        meal: log.time,
+        meal: log.time ?? '',
         date: log.date,
         rating: log.overallRating ? String(log.overallRating) : '',
         city: log.location.city,
@@ -90,13 +99,28 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
       setCoverTransform(log.photoTransform);
       setGeocoded({ lat: log.location.lat, lng: log.location.lng, city: log.location.city, country: log.location.country });
     } else {
-      setForm({ ...emptyForm, tripId: defaultTripIdRef.current ?? '' });
-      setCoverPreview('');
-      setCoverTransform(undefined);
+      let loaded = false;
+      const draftRaw = typeof window !== 'undefined' ? localStorage.getItem(DRAFT_KEY) : null;
+      if (draftRaw) {
+        try {
+          const draft: RestaurantDraft = JSON.parse(draftRaw);
+          setForm({ ...emptyForm, ...draft.form, tripId: draft.form.tripId || defaultTripIdRef.current || '' });
+          setCoverPreview(draft.coverPreview || '');
+          setCoverTransform(draft.coverTransform);
+          setGeocoded(draft.geocoded ?? null);
+          loaded = true;
+        } catch { /* ignore corrupt draft */ }
+      }
+      if (!loaded) {
+        setForm({ ...emptyForm, tripId: defaultTripIdRef.current ?? '' });
+        setCoverPreview('');
+        setCoverTransform(undefined);
+        setGeocoded(null);
+      }
       coverFileRef.current = null;
-      setGeocoded(null);
     }
     setStep('form');
+    setSavingDraft(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -123,7 +147,28 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
     setTimeout(() => { isSelectingRef.current = false; }, 50);
   }
 
-  const isValid = form.restaurantName.trim() && form.date;
+  const isValid = form.restaurantName.trim() && form.date && form.address.trim();
+
+  async function handleSaveDraft() {
+    if (savingDraft || submitting) return;
+    setSavingDraft(true);
+    let photo = coverPreview;
+    if (coverPreview.startsWith('data:') && coverFileRef.current) {
+      photo = await uploadPhoto(coverFileRef.current);
+      coverFileRef.current = null;
+    }
+    const transform = imgRef.current?.getTransform();
+    const draft: RestaurantDraft = { form, coverPreview: photo, coverTransform: transform, geocoded };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    setCoverPreview(photo);
+    setCoverTransform(transform);
+    setStep('draft-saved');
+    setTimeout(() => {
+      onClose();
+      setStep('form');
+      setSavingDraft(false);
+    }, 1400);
+  }
 
   async function handleSubmit() {
     if (!isValid || submitting) return;
@@ -170,7 +215,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
       restaurantName: form.restaurantName.trim(),
       cuisine: form.cuisine.trim(),
       date: form.date,
-      time: (form.meal || 'Dinner') as DiningLog['time'],
+      ...(form.meal ? { time: form.meal } : {}),
       totalExpense: parseFloat(form.expense) || 0,
       currency: form.currency,
       overallRating: parseFloat(form.rating) || 0,
@@ -212,6 +257,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
         addStandaloneRestaurant(log);
       }
     }
+    if (!isEdit) localStorage.removeItem(DRAFT_KEY);
     setStep('done');
     setTimeout(() => { onClose(); setStep('form'); }, 1400);
   }
@@ -247,14 +293,17 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                 {step === 'form' && (
                   <div className="space-y-3">
 
-                    {/* Row 1: Name / Cuisine / Meal / Date + Cover photo */}
+                    {/* Row 1: Name / Date / Cuisine / Meal + Cover photo */}
                     <div className="flex flex-col md:flex-row gap-3 md:gap-5">
                       <div className="flex-1 space-y-3 min-w-0 order-last md:order-none">
                         <div>
-                          <label className={LABEL}>Restaurant Name</label>
+                          <label className={LABEL}>
+                            Restaurant Name <span className="normal-case font-normal text-[#C0BAB2]">(required)</span>
+                          </label>
                           <input type="text" placeholder="e.g. Izumo Ikebukuro" value={form.restaurantName}
                             onChange={e => set('restaurantName', e.target.value)} className={INPUT} />
                         </div>
+                        <DatePickerInput label={<>Date <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>} value={form.date} onChange={v => set('date', v)} />
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className={LABEL}>Cuisine</label>
@@ -269,12 +318,11 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                             </select>
                           </div>
                         </div>
-                        <DatePickerInput label="Date" value={form.date} onChange={v => set('date', v)} />
                       </div>
 
                       {/* Cover photo — aligned with the top block only */}
                       <div className="w-full md:flex-1 flex flex-col order-first md:order-none">
-                        <label className={LABEL}>Cover Photo <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span></label>
+                        <label className={LABEL}>Cover Photo</label>
                         <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleImageChange} />
                         {coverPreview ? (
                           <div className="w-full aspect-[16/9] md:aspect-auto md:flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
@@ -341,7 +389,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                         </div>
                       </div>
                       <div className="col-span-1 md:col-span-3">
-                        <label className={LABEL}>Add to Trip <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span></label>
+                        <label className={LABEL}>Add to Trip</label>
                         <select value={form.tripId} onChange={e => set('tripId', e.target.value)} className={`${SELECT} ${form.tripId === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
                           <option value="">Select a trip…</option>
                           {trips.map(t => <option key={t.id} value={t.id} className="text-[#1A1A1A]">{t.title}</option>)}
@@ -351,7 +399,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
 
                     {/* Row 3: Address */}
                     <div>
-                      <label className={LABEL}>Address</label>
+                      <label className={LABEL}>Address <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></label>
                       <AddressSearchBox
                         value={form.address}
                         onChange={v => { if (!isSelectingRef.current) setGeocoded(null); set('address', v); }}
@@ -389,10 +437,34 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                     <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{isEdit ? 'Changes Saved' : 'Restaurant Added'}</h3>
                   </div>
                 )}
+
+                {step === 'draft-saved' && (
+                  <div className="text-center py-10">
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: 'spring', damping: 12 }}
+                      className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4"
+                    >
+                      <CheckCircle size={32} className="text-green-500" />
+                    </motion.div>
+                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">Draft Saved</h3>
+                  </div>
+                )}
               </div>
 
               {step === 'form' && (
-                <div className="px-5 pb-4 pt-0 flex justify-end">
+                <div className="px-5 pb-4 pt-0 flex justify-end gap-3">
+                  {!isEdit && (
+                    <button
+                      type="button"
+                      onClick={handleSaveDraft}
+                      disabled={submitting || savingDraft}
+                      className="text-sm font-medium px-6 py-2.5 rounded-full border border-[#E8E6E1] text-[#1A1A1A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Save Draft
+                    </button>
+                  )}
                   <button
                     onClick={handleSubmit}
                     disabled={!isValid || submitting}

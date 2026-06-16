@@ -148,7 +148,7 @@ export default function RestaurantsPage() {
     : allRestaurants;
 
   const byTime = (a: typeof base[0], b: typeof base[0]) =>
-    (TIME_ORDER[a.time] ?? 0) - (TIME_ORDER[b.time] ?? 0);
+    (TIME_ORDER[a.time ?? ''] ?? 0) - (TIME_ORDER[b.time ?? ''] ?? 0);
 
   const filtered = [...base].sort((a, b) => {
     if (sortBy === 'date-desc') { const c = b.date.localeCompare(a.date); return c !== 0 ? c : byTime(b, a); }
@@ -302,7 +302,7 @@ export default function RestaurantsPage() {
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 text-xs text-[#8A8A8A] order-last md:order-first">
                   <span className="flex items-center gap-1"><MapPin size={11} />{dining.location.city}, {fmtCountry(dining.location.country)}</span>
-                  <span className="hidden md:flex items-center gap-1"><Clock size={11} />{dining.time}</span>
+                  {dining.time && <span className="hidden md:flex items-center gap-1"><Clock size={11} />{dining.time}</span>}
                 </div>
               </div>
               <div className="flex items-center justify-between">

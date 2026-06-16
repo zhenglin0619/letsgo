@@ -44,6 +44,14 @@ const emptyForm = {
   address: '',
   tripId: '',
 };
+const DRAFT_KEY = 'foodprint-draft-hotel';
+
+interface HotelDraft {
+  form: typeof emptyForm;
+  coverPreview: string;
+  coverTransform?: PhotoTransform;
+  geocoded: { lat: number; lng: number; city: string; country: string } | null;
+}
 
 export default function AddHotelModal({ open, onClose, defaultTripId, initialHotel }: Props) {
   const { trips, updateTrip, addStandaloneHotel, updateStandaloneHotel, deleteStandaloneHotel, detachStandaloneHotel } = useTrips();
@@ -51,8 +59,9 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState('');
   const [coverTransform, setCoverTransform] = useState<PhotoTransform | undefined>(undefined);
-  const [step, setStep] = useState<'form' | 'done'>('form');
+  const [step, setStep] = useState<'form' | 'done' | 'draft-saved'>('form');
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [geocoded, setGeocoded] = useState<{ lat: number; lng: number; city: string; country: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<DraggableImageHandle>(null);
@@ -85,13 +94,28 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
       setCoverTransform(hotel.photoTransform);
       setGeocoded({ lat: hotel.location.lat, lng: hotel.location.lng, city: hotel.location.city, country: hotel.location.country });
     } else {
-      setForm({ ...emptyForm, tripId: defaultTripIdRef.current ?? '' });
-      setCoverPreview('');
-      setCoverTransform(undefined);
+      let loaded = false;
+      const draftRaw = typeof window !== 'undefined' ? localStorage.getItem(DRAFT_KEY) : null;
+      if (draftRaw) {
+        try {
+          const draft: HotelDraft = JSON.parse(draftRaw);
+          setForm({ ...emptyForm, ...draft.form, tripId: draft.form.tripId || defaultTripIdRef.current || '' });
+          setCoverPreview(draft.coverPreview || '');
+          setCoverTransform(draft.coverTransform);
+          setGeocoded(draft.geocoded ?? null);
+          loaded = true;
+        } catch { /* ignore corrupt draft */ }
+      }
+      if (!loaded) {
+        setForm({ ...emptyForm, tripId: defaultTripIdRef.current ?? '' });
+        setCoverPreview('');
+        setCoverTransform(undefined);
+        setGeocoded(null);
+      }
       coverFileRef.current = null;
-      setGeocoded(null);
     }
     setStep('form');
+    setSavingDraft(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -116,7 +140,28 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
     setTimeout(() => { isSelectingRef.current = false; }, 50);
   }
 
-  const isValid = form.hotelName.trim() && form.checkIn && form.checkOut;
+  const isValid = form.hotelName.trim() && form.checkIn && form.checkOut && form.address.trim();
+
+  async function handleSaveDraft() {
+    if (savingDraft || submitting) return;
+    setSavingDraft(true);
+    let photo = coverPreview;
+    if (coverPreview.startsWith('data:') && coverFileRef.current) {
+      photo = await uploadPhoto(coverFileRef.current);
+      coverFileRef.current = null;
+    }
+    const transform = imgRef.current?.getTransform();
+    const draft: HotelDraft = { form, coverPreview: photo, coverTransform: transform, geocoded };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    setCoverPreview(photo);
+    setCoverTransform(transform);
+    setStep('draft-saved');
+    setTimeout(() => {
+      onClose();
+      setStep('form');
+      setSavingDraft(false);
+    }, 1400);
+  }
 
   async function handleSubmit() {
     if (!isValid || submitting) return;
@@ -199,6 +244,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
       addStandaloneHotel(hotel);
     }
 
+    if (!isEdit) localStorage.removeItem(DRAFT_KEY);
     setStep('done');
     setTimeout(() => { onClose(); setStep('form'); }, 1400);
   }
@@ -238,13 +284,13 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                     <div className="flex flex-col md:flex-row gap-3 md:gap-5">
                       <div className="flex-1 space-y-3 min-w-0 order-last md:order-none">
                         <div>
-                          <label className={LABEL}>Hotel Name</label>
+                          <label className={LABEL}>Hotel Name <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></label>
                           <input type="text" placeholder="e.g. Aman Tokyo" value={form.hotelName}
                             onChange={e => set('hotelName', e.target.value)} className={INPUT} />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <DatePickerInput label="Check-in" value={form.checkIn} onChange={v => set('checkIn', v)} />
-                          <DatePickerInput label="Check-out" value={form.checkOut} onChange={v => set('checkOut', v)}
+                          <DatePickerInput label={<>Check-in <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>} value={form.checkIn} onChange={v => set('checkIn', v)} />
+                          <DatePickerInput label={<>Check-out <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>} value={form.checkOut} onChange={v => set('checkOut', v)}
                             min={form.checkIn} defaultMonth={form.checkIn} />
                         </div>
                         <div className="grid grid-cols-3 md:grid-cols-2 gap-2 md:gap-3">
@@ -274,7 +320,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
 
                       {/* Cover photo */}
                       <div className="w-full md:flex-1 flex flex-col order-first md:order-none">
-                        <label className={LABEL}>Cover Photo <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span></label>
+                        <label className={LABEL}>Cover Photo</label>
                         <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleImageChange} />
                         {coverPreview ? (
                           <div className="w-full aspect-[16/9] md:aspect-auto md:flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
@@ -326,7 +372,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                         </div>
                       </div>
                       <div>
-                        <label className={LABEL}>Add to Trip <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span></label>
+                        <label className={LABEL}>Add to Trip</label>
                         <select value={form.tripId} onChange={e => set('tripId', e.target.value)} className={`${SELECT} ${form.tripId === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
                           <option value="">Select a trip…</option>
                           {trips.map(t => <option key={t.id} value={t.id} className="text-[#1A1A1A]">{t.title}</option>)}
@@ -336,7 +382,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
 
                     {/* Address */}
                     <div>
-                      <label className={LABEL}>Address</label>
+                      <label className={LABEL}>Address <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></label>
                       <AddressSearchBox
                         value={form.address}
                         onChange={v => { if (!isSelectingRef.current) setGeocoded(null); set('address', v); }}
@@ -373,10 +419,34 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                     <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{isEdit ? 'Changes Saved' : 'Hotel Added'}</h3>
                   </div>
                 )}
+
+                {step === 'draft-saved' && (
+                  <div className="text-center py-10">
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: 'spring', damping: 12 }}
+                      className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4"
+                    >
+                      <CheckCircle size={32} className="text-green-500" />
+                    </motion.div>
+                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">Draft Saved</h3>
+                  </div>
+                )}
               </div>
 
               {step === 'form' && (
-                <div className="px-4 pb-3 pt-0 md:px-5 md:pb-4 flex justify-end">
+                <div className="px-4 pb-3 pt-0 md:px-5 md:pb-4 flex justify-end gap-3">
+                  {!isEdit && (
+                    <button
+                      type="button"
+                      onClick={handleSaveDraft}
+                      disabled={submitting || savingDraft}
+                      className="text-sm font-medium px-6 py-2.5 rounded-full border border-[#E8E6E1] text-[#1A1A1A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Save Draft
+                    </button>
+                  )}
                   <button
                     onClick={handleSubmit}
                     disabled={!isValid || submitting}

@@ -17,6 +17,14 @@ interface Props {
 }
 
 const emptyForm = { title: '', country: '', city: '', startDate: '', endDate: '' };
+const DRAFT_KEY = 'foodprint-draft-trip';
+
+interface TripDraft {
+  form: typeof emptyForm;
+  coverPreview: string;
+  coverTransform?: PhotoTransform;
+  highlightPhotos: string[];
+}
 
 export default function AddTripModal({ open, onClose, initialTrip }: Props) {
   const { addTrip, updateTrip } = useTrips();
@@ -25,8 +33,9 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
   const [coverPreview, setCoverPreview] = useState<string>('');
   const [coverTransform, setCoverTransform] = useState<PhotoTransform | undefined>(undefined);
   const [highlightPhotos, setHighlightPhotos] = useState<string[]>([]);
-  const [step, setStep] = useState<'form' | 'done'>('form');
+  const [step, setStep] = useState<'form' | 'done' | 'draft-saved'>('form');
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const highlightFileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<DraggableImageHandle>(null);
@@ -47,14 +56,29 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
       setCoverTransform(initialTrip.coverPhotoTransform);
       setHighlightPhotos(initialTrip.photos ?? []);
     } else {
-      setForm(emptyForm);
-      setCoverPreview('');
-      setCoverTransform(undefined);
+      let loaded = false;
+      const draftRaw = typeof window !== 'undefined' ? localStorage.getItem(DRAFT_KEY) : null;
+      if (draftRaw) {
+        try {
+          const draft: TripDraft = JSON.parse(draftRaw);
+          setForm({ ...emptyForm, ...draft.form });
+          setCoverPreview(draft.coverPreview || '');
+          setCoverTransform(draft.coverTransform);
+          setHighlightPhotos(draft.highlightPhotos || []);
+          loaded = true;
+        } catch { /* ignore corrupt draft */ }
+      }
+      if (!loaded) {
+        setForm(emptyForm);
+        setCoverPreview('');
+        setCoverTransform(undefined);
+        setHighlightPhotos([]);
+      }
       coverFileRef.current = null;
-      setHighlightPhotos([]);
     }
     setStep('form');
     setSubmitting(false);
+    setSavingDraft(false);
   }, [open, initialTrip]);
 
   function set(field: string, value: string) {
@@ -88,6 +112,27 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
 
 
   const isValid = form.title.trim() && form.country.trim() && form.city.trim() && form.startDate && form.endDate;
+
+  async function handleSaveDraft() {
+    if (savingDraft || submitting) return;
+    setSavingDraft(true);
+    let photoUrl = coverPreview;
+    if (coverPreview.startsWith('data:') && coverFileRef.current) {
+      photoUrl = await uploadPhoto(coverFileRef.current);
+      coverFileRef.current = null;
+    }
+    const transform = imgRef.current?.getTransform();
+    const draft: TripDraft = { form, coverPreview: photoUrl, coverTransform: transform, highlightPhotos };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    setCoverPreview(photoUrl);
+    setCoverTransform(transform);
+    setStep('draft-saved');
+    setTimeout(() => {
+      onClose();
+      setStep('form');
+      setSavingDraft(false);
+    }, 1400);
+  }
 
   async function handleSubmit() {
     if (!isValid || submitting) return;
@@ -129,6 +174,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
         diningLogs:          [],
       });
     }
+    if (!isEdit) localStorage.removeItem(DRAFT_KEY);
     setStep('done');
     setTimeout(() => {
       onClose();
@@ -181,7 +227,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                       <div className="flex-1 space-y-3 md:space-y-5 min-w-0 order-last md:order-none">
                         <div>
                           <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
-                            Trip Name
+                            Trip Name <span className="normal-case font-normal text-[#C0BAB2]">(required)</span>
                           </label>
                           <input
                             type="text"
@@ -194,7 +240,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
 
                         <div className="grid grid-cols-2 gap-3">
                           <GeoAutocomplete
-                            label="City"
+                            label={<>City <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>}
                             placeholder="e.g. Tokyo"
                             value={form.city}
                             onChange={v => set('city', v)}
@@ -202,7 +248,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                             onSelectCountry={c => { if (!form.country) set('country', c); }}
                           />
                           <GeoAutocomplete
-                            label="Country"
+                            label={<>Country <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>}
                             placeholder="e.g. Japan"
                             value={form.country}
                             onChange={v => set('country', v)}
@@ -212,13 +258,13 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
 
                         <div className="grid grid-cols-2 gap-3">
                           <DatePickerInput
-                            label="Start Date"
+                            label={<>Start Date <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>}
                             value={form.startDate}
                             onChange={v => set('startDate', v)}
                             placement="above"
                           />
                           <DatePickerInput
-                            label="End Date"
+                            label={<>End Date <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>}
                             value={form.endDate}
                             onChange={v => set('endDate', v)}
                             min={form.startDate}
@@ -238,7 +284,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                         />
                         <div>
                           <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
-                            Highlight Photos <span className="normal-case font-normal text-[#C0BAB2]">(optional)</span>
+                            Highlight Photos
                           </label>
                           <button
                             type="button"
@@ -257,7 +303,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                       {/* Right: cover photo upload */}
                       <div className="w-full md:w-72 md:flex-shrink-0 flex flex-col order-first md:order-none">
                         <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
-                          Cover Photo <span className="normal-case text-[#C0BAB2]">(optional)</span>
+                          Cover Photo
                         </label>
                         <input
                           ref={fileRef}
@@ -305,13 +351,36 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                       <CheckCircle size={32} className="text-green-500" />
                     </motion.div>
                     <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{isEdit ? 'Changes Saved' : 'Trip Created'}</h3>
-                    {isEdit && <p className="text-sm text-[#8A8A8A]">Your trip has been updated</p>}
+                  </div>
+                )}
+
+                {step === 'draft-saved' && (
+                  <div className="text-center py-8">
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: 'spring', damping: 12 }}
+                      className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4"
+                    >
+                      <CheckCircle size={32} className="text-green-500" />
+                    </motion.div>
+                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">Draft Saved</h3>
                   </div>
                 )}
               </div>
 
               {step === 'form' && (
-                <div className="px-3 pb-3 pt-0 md:px-6 md:pb-6 flex justify-end">
+                <div className="px-3 pb-3 pt-0 md:px-6 md:pb-6 flex justify-end gap-3">
+                  {!isEdit && (
+                    <button
+                      type="button"
+                      onClick={handleSaveDraft}
+                      disabled={submitting || savingDraft}
+                      className="text-sm font-medium px-6 py-2.5 rounded-full border border-[#E8E6E1] text-[#1A1A1A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Save Draft
+                    </button>
+                  )}
                   <button
                     onClick={handleSubmit}
                     disabled={!isValid || submitting}

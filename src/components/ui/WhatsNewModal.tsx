@@ -12,32 +12,42 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: '1.2.1',
+    date: 'June 15, 2025',
+    items: [
+      { tag: 'New', text: 'Save Draft: You can now save your progress as a draft and continue editing later' },
+      { tag: 'Bug', text: 'Fixed always showing loading page on first load after session token expires' },
+      { tag: 'Bug', text: 'Fixed bugs and Improved UI' },
+    ],
+  },
+  {
     version: '1.2.0',
     date: 'June 15, 2025',
     items: [
-      { tag: 'New', text: 'Item-Level Collaborations: you can share individual trips, restaurants, and hotels independently to different accounts now' },
-      { tag: 'New', text: 'Appearance Setting: you can change the appearance to System, Light, and Dark mode options' },
-      { tag: 'New', text: 'Notification Badge: you can see a number badge on your avatar for pending collaboration invitations' },
-      { tag: 'New', text: 'New Collaboration Features: owners and collaborators. All collaborators can edit, share, and leave, but cannot delete. Otherwise, the owners can do anything' },
-      { tag: 'New', text: 'What\'s New: a dedicated modal to showcase the latest updates and features' },
-      { tag: 'Bug', text: 'Blank screen on first load after session token expires' },
+      { tag: 'New', text: 'Item-Level Collaborations: You can share individual trips, restaurants, and hotels independently to different accounts now' },
+      { tag: 'New', text: 'Appearance Setting: You can change the appearance to System, Light, and Dark mode options' },
+      { tag: 'New', text: 'Notification Badge: You can see a number badge on your avatar for pending collaboration invitations' },
+      { tag: 'New', text: 'New Collaboration Features: Owners and collaborators. All collaborators can edit, share, and leave, but cannot delete. Otherwise, the owners can do anything' },
+      { tag: 'New', text: 'What\'s New: A dedicated modal to showcase the latest updates and features' },
       { tag: 'Bug', text: 'Prevent multiple-click add button to create duplicates' },
-      { tag: 'Bug', text: 'Note paragraphs now preserved in Hotel drawer' },
+      { tag: 'Bug', text: 'Fixed bugs and Improved UI' },
     ],
   },
   {
     version: '1.1.2',
     date: 'June 14, 2025',
     items: [
-      { tag: 'New', text: 'Web App Icon: updated PWA icon and iOS Home Screen icon' },
+      { tag: 'New', text: 'Web App Icon: Updated PWA icon and iOS Home Screen icon' },
+      { tag: 'Bug', text: 'Fixed bugs and Improved UI' },
     ],
   },
   {
     version: '1.1.1',
     date: 'June 13, 2025',
     items: [
-      { tag: 'New', text: 'Currency Auto-Update: you can now choose your preferred currency at any time, and it will be automatically updated' },
+      { tag: 'New', text: 'Currency Auto-Update: You can now choose your preferred currency at any time, and it will be automatically updated' },
       { tag: 'Bug', text: 'Fixed time zone issue causing inconsistent dates' },
+      { tag: 'Bug', text: 'Fixed bugs and Improved UI' },
     ],
   },
   {
@@ -45,10 +55,10 @@ const RELEASES: Release[] = [
     date: 'June 13, 2025',
     items: [
       { tag: 'New', text: 'Official Public Release' },
-      { tag: 'New', text: 'World Map: view your visited countries and cities with a heatmap on World homepage' },
-      { tag: 'New', text: 'Stats Bento: view your dining and hotel summaries, including visit counts and total expenses' },
-      { tag: 'New', text: 'Trip Collaboration: invite others to view and contribute to your trips, dinings, and stays' },
-      { tag: 'New', text: 'Future Plan: add or edit your future plans to keep track of upcoming experiences' },
+      { tag: 'New', text: 'World Map: View your visited countries and cities with a heatmap on World homepage' },
+      { tag: 'New', text: 'Stats Bento: View your dining and hotel summaries, including visit counts and total expenses' },
+      { tag: 'New', text: 'Trip Collaboration: Invite others to view and contribute to your trips, dinings, and stays' },
+      { tag: 'New', text: 'Future Plan: Add or edit your future plans to keep track of upcoming experiences' },
     ],
   },
 ];

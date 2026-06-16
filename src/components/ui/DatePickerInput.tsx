@@ -6,7 +6,7 @@ import { CalendarDays } from 'lucide-react';
 import './DatePickerInput.css';
 
 interface Props {
-  label: string;
+  label: React.ReactNode;
   value: string;         // YYYY-MM-DD
   onChange: (val: string) => void;
   min?: string;          // YYYY-MM-DD

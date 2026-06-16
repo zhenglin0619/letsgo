@@ -91,7 +91,7 @@ function logToRow(d: DiningLog, userId: string, tripId: string | null): Restaura
   return {
     id: d.id, user_id: d.ownerId ?? userId, trip_id: tripId,
     restaurant_name: d.restaurantName, cuisine: d.cuisine,
-    date: d.date, meal_type: d.time, total_expense: d.totalExpense,
+    date: d.date, meal_type: d.time ?? '', total_expense: d.totalExpense,
     currency: d.currency, overall_rating: d.overallRating,
     location: d.location, photos: d.photos,
     photo_transform: d.photoTransform ?? null,
@@ -101,7 +101,7 @@ function logToRow(d: DiningLog, userId: string, tripId: string | null): Restaura
 function rowToLog(r: RestaurantRow): DiningLog {
   return {
     id: r.id, ownerId: r.user_id, restaurantName: r.restaurant_name, cuisine: r.cuisine,
-    date: r.date, time: r.meal_type as DiningLog['time'],
+    date: r.date, time: (r.meal_type || undefined) as DiningLog['time'],
     totalExpense: r.total_expense, currency: r.currency,
     overallRating: r.overall_rating, location: r.location,
     photos: r.photos,
@@ -345,15 +345,21 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     // Use onAuthStateChange only — getSession() can return a stale cached session
     // with an already-expired access token, causing RLS to silently return empty
     // arrays and producing a blank account on first load after several hours.
-    // onAuthStateChange fires INITIAL_SESSION first, then TOKEN_REFRESHED once the
-    // client auto-renews the token, so we skip INITIAL_SESSION when the token is
-    // already expired and let TOKEN_REFRESHED carry the valid session instead.
+    // onAuthStateChange fires INITIAL_SESSION first; if that token is already
+    // expired we force an explicit refreshSession() rather than passively waiting
+    // for the SDK's background auto-refresh timer, which doesn't always fire
+    // promptly on a fresh page load and was leaving the app stuck on the loading
+    // screen until a manual reload happened to win the race.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'INITIAL_SESSION' && session) {
           const nowSec = Math.floor(Date.now() / 1000);
           if (session.expires_at && session.expires_at < nowSec) {
-            return; // expired — TOKEN_REFRESHED will fire with a valid token
+            const { data, error } = await supabase.auth.refreshSession();
+            if (error) console.warn('[auth] refresh failed:', error.message);
+            clearTimeout(timeout);
+            await applySession(error ? null : data.session);
+            return;
           }
         }
         clearTimeout(timeout);

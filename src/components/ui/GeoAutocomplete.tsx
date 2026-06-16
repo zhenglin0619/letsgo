@@ -10,7 +10,7 @@ interface Suggestion {
 }
 
 interface Props {
-  label: string;
+  label: React.ReactNode;
   placeholder: string;
   value: string;
   onChange: (v: string) => void;

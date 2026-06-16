@@ -20,7 +20,7 @@ export interface DiningLog {
   restaurantName: string;
   cuisine: string;
   date: string;
-  time: 'Breakfast' | 'Brunch' | 'Lunch' | 'Afternoon Tea' | 'Dinner' | 'Late Night';
+  time?: 'Breakfast' | 'Brunch' | 'Lunch' | 'Afternoon Tea' | 'Dinner' | 'Late Night';
   totalExpense: number;
   currency: string;
   overallRating: number; // 0–5

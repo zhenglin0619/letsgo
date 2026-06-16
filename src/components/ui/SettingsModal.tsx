@@ -82,6 +82,7 @@ type AppearanceMode = 'system' | 'light' | 'dark';
 export default function SettingsModal({ open, onClose }: Props) {
   const { demoMode, toggleDemoMode } = useTrips();
   const [appearance, setAppearance] = useState<AppearanceMode>('light');
+  const [systemDark, setSystemDark] = useState(false);
   const [language, setLanguage]     = useState('en');
   const [mounted, setMounted]       = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -95,6 +96,14 @@ export default function SettingsModal({ open, onClose }: Props) {
       setLanguage(localStorage.getItem('language') ?? 'en');
     }
   }, [open]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    setSystemDark(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   function applyAppearance(mode: AppearanceMode) {
     localStorage.setItem('appearance', mode);
@@ -119,7 +128,7 @@ export default function SettingsModal({ open, onClose }: Props) {
     }
   }
 
-  const isDark = appearance === 'dark';
+  const isDark = appearance === 'dark' || (appearance === 'system' && systemDark);
   const ic = iconColor(isDark);
 
   const modal = (
@@ -260,7 +269,7 @@ export default function SettingsModal({ open, onClose }: Props) {
                   onClick={() => setWhatsNewOpen(true)}
                   className="text-[10px] text-[#4A4A4A] tracking-widest hover:text-[#C87A53] transition-colors"
                 >
-                  version 1.2.0
+                  version 1.2.1
                 </button>
               </div>
             </motion.div>

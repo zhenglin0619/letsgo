@@ -129,7 +129,7 @@ export default function DiningCard({ log, index, onClick, onEdit, onDelete }: Pr
             <span className="flex items-center gap-1">
               <MapPin size={11} />{[log.location.city, log.location.country].filter(Boolean).join(', ')}
             </span>
-            <span className="hidden md:flex items-center gap-1"><Clock size={11} />{log.time}</span>
+            {log.time && <span className="hidden md:flex items-center gap-1"><Clock size={11} />{log.time}</span>}
           </div>
         </div>
         <div className="flex items-center justify-between">
