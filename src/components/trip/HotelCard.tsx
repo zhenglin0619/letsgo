@@ -117,13 +117,13 @@ export default function HotelCard({ hotel, index, onClick, onEdit, onDelete }: P
         </div>
       </div>
 
-      <div className="px-2.5 pt-2 pb-1 md:p-4">
+      <div className="px-2.5 pt-2 pb-3 md:px-3 md:pt-2.5 md:pb-3">
         {hotel.rating > 0 && (
           <div className="md:hidden mb-1">
             <StarRating value={hotel.rating} readonly size="sm" />
           </div>
         )}
-        <div className="flex items-center justify-between mb-1 md:mb-3">
+        <div className="flex items-center justify-between mb-1 md:mb-1.5">
           <span className="flex items-center gap-1 text-[10.5px] md:text-xs text-[#8A8A8A]">
             <MapPin size={10} className="md:w-[11px] md:h-[11px]" />{hotel.location.city}, {fmtCountry(hotel.location.country)}
           </span>

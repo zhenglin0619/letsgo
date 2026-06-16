@@ -1,1 +1,1 @@
-if(localStorage.getItem('nightMode')==='true')document.documentElement.classList.add('dark');
+(function(){var v=localStorage.getItem('appearance');var dark=v==='dark'||(v==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(dark)document.documentElement.classList.add('dark');})();

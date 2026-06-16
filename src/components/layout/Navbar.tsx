@@ -3,9 +3,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MapPin, Plane, BedDouble, Utensils, LogOut, User, Users, Settings, NotebookPen, Menu, X } from 'lucide-react';
+import { MapPin, Plane, BedDouble, Utensils, LogOut, User, Bell, Settings, NotebookPen, Menu, X } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
-import CollaboratorModal from '@/components/ui/CollaboratorModal';
+import NotificationsModal from '@/components/ui/NotificationsModal';
 import FuturePlanModal from '@/components/ui/FuturePlanModal';
 import SettingsModal from '@/components/ui/SettingsModal';
 
@@ -47,11 +47,11 @@ function LetsGoLogoTextOnly() {
 }
 
 function UserMenu() {
-  const { user, signOut, pendingInvites } = useTrips();
-  const [open, setOpen]                     = useState(false);
-  const [collabOpen, setCollabOpen]         = useState(false);
-  const [settingsOpen, setSettingsOpen]     = useState(false);
-  const [futurePlanOpen, setFuturePlanOpen] = useState(false);
+  const { user, signOut, pendingItemInvites } = useTrips();
+  const [open, setOpen]                       = useState(false);
+  const [notifOpen, setNotifOpen]             = useState(false);
+  const [settingsOpen, setSettingsOpen]       = useState(false);
+  const [futurePlanOpen, setFuturePlanOpen]   = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropPos, setDropPos] = useState({ top: 0, right: 0 });
@@ -98,19 +98,19 @@ function UserMenu() {
       </div>
 
       <button
-        onClick={() => { setOpen(false); setCollabOpen(true); }}
+        onClick={() => { setOpen(false); setNotifOpen(true); }}
         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
       >
         <div className="relative">
-          <Users size={14} />
-          {pendingInvites.length > 0 && (
+          <Bell size={14} />
+          {pendingItemInvites.length > 0 && (
             <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#C87A53]" />
           )}
         </div>
-        Collaborators
-        {pendingInvites.length > 0 && (
+        Notifications
+        {pendingItemInvites.length > 0 && (
           <span className="ml-auto text-[10px] font-semibold text-white bg-[#C87A53] rounded-full px-1.5 py-0.5 leading-none">
-            {pendingInvites.length}
+            {pendingItemInvites.length}
           </span>
         )}
       </button>
@@ -145,22 +145,29 @@ function UserMenu() {
   return (
     <>
       <div className="md:pl-5 md:border-l border-[#E8E6E1]">
-        <button
-          ref={btnRef}
-          onClick={handleOpen}
-          className="w-[34px] h-[34px] md:w-8 md:h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#C87A53] transition-all mt-1.5"
-        >
-          {avatarUrl ? (
-            <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-          ) : (
-            <div className="w-full h-full bg-[#F0ECE6] flex items-center justify-center">
-              <User size={14} className="text-[#8A8A8A]" />
-            </div>
+        <div className="relative inline-block">
+          <button
+            ref={btnRef}
+            onClick={handleOpen}
+            className="w-[34px] h-[34px] md:w-8 md:h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-[#C87A53] transition-all mt-1.5"
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            ) : (
+              <div className="w-full h-full bg-[#F0ECE6] flex items-center justify-center">
+                <User size={14} className="text-[#8A8A8A]" />
+              </div>
+            )}
+          </button>
+          {pendingItemInvites.length > 0 && (
+            <span className="absolute top-0.5 -right-1.5 min-w-[16px] h-4 rounded-full bg-[#C87A53] text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none pointer-events-none">
+              {pendingItemInvites.length > 9 ? '9+' : pendingItemInvites.length}
+            </span>
           )}
-        </button>
+        </div>
       </div>
       {open && createPortal(dropdown, document.body)}
-      <CollaboratorModal open={collabOpen} onClose={() => setCollabOpen(false)} />
+      <NotificationsModal open={notifOpen} onClose={() => setNotifOpen(false)} />
       <FuturePlanModal open={futurePlanOpen} onClose={() => setFuturePlanOpen(false)} />
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>

@@ -26,6 +26,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
   const [coverTransform, setCoverTransform] = useState<PhotoTransform | undefined>(undefined);
   const [highlightPhotos, setHighlightPhotos] = useState<string[]>([]);
   const [step, setStep] = useState<'form' | 'done'>('form');
+  const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const highlightFileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<DraggableImageHandle>(null);
@@ -53,6 +54,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
       setHighlightPhotos([]);
     }
     setStep('form');
+    setSubmitting(false);
   }, [open, initialTrip]);
 
   function set(field: string, value: string) {
@@ -88,7 +90,8 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
   const isValid = form.title.trim() && form.country.trim() && form.city.trim() && form.startDate && form.endDate;
 
   async function handleSubmit() {
-    if (!isValid) return;
+    if (!isValid || submitting) return;
+    setSubmitting(true);
     // Upload original file if the user just picked a new photo; keep URL for existing ones
     let photoUrl = coverPreview;
     if (coverPreview.startsWith('data:') && coverFileRef.current) {
@@ -311,7 +314,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                 <div className="px-3 pb-3 pt-0 md:px-6 md:pb-6 flex justify-end">
                   <button
                     onClick={handleSubmit}
-                    disabled={!isValid}
+                    disabled={!isValid || submitting}
                     className="bg-[#1A1A1A] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-[#333] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {isEdit ? 'Save Changes' : 'Create Trip'}

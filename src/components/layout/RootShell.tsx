@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
 import FAB from './FAB';
@@ -49,9 +49,24 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AppearanceSync() {
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function sync(e: MediaQueryListEvent) {
+      if (localStorage.getItem('appearance') === 'system') {
+        document.documentElement.classList.toggle('dark', e.matches);
+      }
+    }
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  return null;
+}
+
 export default function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <TripsProvider>
+      <AppearanceSync />
       <Shell>{children}</Shell>
     </TripsProvider>
   );

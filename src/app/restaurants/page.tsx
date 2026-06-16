@@ -1,8 +1,10 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { useTrips } from '@/store/tripsContext';
-import { MapPin, Clock, MoreHorizontal, Pencil, Trash2, Search, X } from 'lucide-react';
+import { MapPin, Clock, MoreHorizontal, Pencil, Trash2, Users, LogOut, Search, X } from 'lucide-react';
+import ItemCollaboratorModal from '@/components/ui/ItemCollaboratorModal';
 import StarRating from '@/components/ui/StarRating';
 import MichelinBadge from '@/components/ui/MichelinBadge';
 import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
@@ -16,31 +18,53 @@ function formatDate(d: string) {
   return parseLocalDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function DiningMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+function DiningMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
+  onEdit: () => void; onDelete: () => void; onShare: () => void;
+  onLeave: () => void; isOwner: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [dropPos, setDropPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) { setConfirming(false); return; }
     const close = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (
+        dropRef.current && !dropRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) setOpen(false);
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, [open]);
 
+  function handleOpen(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setDropPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
+    }
+    setOpen(v => !v);
+  }
+
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
-        onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+        ref={btnRef}
+        onClick={handleOpen}
         className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors flex items-center justify-center"
       >
         <MoreHorizontal size={14} className="text-white" />
       </button>
 
-      {open && (
-        <div className="absolute top-9 right-0 bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-40 z-30">
+      {open && createPortal(
+        <div
+          ref={dropRef}
+          className="fixed bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-40 z-[99999]"
+          style={{ top: dropPos.top, right: dropPos.right }}
+        >
           {!confirming ? (
             <>
               <button
@@ -50,20 +74,37 @@ function DiningMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => 
                 <Pencil size={13} className="text-[#8A8A8A]" /> Edit
               </button>
               <button
-                onClick={e => { e.stopPropagation(); setConfirming(true); }}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                onClick={e => { e.stopPropagation(); onShare(); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Trash2 size={13} /> Delete
+                <Users size={13} className="text-[#8A8A8A]" /> Share
               </button>
+              {isOwner ? (
+                <button
+                  onClick={e => { e.stopPropagation(); setConfirming(true); }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 size={13} /> Delete
+                </button>
+              ) : (
+                <button
+                  onClick={e => { e.stopPropagation(); setConfirming(true); }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={13} /> Leave
+                </button>
+              )}
             </>
           ) : (
             <div className="px-4 py-2">
-              <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this restaurant?</p>
+              <p className="text-xs text-[#1A1A1A] font-medium mb-2">
+                {isOwner ? 'Delete this restaurant?' : 'Leave this restaurant?'}
+              </p>
               <div className="flex gap-2">
                 <button
-                  onClick={e => { e.stopPropagation(); onDelete(); setOpen(false); }}
+                  onClick={e => { e.stopPropagation(); isOwner ? onDelete() : onLeave(); setOpen(false); }}
                   className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
-                >Delete</button>
+                >{isOwner ? 'Delete' : 'Leave'}</button>
                 <button
                   onClick={e => { e.stopPropagation(); setConfirming(false); }}
                   className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
@@ -71,14 +112,15 @@ function DiningMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => 
               </div>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
 export default function RestaurantsPage() {
-  const { trips, standaloneRestaurants, updateTrip, updateStandaloneRestaurant, deleteStandaloneRestaurant } = useTrips();
+  const { trips, standaloneRestaurants, updateTrip, updateStandaloneRestaurant, deleteStandaloneRestaurant, leaveItemShare, user } = useTrips();
   const allRestaurants = [
     ...trips.flatMap(trip =>
       trip.diningLogs.map(dining => ({ ...dining, tripTitle: trip.title, tripId: trip.id, isStandalone: false }))
@@ -116,10 +158,11 @@ export default function RestaurantsPage() {
     return 0;
   });
 
-  const [editTarget, setEditTarget]       = useState<{ log: DiningLog; tripId: string } | null>(null);
+  const [editTarget, setEditTarget]         = useState<{ log: DiningLog; tripId: string } | null>(null);
   const [selectedDining, setSelectedDining] = useState<DiningLog | null>(null);
   const [selectedMeta, setSelectedMeta]     = useState<{ tripId: string; isStandalone: boolean } | null>(null);
   const [drawerOpen, setDrawerOpen]         = useState(false);
+  const [shareDining, setShareDining]       = useState<DiningLog | null>(null);
 
   function openDining(dining: typeof allRestaurants[number]) {
     setSelectedDining(dining);
@@ -237,14 +280,23 @@ export default function RestaurantsPage() {
               )}
               <div className="absolute top-3 right-3">
                 <DiningMenu
+                  isOwner={dining.isStandalone
+                    ? (!dining.ownerId || dining.ownerId === user?.id)
+                    : (!trips.find(t => t.id === dining.tripId)?.ownerId || trips.find(t => t.id === dining.tripId)?.ownerId === user?.id)
+                  }
                   onEdit={() => setEditTarget({ log: dining, tripId: dining.tripId })}
                   onDelete={() => handleDelete(dining, dining.tripId, dining.isStandalone)}
+                  onShare={() => setShareDining(dining)}
+                  onLeave={() => leaveItemShare(
+                    dining.isStandalone ? dining.id : dining.tripId,
+                    dining.isStandalone ? 'restaurant' : 'trip'
+                  )}
                 />
               </div>
             </div>
 
-            <div className="px-2.5 pt-2 pb-1.5 md:p-4">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-1 md:mb-2 gap-1 md:gap-0">
+            <div className={`px-2.5 pt-2 md:px-3 md:pt-2.5 ${dining.tripTitle ? 'pb-1.5 md:pb-2.5' : 'pb-1.5 md:pb-3'}`}>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-1 md:mb-1.5 gap-1 md:gap-0">
                 <div className="order-first md:order-last">
                   <StarRating value={dining.overallRating} readonly size="sm" />
                 </div>
@@ -257,7 +309,9 @@ export default function RestaurantsPage() {
                 <span className="text-xs text-[#8A8A8A]">{formatDate(dining.date)}</span>
                 <span className="text-xs text-[#8A8A8A]">{dining.currency} {dining.totalExpense.toLocaleString()}</span>
               </div>
-              <p className="text-[10px] text-[#C87A53] font-medium mt-1 md:mt-2 uppercase tracking-wider">{dining.tripTitle}</p>
+              {dining.tripTitle && (
+                <p className="text-[10px] text-[#C87A53] font-medium mt-1 md:mt-2 uppercase tracking-wider">{dining.tripTitle}</p>
+              )}
             </div>
           </motion.div>
         ))}
@@ -277,7 +331,28 @@ export default function RestaurantsPage() {
         onUpdateLog={handleUpdateLog}
         onEdit={() => selectedDining && selectedMeta && setEditTarget({ log: selectedDining, tripId: selectedMeta.tripId })}
         onDelete={() => selectedDining && selectedMeta && handleDelete(selectedDining, selectedMeta.tripId, selectedMeta.isStandalone)}
+        onShare={() => selectedDining && setShareDining(selectedDining)}
+        onLeave={() => selectedDining && selectedMeta && leaveItemShare(
+          selectedMeta.isStandalone ? selectedDining.id : selectedMeta.tripId,
+          selectedMeta.isStandalone ? 'restaurant' : 'trip'
+        )}
+        isOwner={selectedDining && selectedMeta
+          ? selectedMeta.isStandalone
+            ? (!selectedDining.ownerId || selectedDining.ownerId === user?.id)
+            : (!trips.find(t => t.id === selectedMeta.tripId)?.ownerId || trips.find(t => t.id === selectedMeta.tripId)?.ownerId === user?.id)
+          : true
+        }
       />
+      {shareDining && (
+        <ItemCollaboratorModal
+          open={!!shareDining}
+          onClose={() => setShareDining(null)}
+          itemId={shareDining.id}
+          itemType="restaurant"
+          itemTitle={shareDining.restaurantName}
+          ownerId={shareDining.ownerId ?? user?.id ?? ''}
+        />
+      )}
     </main>
   );
 }

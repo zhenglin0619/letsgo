@@ -17,10 +17,14 @@ import { DiningLog, HotelLog } from '@/types';
 import { uploadPhoto, deleteStoragePhoto, deleteStoragePhotos } from '@/lib/imageUtils';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BedDouble, Utensils, Images, MoreHorizontal, Pencil, Trash2, Plus, ChevronLeft, ChevronRight, Plane } from 'lucide-react';
+import { BedDouble, Utensils, Images, MoreHorizontal, Pencil, Trash2, Plus, ChevronLeft, ChevronRight, Plane, Users, LogOut } from 'lucide-react';
+import ItemCollaboratorModal from '@/components/ui/ItemCollaboratorModal';
 
 // ── Edit / Delete menu ────────────────────────────────────────────────────────
-function TripMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+function TripMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
+  onEdit: () => void; onDelete: () => void; onShare: () => void;
+  onLeave: () => void; isOwner: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -54,20 +58,37 @@ function TripMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => vo
                 <Pencil size={13} className="text-[#8A8A8A]" /> Edit trip
               </button>
               <button
-                onClick={() => setConfirming(true)}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                onClick={() => { onShare(); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Trash2 size={13} /> Delete trip
+                <Users size={13} className="text-[#8A8A8A]" /> Share trip
               </button>
+              {isOwner ? (
+                <button
+                  onClick={() => setConfirming(true)}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 size={13} /> Delete trip
+                </button>
+              ) : (
+                <button
+                  onClick={() => setConfirming(true)}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={13} /> Leave trip
+                </button>
+              )}
             </>
           ) : (
             <div className="px-4 py-2">
-              <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this trip?</p>
+              <p className="text-xs text-[#1A1A1A] font-medium mb-2">
+                {isOwner ? 'Delete this trip?' : 'Leave this trip?'}
+              </p>
               <div className="flex gap-2">
                 <button
-                  onClick={onDelete}
+                  onClick={isOwner ? onDelete : onLeave}
                   className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
-                >Delete</button>
+                >{isOwner ? 'Delete' : 'Leave'}</button>
                 <button
                   onClick={() => setConfirming(false)}
                   className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
@@ -84,12 +105,13 @@ function TripMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => vo
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { trips, updateTrip, deleteTrip } = useTrips();
+  const { trips, updateTrip, deleteTrip, leaveItemShare, user } = useTrips();
   const router = useRouter();
   const trip = trips.find(t => t.id === id);
   if (!trip) notFound();
 
-  const [editTripOpen, setEditTripOpen] = useState(false);
+  const [editTripOpen, setEditTripOpen]   = useState(false);
+  const [shareTripOpen, setShareTripOpen] = useState(false);
   const [tab, setTab] = useState<'highlights' | 'restaurants' | 'hotels'>('highlights');
   const [selectedDining, setSelectedDining] = useState<DiningLog | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -169,8 +191,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         </Link>
         <div className="absolute top-20 right-4 md:top-25 md:right-8 z-10">
           <TripMenu
+            isOwner={!trip!.ownerId || trip!.ownerId === user?.id}
             onEdit={() => setEditTripOpen(true)}
             onDelete={handleDelete}
+            onShare={() => setShareTripOpen(true)}
+            onLeave={async () => { await leaveItemShare(trip!.id, 'trip'); router.push('/trips'); }}
           />
         </div>
       </div>
@@ -358,6 +383,14 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         }}
       />
       <AddTripModal open={editTripOpen} onClose={() => setEditTripOpen(false)} initialTrip={trip!} />
+      <ItemCollaboratorModal
+        open={shareTripOpen}
+        onClose={() => setShareTripOpen(false)}
+        itemId={trip!.id}
+        itemType="trip"
+        itemTitle={trip!.title}
+        ownerId={trip!.ownerId ?? ''}
+      />
       <AddTripModal open={addTripOpen} onClose={() => setAddTripOpen(false)} />
       <AddHotelModal
         open={addHotelOpen || !!editingHotel}

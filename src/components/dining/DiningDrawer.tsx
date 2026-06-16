@@ -5,7 +5,7 @@ import { DiningLog, Dish } from '@/types';
 import StarRating from '@/components/ui/StarRating';
 import MichelinBadge from '@/components/ui/MichelinBadge';
 import DishRow from './DishRow';
-import { X, MapPin, GripVertical, Trash2, Plus, Check, ImagePlus, Pencil, MoreHorizontal } from 'lucide-react';
+import { X, MapPin, GripVertical, Trash2, Plus, Check, ImagePlus, Pencil, MoreHorizontal, Users, LogOut } from 'lucide-react';
 import DraggableImage, { type DraggableImageHandle } from '@/components/ui/DraggableImage';
 import { fileToDataUrl, uploadPhoto, uploadDataUrl, deleteStoragePhoto } from '@/lib/imageUtils';
 import { parseLocalDate } from '@/lib/formatUtils';
@@ -20,6 +20,9 @@ interface Props {
   onUpdateLog?: (updated: DiningLog) => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onShare?: () => void;
+  onLeave?: () => void;
+  isOwner?: boolean;
 }
 
 // ── Draggable edit row ────────────────────────────────────────────────────────
@@ -149,7 +152,7 @@ function DishEditRow({
 }
 
 // ── Main drawer ───────────────────────────────────────────────────────────────
-export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, onDelete }: Props) {
+export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, onDelete, onShare, onLeave, isOwner = true }: Props) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const addFileRef = useRef<HTMLInputElement>(null);
   const addImgRef = useRef<DraggableImageHandle>(null);
@@ -302,7 +305,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                   </div>
                 )}
                 {/* ⋯ menu */}
-                {(onEdit || onDelete) && (
+                {(onEdit || onShare || onDelete || onLeave) && (
                   <div ref={menuRef} className="absolute top-3 right-3">
                     <button
                       onClick={() => setMenuOpen(v => !v)}
@@ -311,7 +314,7 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                       <MoreHorizontal size={14} className="text-white" />
                     </button>
                     {menuOpen && (
-                      <div className="absolute top-9 right-0 bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-36 z-30">
+                      <div className="absolute top-9 right-0 bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-40 z-30">
                         {!confirmDelete ? (
                           <>
                             {onEdit && (
@@ -322,23 +325,44 @@ export default function DiningDrawer({ log, open, onClose, onUpdateLog, onEdit, 
                                 <Pencil size={13} className="text-[#8A8A8A]" /> Edit
                               </button>
                             )}
-                            {onDelete && (
+                            {onShare && (
                               <button
-                                onClick={() => setConfirmDelete(true)}
-                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                                onClick={() => { onShare(); setMenuOpen(false); }}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
                               >
-                                <Trash2 size={13} /> Delete
+                                <Users size={13} className="text-[#8A8A8A]" /> Share
                               </button>
+                            )}
+                            {isOwner ? (
+                              onDelete && (
+                                <button
+                                  onClick={() => setConfirmDelete(true)}
+                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                                >
+                                  <Trash2 size={13} /> Delete
+                                </button>
+                              )
+                            ) : (
+                              onLeave && (
+                                <button
+                                  onClick={() => setConfirmDelete(true)}
+                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                                >
+                                  <LogOut size={13} /> Leave
+                                </button>
+                              )
                             )}
                           </>
                         ) : (
                           <div className="px-4 py-2">
-                            <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this restaurant?</p>
+                            <p className="text-xs text-[#1A1A1A] font-medium mb-2">
+                              {isOwner ? 'Delete this restaurant?' : 'Leave this restaurant?'}
+                            </p>
                             <div className="flex gap-2">
                               <button
-                                onClick={() => { onDelete!(); onClose(); }}
+                                onClick={() => { isOwner ? onDelete!() : onLeave!(); onClose(); }}
                                 className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
-                              >Delete</button>
+                              >{isOwner ? 'Delete' : 'Leave'}</button>
                               <button
                                 onClick={() => setConfirmDelete(false)}
                                 className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"

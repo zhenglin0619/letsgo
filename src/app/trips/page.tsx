@@ -6,9 +6,10 @@ import { useTrips } from '@/store/tripsContext';
 import { Trip } from '@/types';
 import { deleteStoragePhotos } from '@/lib/imageUtils';
 import { supabase } from '@/lib/supabase';
-import { Calendar, MapPin, BedDouble, Utensils, ArrowRight, MoreHorizontal, Pencil, Trash2, Search, X } from 'lucide-react';
+import { Calendar, MapPin, BedDouble, Utensils, ArrowRight, MoreHorizontal, Pencil, Trash2, Users, LogOut, Search, X } from 'lucide-react';
 import AddTripModal from '@/components/upload/AddTripModal';
 import SortMenu, { DATE_OPTIONS } from '@/components/ui/SortMenu';
+import ItemCollaboratorModal from '@/components/ui/ItemCollaboratorModal';
 import { fmtCountries, parseLocalDate } from '@/lib/formatUtils';
 
 function formatRange(start: string, end: string) {
@@ -19,7 +20,10 @@ function formatRange(start: string, end: string) {
   return `${sStr} – ${eStr}`;
 }
 
-function TripMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+function TripMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
+  onEdit: () => void; onDelete: () => void; onShare: () => void;
+  onLeave: () => void; isOwner: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -55,21 +59,38 @@ function TripMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => vo
                 <Pencil size={13} className="text-[#8A8A8A]" /> Edit trip
               </button>
               <button
-                onClick={e => { e.stopPropagation(); setConfirming(true); }}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                onClick={e => { e.stopPropagation(); onShare(); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Trash2 size={13} /> Delete trip
+                <Users size={13} className="text-[#8A8A8A]" /> Share trip
               </button>
+              {isOwner ? (
+                <button
+                  onClick={e => { e.stopPropagation(); setConfirming(true); }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 size={13} /> Delete trip
+                </button>
+              ) : (
+                <button
+                  onClick={e => { e.stopPropagation(); setConfirming(true); }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={13} /> Leave trip
+                </button>
+              )}
             </>
           ) : (
             <div className="px-4 py-2">
-              <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this trip?</p>
+              <p className="text-xs text-[#1A1A1A] font-medium mb-2">
+                {isOwner ? 'Delete this trip?' : 'Leave this trip?'}
+              </p>
               <div className="flex gap-2">
                 <button
-                  onClick={e => { e.stopPropagation(); onDelete(); setOpen(false); }}
+                  onClick={e => { e.stopPropagation(); isOwner ? onDelete() : onLeave(); setOpen(false); }}
                   className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
                 >
-                  Delete
+                  {isOwner ? 'Delete' : 'Leave'}
                 </button>
                 <button
                   onClick={e => { e.stopPropagation(); setConfirming(false); }}
@@ -87,7 +108,7 @@ function TripMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => vo
 }
 
 export default function TripsPage() {
-  const { trips: rawTrips, deleteTrip } = useTrips();
+  const { trips: rawTrips, deleteTrip, leaveItemShare, user } = useTrips();
 
   async function handleDeleteTrip(trip: Trip) {
     const { data } = await supabase.from('trips').select('photos').eq('id', trip.id).single();
@@ -101,6 +122,7 @@ export default function TripsPage() {
     deleteTrip(trip.id);
   }
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
+  const [shareTrip, setShareTrip]     = useState<Trip | null>(null);
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('date-desc');
 
@@ -229,8 +251,11 @@ export default function TripsPage() {
             {/* Menu button — outside Link so it doesn't trigger navigation */}
             <div className="absolute top-3 right-3 z-20">
               <TripMenu
+                isOwner={!trip.ownerId || trip.ownerId === user?.id}
                 onEdit={() => setEditingTrip(trip)}
                 onDelete={() => handleDeleteTrip(trip)}
+                onShare={() => setShareTrip(trip)}
+                onLeave={() => leaveItemShare(trip.id, 'trip')}
               />
             </div>
           </motion.div>
@@ -242,6 +267,16 @@ export default function TripsPage() {
         onClose={() => setEditingTrip(null)}
         initialTrip={editingTrip ?? undefined}
       />
+      {shareTrip && (
+        <ItemCollaboratorModal
+          open={!!shareTrip}
+          onClose={() => setShareTrip(null)}
+          itemId={shareTrip.id}
+          itemType="trip"
+          itemTitle={shareTrip.title}
+          ownerId={shareTrip.ownerId ?? ''}
+        />
+      )}
     </main>
   );
 }

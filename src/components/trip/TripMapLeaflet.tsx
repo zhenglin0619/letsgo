@@ -70,7 +70,7 @@ export default function TripMapLeaflet({ pins }: { pins: TripPin[] }) {
 
     if (markers.length > 0) {
       const group = L.featureGroup(markers);
-      map.fitBounds(group.getBounds().pad(0.4));
+      map.fitBounds(group.getBounds().pad(0.14));
     } else {
       map.setView([22, 12], 2);
     }

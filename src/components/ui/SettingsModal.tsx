@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings, Moon, PlayCircle, Globe, Mail, Share2, Shield, FileText, ChevronRight, Heart } from 'lucide-react';
+import { X, Settings, Monitor, PlayCircle, Globe, Mail, Share, Shield, FileText, ChevronRight, Heart } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
+import WhatsNewModal from '@/components/ui/WhatsNewModal';
 
 interface Props {
   open: boolean;
@@ -36,19 +37,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function iconBg(nightMode: boolean) {
-  return nightMode ? 'bg-[#1A1A1A]' : 'bg-[#E8E4DC]';
+function iconBg(dark: boolean) {
+  return dark ? 'bg-[#1A1A1A]' : 'bg-[#E8E4DC]';
 }
 
-function iconColor(nightMode: boolean) {
-  return nightMode ? 'text-[#C87A53]' : 'text-[#8A8A8A]';
+function iconColor(dark: boolean) {
+  return dark ? 'text-[#C87A53]' : 'text-[#8A8A8A]';
 }
 
-function SettingRow({ icon, label, children, nightMode }: { icon: React.ReactNode; label: string; children: React.ReactNode; nightMode: boolean }) {
+function SettingRow({ icon, label, children, dark }: { icon: React.ReactNode; label: string; children: React.ReactNode; dark: boolean }) {
   return (
     <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#F9F7F4]">
       <div className="flex items-center gap-2.5">
-        <div className={`w-7 h-7 rounded-full ${iconBg(nightMode)} flex items-center justify-center shrink-0 transition-colors`}>
+        <div className={`w-7 h-7 rounded-full ${iconBg(dark)} flex items-center justify-center shrink-0 transition-colors`}>
           {icon}
         </div>
         <span className="text-sm text-[#1A1A1A]">{label}</span>
@@ -58,7 +59,7 @@ function SettingRow({ icon, label, children, nightMode }: { icon: React.ReactNod
   );
 }
 
-function ActionRow({ icon, label, onClick, nightMode }: { icon: React.ReactNode; label: string; onClick?: () => void; nightMode: boolean }) {
+function ActionRow({ icon, label, onClick, dark }: { icon: React.ReactNode; label: string; onClick?: () => void; dark: boolean }) {
   return (
     <button
       type="button"
@@ -66,7 +67,7 @@ function ActionRow({ icon, label, onClick, nightMode }: { icon: React.ReactNode;
       className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#F9F7F4] hover:bg-[#F0ECE6] transition-colors group"
     >
       <div className="flex items-center gap-2.5">
-        <div className={`w-7 h-7 rounded-full ${iconBg(nightMode)} flex items-center justify-center shrink-0 transition-colors`}>
+        <div className={`w-7 h-7 rounded-full ${iconBg(dark)} flex items-center justify-center shrink-0 transition-colors`}>
           {icon}
         </div>
         <span className="text-sm text-[#1A1A1A]">{label}</span>
@@ -76,29 +77,30 @@ function ActionRow({ icon, label, onClick, nightMode }: { icon: React.ReactNode;
   );
 }
 
+type AppearanceMode = 'system' | 'light' | 'dark';
+
 export default function SettingsModal({ open, onClose }: Props) {
   const { demoMode, toggleDemoMode } = useTrips();
-  const [nightMode, setNightMode] = useState(false);
-  const [language, setLanguage]   = useState('en');
-  const [mounted, setMounted]     = useState(false);
+  const [appearance, setAppearance] = useState<AppearanceMode>('light');
+  const [language, setLanguage]     = useState('en');
+  const [mounted, setMounted]       = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (open) {
-      setNightMode(localStorage.getItem('nightMode') === 'true');
+      setAppearance((localStorage.getItem('appearance') as AppearanceMode | null) ?? 'light');
       setLanguage(localStorage.getItem('language') ?? 'en');
     }
   }, [open]);
 
-  function toggleNightMode() {
-    setNightMode(prev => {
-      const next = !prev;
-      localStorage.setItem('nightMode', String(next));
-      document.documentElement.classList.toggle('dark', next);
-      return next;
-    });
+  function applyAppearance(mode: AppearanceMode) {
+    localStorage.setItem('appearance', mode);
+    const dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.classList.toggle('dark', dark);
+    setAppearance(mode);
   }
 
   function handleLanguageChange(code: string) {
@@ -117,7 +119,8 @@ export default function SettingsModal({ open, onClose }: Props) {
     }
   }
 
-  const ic = iconColor(nightMode);
+  const isDark = appearance === 'dark';
+  const ic = iconColor(isDark);
 
   const modal = (
     <AnimatePresence>
@@ -158,17 +161,25 @@ export default function SettingsModal({ open, onClose }: Props) {
                 <div>
                   <SectionLabel>General</SectionLabel>
                   <div className="space-y-1.5">
-                    <SettingRow nightMode={nightMode} icon={<PlayCircle size={16} className={ic} />} label="Demo Mode">
+                    <SettingRow dark={isDark} icon={<PlayCircle size={16} className={ic} />} label="Demo Mode">
                       <Toggle on={demoMode} onToggle={toggleDemoMode} />
                     </SettingRow>
 
-                    <SettingRow nightMode={nightMode} icon={<Moon size={16} className={ic} />} label="Night Mode">
-                      <Toggle on={nightMode} onToggle={toggleNightMode} />
+                    <SettingRow dark={isDark} icon={<Monitor size={16} className={ic} />} label="Appearance">
+                      <select
+                        value={appearance}
+                        onChange={e => applyAppearance(e.target.value as AppearanceMode)}
+                        className="w-20 text-sm md:text-[12px] text-[#8A8A8A] bg-[#EDEAE5] border-none rounded-lg px-1 md:px-2.5 py-0.5 md:py-1 focus:outline-none focus:ring-1 focus:ring-[#C87A53] cursor-pointer"
+                      >
+                        <option value="system">System</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                      </select>
                     </SettingRow>
 
                     <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#F9F7F4]">
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-7 h-7 rounded-full ${iconBg(nightMode)} flex items-center justify-center shrink-0 transition-colors`}>
+                        <div className={`w-7 h-7 rounded-full ${iconBg(isDark)} flex items-center justify-center shrink-0 transition-colors`}>
                           <Globe size={16} className={ic} />
                         </div>
                         <span className="text-sm text-[#1A1A1A]">Language</span>
@@ -176,7 +187,7 @@ export default function SettingsModal({ open, onClose }: Props) {
                       <select
                         value={language}
                         onChange={e => handleLanguageChange(e.target.value)}
-                        className="text-base md:text-[12px] text-[#8A8A8A] bg-[#EDEAE5] border-none rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-[#C87A53] cursor-pointer"
+                        className="w-20 text-sm md:text-[12px] text-[#8A8A8A] bg-[#EDEAE5] border-none rounded-lg px-1 md:px-2.5 py-0.5 md:py-1 focus:outline-none focus:ring-1 focus:ring-[#C87A53] cursor-pointer"
                       >
                         {LANGUAGES.map(l => (
                           <option key={l.code} value={l.code}>{l.label}</option>
@@ -191,7 +202,7 @@ export default function SettingsModal({ open, onClose }: Props) {
                   <SectionLabel>Help</SectionLabel>
                   <div className="space-y-1.5">
                     <ActionRow
-                      nightMode={nightMode}
+                      dark={isDark}
                       icon={<Mail size={16} className={ic} />}
                       label="Contact Support"
                       onClick={() => window.open('mailto:zhenglin0619@gmail.com', '_blank')}
@@ -209,8 +220,8 @@ export default function SettingsModal({ open, onClose }: Props) {
                       className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#F9F7F4] hover:bg-[#F0ECE6] transition-colors group"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-7 h-7 rounded-full ${iconBg(nightMode)} flex items-center justify-center shrink-0 transition-colors`}>
-                          <Share2 size={16} className={ic} />
+                        <div className={`w-7 h-7 rounded-full ${iconBg(isDark)} flex items-center justify-center shrink-0 transition-colors`}>
+                          <Share size={16} className={ic} />
                         </div>
                         <span className="text-sm text-[#1A1A1A]">Share LET&rsquo;S GO</span>
                       </div>
@@ -222,14 +233,14 @@ export default function SettingsModal({ open, onClose }: Props) {
                     </button>
 
                     <ActionRow
-                      nightMode={nightMode}
+                      dark={isDark}
                       icon={<Shield size={16} className={ic} />}
                       label="Privacy Policy"
                       onClick={() => window.open('/privacy', '_blank')}
                     />
 
                     <ActionRow
-                      nightMode={nightMode}
+                      dark={isDark}
                       icon={<FileText size={16} className={ic} />}
                       label="Terms of Service"
                       onClick={() => window.open('/terms', '_blank')}
@@ -244,7 +255,13 @@ export default function SettingsModal({ open, onClose }: Props) {
                 <p className="text-[10px] text-[#4A4A4A] tracking-wide flex items-center gap-1">
                   by CX <Heart size={10} className="text-[#C87A53] fill-[#C87A53]" /> ZW
                 </p>
-                <p className="text-[10px] text-[#4A4A4A] tracking-widest">version 1.1.2</p>
+                <button
+                  type="button"
+                  onClick={() => setWhatsNewOpen(true)}
+                  className="text-[10px] text-[#4A4A4A] tracking-widest hover:text-[#C87A53] transition-colors"
+                >
+                  version 1.2.0
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -253,5 +270,10 @@ export default function SettingsModal({ open, onClose }: Props) {
     </AnimatePresence>
   );
 
-  return mounted ? createPortal(modal, document.body) : null;
+  return (
+    <>
+      {mounted ? createPortal(modal, document.body) : null}
+      <WhatsNewModal open={whatsNewOpen} onClose={() => setWhatsNewOpen(false)} />
+    </>
+  );
 }

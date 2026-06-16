@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HotelLog } from '@/types';
 import StarRating from '@/components/ui/StarRating';
-import { X, MapPin, BedDouble, Eye, Pencil, Trash2, Check, MoreHorizontal } from 'lucide-react';
+import { X, MapPin, BedDouble, Eye, Pencil, Trash2, Check, MoreHorizontal, Users, LogOut } from 'lucide-react';
 import { fmtCountry, parseLocalDate } from '@/lib/formatUtils';
 
 interface Props {
@@ -12,6 +12,9 @@ interface Props {
   onClose: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onShare?: () => void;
+  onLeave?: () => void;
+  isOwner?: boolean;
   onUpdateHotel?: (updated: HotelLog) => void;
 }
 
@@ -23,7 +26,7 @@ function formatDate(d: string) {
   return parseLocalDate(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, onUpdateHotel }: Props) {
+export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, onShare, onLeave, isOwner = true, onUpdateHotel }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editingNote, setEditingNote] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -124,7 +127,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-[#4A5343]/30 via-[#E8E4DC] to-[#C87A53]/20" />
                 )}
-                {(onEdit || onDelete) && (
+                {(onEdit || onShare || onDelete || onLeave) && (
                   <div ref={menuRef} className="absolute top-3 right-3">
                     <button
                       onClick={() => setMenuOpen(v => !v)}
@@ -133,7 +136,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                       <MoreHorizontal size={14} className="text-white" />
                     </button>
                     {menuOpen && (
-                      <div className="absolute top-9 right-0 bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-36 z-30">
+                      <div className="absolute top-9 right-0 bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-40 z-30">
                         {!confirmDelete ? (
                           <>
                             {onEdit && (
@@ -144,23 +147,44 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                                 <Pencil size={13} className="text-[#8A8A8A]" /> Edit
                               </button>
                             )}
-                            {onDelete && (
+                            {onShare && (
                               <button
-                                onClick={() => setConfirmDelete(true)}
-                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                                onClick={() => { onShare(); setMenuOpen(false); }}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
                               >
-                                <Trash2 size={13} /> Delete
+                                <Users size={13} className="text-[#8A8A8A]" /> Share
                               </button>
+                            )}
+                            {isOwner ? (
+                              onDelete && (
+                                <button
+                                  onClick={() => setConfirmDelete(true)}
+                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                                >
+                                  <Trash2 size={13} /> Delete
+                                </button>
+                              )
+                            ) : (
+                              onLeave && (
+                                <button
+                                  onClick={() => setConfirmDelete(true)}
+                                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                                >
+                                  <LogOut size={13} /> Leave
+                                </button>
+                              )
                             )}
                           </>
                         ) : (
                           <div className="px-4 py-2">
-                            <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this hotel?</p>
+                            <p className="text-xs text-[#1A1A1A] font-medium mb-2">
+                              {isOwner ? 'Delete this hotel?' : 'Leave this hotel?'}
+                            </p>
                             <div className="flex gap-2">
                               <button
-                                onClick={() => { onDelete!(); onClose(); }}
+                                onClick={() => { isOwner ? onDelete!() : onLeave!(); onClose(); }}
                                 className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
-                              >Delete</button>
+                              >{isOwner ? 'Delete' : 'Leave'}</button>
                               <button
                                 onClick={() => setConfirmDelete(false)}
                                 className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
@@ -269,7 +293,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                     </span>
                   </div>
                 ) : hotel.notes ? (
-                  <p className="text-sm text-[#8A8A8A] leading-relaxed">{hotel.notes}</p>
+                  <p className="text-sm text-[#8A8A8A] leading-relaxed whitespace-pre-wrap">{hotel.notes}</p>
                 ) : (
                   <p className="text-sm text-[#C0BAB2] italic">No notes yet.</p>
                 )}

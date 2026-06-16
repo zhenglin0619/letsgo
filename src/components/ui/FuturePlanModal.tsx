@@ -89,13 +89,10 @@ export default function FuturePlanModal({ open, onClose }: Props) {
     setEditingId(null);
     setLoading(true);
     (async () => {
-      const { data: sharedRows } = await supabase
-        .from('collaborators').select('owner_id').eq('collaborator_id', user.id);
-      const ownerIds = [user.id, ...(sharedRows?.map(r => r.owner_id as string) ?? [])];
       const { data } = await supabase
         .from('future_plans')
         .select('id, user_id, title, notes, type')
-        .in('user_id', ownerIds)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: true });
       setPlans((data ?? []) as Plan[]);
       setLoading(false);

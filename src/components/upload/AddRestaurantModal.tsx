@@ -55,6 +55,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
   const [coverPreview, setCoverPreview] = useState('');
   const [coverTransform, setCoverTransform] = useState<PhotoTransform | undefined>(undefined);
   const [step, setStep] = useState<'form' | 'done'>('form');
+  const [submitting, setSubmitting] = useState(false);
   const [geocoded, setGeocoded] = useState<{ lat: number; lng: number; city: string; country: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<DraggableImageHandle>(null);
@@ -67,7 +68,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
   defaultTripIdRef.current = defaultTripId;
 
   useEffect(() => {
-    if (!open) { setForm(emptyForm); setCoverPreview(''); setCoverTransform(undefined); coverFileRef.current = null; setStep('form'); setGeocoded(null); return; }
+    if (!open) { setForm(emptyForm); setCoverPreview(''); setCoverTransform(undefined); coverFileRef.current = null; setStep('form'); setSubmitting(false); setGeocoded(null); return; }
     const init = initialDiningRef.current;
     if (init) {
       const { log, tripId } = init;
@@ -125,7 +126,8 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
   const isValid = form.restaurantName.trim() && form.date;
 
   async function handleSubmit() {
-    if (!isValid) return;
+    if (!isValid || submitting) return;
+    setSubmitting(true);
     let photo: string | null = null;
     if (coverPreview) {
       photo = coverPreview.startsWith('data:') && coverFileRef.current
@@ -393,7 +395,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                 <div className="px-5 pb-4 pt-0 flex justify-end">
                   <button
                     onClick={handleSubmit}
-                    disabled={!isValid}
+                    disabled={!isValid || submitting}
                     className="bg-[#1A1A1A] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-[#333] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {isEdit ? 'Save Changes' : 'Add Restaurant'}

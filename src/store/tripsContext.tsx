@@ -7,19 +7,13 @@ import { Trip, DiningLog, HotelLog, PhotoTransform } from '@/types';
 import { mockTrips, mockStandaloneRestaurants, mockStandaloneHotels } from '@/store/data';
 import { setDemoMode as setImageUtilsDemoMode } from '@/lib/imageUtils';
 
-export interface Collaborator {
-  userId: string;
-  email: string;
-}
-
-export interface PendingInvite {
-  ownerId: string;
-  ownerEmail: string;
-}
-
-export interface SentInvite {
-  inviteeId: string;
-  inviteeEmail: string;
+export interface ItemInvite {
+  id: string;
+  itemId: string;
+  itemType: 'trip' | 'restaurant' | 'hotel';
+  itemTitle: string;
+  inviterId: string;
+  inviterEmail: string;
 }
 
 interface TripsContextValue {
@@ -30,13 +24,10 @@ interface TripsContextValue {
   trips: Trip[];
   standaloneRestaurants: DiningLog[];
   standaloneHotels: HotelLog[];
-  collaborators: Collaborator[];
-  pendingInvites: PendingInvite[];
-  sentInvites: SentInvite[];
-  sendInvite:         (email: string) => Promise<string | null>;
-  acceptInvite:       (ownerId: string) => Promise<void>;
-  rejectInvite:       (ownerId: string) => Promise<void>;
-  removeCollaborator: (collaboratorUserId: string) => Promise<void>;
+  pendingItemInvites: ItemInvite[];
+  acceptItemInvite:  (inviteId: string) => Promise<void>;
+  rejectItemInvite:  (inviteId: string) => Promise<void>;
+  leaveItemShare:    (itemId: string, itemType: 'trip' | 'restaurant' | 'hotel') => Promise<void>;
   addTrip:                    (t: Trip)        => void;
   updateTrip:                 (t: Trip)        => void;
   deleteTrip:                 (id: string)     => void;
@@ -143,62 +134,44 @@ function rowToHotel(r: HotelRow): HotelLog {
 
 // ── Supabase sync helpers ─────────────────────────────────────────────────────
 
-async function loadCollaborators(userId: string): Promise<Collaborator[]> {
-  const { data: rows } = await supabase
-    .from('collaborators')
-    .select('owner_id, collaborator_id')
-    .eq('status', 'accepted')
-    .or(`owner_id.eq.${userId},collaborator_id.eq.${userId}`);
-  if (!rows || rows.length === 0) return [];
-  const otherIds = [...new Set(rows.map(r =>
-    r.owner_id === userId ? r.collaborator_id : r.owner_id
-  ) as string[])];
-  const { data: profiles } = await supabase
-    .from('profiles').select('id, email').in('id', otherIds);
-  return (profiles ?? []).map(p => ({ userId: p.id as string, email: p.email as string }));
+async function loadPendingItemInvites(userId: string): Promise<ItemInvite[]> {
+  const { data: pending } = await supabase
+    .from('item_collaborators')
+    .select('id, item_id, item_type, item_name, inviter_id')
+    .eq('collaborator_id', userId)
+    .eq('status', 'pending');
+  if (!pending?.length) return [];
+
+  const inviterIds = [...new Set(pending.map(p => p.inviter_id as string))];
+  const { data: profiles } = await supabase.from('profiles').select('id, email').in('id', inviterIds);
+  const emailMap: Record<string, string> = {};
+  for (const p of (profiles ?? []) as { id: string; email: string }[]) emailMap[p.id] = p.email;
+
+  return pending.map(p => ({
+    id:           p.id as string,
+    itemId:       p.item_id as string,
+    itemType:     p.item_type as 'trip' | 'restaurant' | 'hotel',
+    itemTitle:    (p.item_name as string | null) ?? 'Unknown',
+    inviterId:    p.inviter_id as string,
+    inviterEmail: emailMap[p.inviter_id as string] ?? '',
+  }));
 }
 
-async function loadPendingInvites(userId: string): Promise<PendingInvite[]> {
-  const { data: rows } = await supabase
-    .from('collaborators').select('owner_id')
-    .eq('collaborator_id', userId).eq('status', 'pending');
-  if (!rows || rows.length === 0) return [];
-  const ownerIds = rows.map(r => r.owner_id as string);
-  const { data: profiles } = await supabase
-    .from('profiles').select('id, email').in('id', ownerIds);
-  return (profiles ?? []).map(p => ({ ownerId: p.id as string, ownerEmail: p.email as string }));
-}
-
-async function loadSentInvites(userId: string): Promise<SentInvite[]> {
-  const { data: rows } = await supabase
-    .from('collaborators').select('collaborator_id')
-    .eq('owner_id', userId).eq('status', 'pending');
-  if (!rows || rows.length === 0) return [];
-  const inviteeIds = rows.map(r => r.collaborator_id as string);
-  const { data: profiles } = await supabase
-    .from('profiles').select('id, email').in('id', inviteeIds);
-  return (profiles ?? []).map(p => ({ inviteeId: p.id as string, inviteeEmail: p.email as string }));
-}
-
-async function loadUserData(userId: string) {
-  const { data: sharedRows } = await supabase
-    .from('collaborators')
-    .select('owner_id, collaborator_id')
-    .eq('status', 'accepted')
-    .or(`owner_id.eq.${userId},collaborator_id.eq.${userId}`);
-  const otherIds = (sharedRows ?? []).map(r =>
-    r.owner_id === userId ? r.collaborator_id : r.owner_id
-  ) as string[];
-  const ownerIds = [userId, ...new Set(otherIds)];
-
+async function loadUserData(_userId: string) {
+  // RLS policies handle all access control — fetch without explicit filters to get
+  // own items + anything shared via item_collaborators (trips, standalone items,
+  // and trip-attached restaurants/hotels via the parent-trip policy).
   const [tripsRes, restRes, hotelRes] = await Promise.all([
-    supabase.from('trips').select('id,user_id,title,cover_photo,cover_photo_transform,start_date,end_date,countries,city,photos').in('user_id', ownerIds),
-    supabase.from('restaurants').select('*').in('user_id', ownerIds),
-    supabase.from('hotels').select('*').in('user_id', ownerIds),
+    supabase.from('trips').select('id,user_id,title,cover_photo,cover_photo_transform,start_date,end_date,countries,city,photos'),
+    supabase.from('restaurants').select('*'),
+    supabase.from('hotels').select('*'),
   ]);
+
   const tripRows  = (tripsRes.data  ?? []) as TripRow[];
   const restRows  = (restRes.data   ?? []) as RestaurantRow[];
   const hotelRows = (hotelRes.data  ?? []) as HotelRow[];
+
+  const tripIdSet = new Set(tripRows.map(t => t.id));
 
   const trips = tripRows.map(t =>
     rowToTrip(
@@ -209,8 +182,9 @@ async function loadUserData(userId: string) {
   );
   return {
     trips,
-    standalone:       restRows.filter(r => r.trip_id === null).map(rowToLog),
-    standaloneHotels: hotelRows.filter(h => h.trip_id === null).map(rowToHotel),
+    // trip_id is null (truly standalone) OR parent trip isn't accessible (directly shared trip-attached item)
+    standalone:       restRows.filter(r => r.trip_id === null || !tripIdSet.has(r.trip_id)).map(rowToLog),
+    standaloneHotels: hotelRows.filter(h => h.trip_id === null || !tripIdSet.has(h.trip_id)).map(rowToHotel),
   };
 }
 
@@ -316,9 +290,7 @@ export function TripsProvider({ children }: { children: ReactNode }) {
   const [trips, setTrips]                       = useState<Trip[]>([]);
   const [standaloneRestaurants, setStandalone]  = useState<DiningLog[]>([]);
   const [standaloneHotels, setStandaloneHotels] = useState<HotelLog[]>([]);
-  const [collaborators, setCollaborators]   = useState<Collaborator[]>([]);
-  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
-  const [sentInvites, setSentInvites]       = useState<SentInvite[]>([]);
+  const [pendingItemInvites, setPendingItemInvites] = useState<ItemInvite[]>([]);
 
   const [demoMode, setDemoMode]                         = useState(false);
   useEffect(() => { setImageUtilsDemoMode(demoMode); }, [demoMode]);
@@ -345,25 +317,19 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         if (u) {
           await supabase.from('profiles')
             .upsert({ id: u.id, email: u.email }, { onConflict: 'id' });
-          const [data, collabs, pending, sent] = await Promise.all([
+          const [data, invites] = await Promise.all([
             loadUserData(u.id),
-            loadCollaborators(u.id),
-            loadPendingInvites(u.id),
-            loadSentInvites(u.id),
+            loadPendingItemInvites(u.id),
           ]);
           setTrips(data.trips);
           setStandalone(data.standalone);
           setStandaloneHotels(data.standaloneHotels);
-          setCollaborators(collabs);
-          setPendingInvites(pending);
-          setSentInvites(sent);
+          setPendingItemInvites(invites);
         } else {
           setTrips([]);
           setStandalone([]);
           setStandaloneHotels([]);
-          setCollaborators([]);
-          setPendingInvites([]);
-          setSentInvites([]);
+          setPendingItemInvites([]);
         }
       } catch (err) {
         console.error('[auth] session error:', err);
@@ -376,18 +342,21 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     // unblock the UI after 5s so the user at least sees the login screen.
     const timeout = setTimeout(() => setAuthLoading(false), 5000);
 
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => {
-        clearTimeout(timeout);
-        applySession(session);
-      })
-      .catch(() => {
-        clearTimeout(timeout);
-        setAuthLoading(false);
-      });
-
+    // Use onAuthStateChange only — getSession() can return a stale cached session
+    // with an already-expired access token, causing RLS to silently return empty
+    // arrays and producing a blank account on first load after several hours.
+    // onAuthStateChange fires INITIAL_SESSION first, then TOKEN_REFRESHED once the
+    // client auto-renews the token, so we skip INITIAL_SESSION when the token is
+    // already expired and let TOKEN_REFRESHED carry the valid session instead.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        if (event === 'INITIAL_SESSION' && session) {
+          const nowSec = Math.floor(Date.now() / 1000);
+          if (session.expires_at && session.expires_at < nowSec) {
+            return; // expired — TOKEN_REFRESHED will fire with a valid token
+          }
+        }
+        clearTimeout(timeout);
         await applySession(session);
       }
     );
@@ -402,18 +371,14 @@ export function TripsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
     async function onFocus() {
-      const [collabs, data, pending, sent] = await Promise.all([
-        loadCollaborators(user!.id),
+      const [data, invites] = await Promise.all([
         loadUserData(user!.id),
-        loadPendingInvites(user!.id),
-        loadSentInvites(user!.id),
+        loadPendingItemInvites(user!.id),
       ]);
-      setCollaborators(collabs);
       setTrips(data.trips);
       setStandalone(data.standalone);
       setStandaloneHotels(data.standaloneHotels);
-      setPendingInvites(pending);
-      setSentInvites(sent);
+      setPendingItemInvites(invites);
     }
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
@@ -432,46 +397,16 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       trips:                effectiveTrips,
       standaloneRestaurants: effectiveStandalone,
       standaloneHotels:     effectiveStandaloneHotels,
-      collaborators,
+      pendingItemInvites,
 
-      pendingInvites,
-      sentInvites,
-
-      sendInvite: async (email) => {
-        if (!user) return 'Not signed in';
-        if (email.toLowerCase() === user.email?.toLowerCase()) return 'Cannot invite yourself';
-
-        const { data: profile, error } = await supabase
-          .from('profiles').select('id, email').eq('email', email).single();
-        if (error || !profile) return 'No account found with that email';
-
-        if (collaborators.some(c => c.userId === profile.id)) return 'Already a collaborator';
-        if (sentInvites.some(s => s.inviteeId === profile.id)) return 'Invite already sent';
-
-        const { error: insErr } = await supabase.from('collaborators').insert({
-          owner_id: user.id, collaborator_id: profile.id, status: 'pending',
-        });
-        if (insErr) { console.error('[sendInvite]', insErr); return insErr.message; }
-
-        setSentInvites(prev => [...prev, { inviteeId: profile.id as string, inviteeEmail: profile.email as string }]);
-        return null;
-      },
-
-      acceptInvite: async (ownerId) => {
+      acceptItemInvite: async (inviteId) => {
         if (!user) return;
-        const { data: updated, error } = await supabase.from('collaborators')
+        const { error } = await supabase.from('item_collaborators')
           .update({ status: 'accepted' })
-          .eq('owner_id', ownerId)
-          .eq('collaborator_id', user.id)
-          .select();
-        if (error) { console.error('[acceptInvite] error:', error); return; }
-        if (!updated || updated.length === 0) { console.error('[acceptInvite] 0 rows updated — likely RLS blocking UPDATE'); return; }
-
-        const invite = pendingInvites.find(p => p.ownerId === ownerId);
-        setPendingInvites(prev => prev.filter(p => p.ownerId !== ownerId));
-        if (invite) {
-          setCollaborators(prev => [...prev, { userId: ownerId, email: invite.ownerEmail }]);
-        }
+          .eq('id', inviteId)
+          .eq('collaborator_id', user.id);
+        if (error) { console.error('[acceptItemInvite]', error); return; }
+        setPendingItemInvites(prev => prev.filter(p => p.id !== inviteId));
         loadUserData(user.id).then(data => {
           setTrips(data.trips);
           setStandalone(data.standalone);
@@ -479,23 +414,22 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         });
       },
 
-      rejectInvite: async (ownerId) => {
+      rejectItemInvite: async (inviteId) => {
         if (!user) return;
-        await supabase.from('collaborators')
+        await supabase.from('item_collaborators')
           .delete()
-          .eq('owner_id', ownerId)
+          .eq('id', inviteId)
           .eq('collaborator_id', user.id);
-        setPendingInvites(prev => prev.filter(p => p.ownerId !== ownerId));
+        setPendingItemInvites(prev => prev.filter(p => p.id !== inviteId));
       },
 
-      removeCollaborator: async (collaboratorUserId) => {
+      leaveItemShare: async (itemId, itemType) => {
         if (!user) return;
-        await supabase.from('collaborators').delete().or(
-          `and(owner_id.eq.${user.id},collaborator_id.eq.${collaboratorUserId}),` +
-          `and(owner_id.eq.${collaboratorUserId},collaborator_id.eq.${user.id})`
-        );
-        setCollaborators(prev => prev.filter(c => c.userId !== collaboratorUserId));
-        setSentInvites(prev => prev.filter(s => s.inviteeId !== collaboratorUserId));
+        await supabase.from('item_collaborators')
+          .delete()
+          .eq('item_id', itemId)
+          .eq('item_type', itemType)
+          .eq('collaborator_id', user.id);
         loadUserData(user.id).then(data => {
           setTrips(data.trips);
           setStandalone(data.standalone);
@@ -564,9 +498,7 @@ export function TripsProvider({ children }: { children: ReactNode }) {
 
       signOut: async () => {
         setDemoMode(false);
-        setCollaborators([]);
-        setPendingInvites([]);
-        setSentInvites([]);
+        setPendingItemInvites([]);
         await supabase.auth.signOut();
       },
     }}>

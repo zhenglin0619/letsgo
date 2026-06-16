@@ -30,7 +30,7 @@ export default function PrivacyPage() {
             <li><span className="font-semibold text-[#1A1A1A]">Account information:</span> When you sign in via Google or email, we collect your email address, display name, and profile picture to create and identify your account.</li>
             <li><span className="font-semibold text-[#1A1A1A]">Journal content:</span> Trips, restaurant visits, and hotel stays you record — including titles, dates, notes, photos, and ratings — are stored and associated with your account.</li>
             <li><span className="font-semibold text-[#1A1A1A]">Collaboration data:</span> When you invite or accept collaborators, we store the relevant user IDs and email addresses to facilitate shared access.</li>
-            <li><span className="font-semibold text-[#1A1A1A]">Preferences:</span> Local settings such as night mode and language preference are stored in your browser&rsquo;s local storage and are not transmitted to our servers.</li>
+            <li><span className="font-semibold text-[#1A1A1A]">Preferences:</span> Local settings such as appearance (System, Light, or Dark mode) and language preference are stored in your browser&rsquo;s local storage and are not transmitted to our servers.</li>
           </ul>
         </section>
 

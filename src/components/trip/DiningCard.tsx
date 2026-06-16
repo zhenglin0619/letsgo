@@ -120,8 +120,8 @@ export default function DiningCard({ log, index, onClick, onEdit, onDelete }: Pr
       </div>
 
       {/* Body */}
-      <div className="px-2.5 pt-2 pb-1.5 md:p-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-1 md:mb-3 gap-1 md:gap-0">
+      <div className="px-2.5 pt-2 pb-3 md:px-3 md:pt-2.5 md:pb-3">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-1 md:mb-1.5 gap-1 md:gap-0">
           <div className="order-first md:order-last">
             <StarRating value={log.overallRating} readonly size="sm" />
           </div>
@@ -134,9 +134,7 @@ export default function DiningCard({ log, index, onClick, onEdit, onDelete }: Pr
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-[#8A8A8A]">{fmtDate(log.date)}</span>
-          {log.totalExpense > 0 && (
-            <span className="text-xs text-[#8A8A8A]">{log.currency} {log.totalExpense.toLocaleString()}</span>
-          )}
+          <span className="text-xs text-[#8A8A8A]">{log.currency} {log.totalExpense.toLocaleString()}</span>
         </div>
       </div>
     </motion.div>

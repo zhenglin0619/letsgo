@@ -52,6 +52,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
   const [coverPreview, setCoverPreview] = useState('');
   const [coverTransform, setCoverTransform] = useState<PhotoTransform | undefined>(undefined);
   const [step, setStep] = useState<'form' | 'done'>('form');
+  const [submitting, setSubmitting] = useState(false);
   const [geocoded, setGeocoded] = useState<{ lat: number; lng: number; city: string; country: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<DraggableImageHandle>(null);
@@ -64,7 +65,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
   defaultTripIdRef.current = defaultTripId;
 
   useEffect(() => {
-    if (!open) { setForm(emptyForm); setCoverPreview(''); setCoverTransform(undefined); coverFileRef.current = null; setStep('form'); setGeocoded(null); return; }
+    if (!open) { setForm(emptyForm); setCoverPreview(''); setCoverTransform(undefined); coverFileRef.current = null; setStep('form'); setSubmitting(false); setGeocoded(null); return; }
     const init = initialHotelRef.current;
     if (init) {
       const { hotel, tripId } = init;
@@ -118,7 +119,8 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
   const isValid = form.hotelName.trim() && form.checkIn && form.checkOut;
 
   async function handleSubmit() {
-    if (!isValid) return;
+    if (!isValid || submitting) return;
+    setSubmitting(true);
     let photo: string | null = null;
     if (coverPreview) {
       photo = coverPreview.startsWith('data:') && coverFileRef.current
@@ -377,7 +379,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                 <div className="px-4 pb-3 pt-0 md:px-5 md:pb-4 flex justify-end">
                   <button
                     onClick={handleSubmit}
-                    disabled={!isValid}
+                    disabled={!isValid || submitting}
                     className="bg-[#1A1A1A] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-[#333] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {isEdit ? 'Save Changes' : 'Add Hotel'}

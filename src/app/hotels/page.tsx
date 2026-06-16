@@ -1,8 +1,10 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { useTrips } from '@/store/tripsContext';
-import { MapPin, Calendar, MoreHorizontal, Pencil, Trash2, Search, X } from 'lucide-react';
+import { MapPin, Calendar, MoreHorizontal, Pencil, Trash2, Users, LogOut, Search, X } from 'lucide-react';
+import ItemCollaboratorModal from '@/components/ui/ItemCollaboratorModal';
 import AddHotelModal from '@/components/upload/AddHotelModal';
 import SortMenu from '@/components/ui/SortMenu';
 import HotelDrawer from '@/components/hotel/HotelDrawer';
@@ -19,31 +21,53 @@ function formatDate(d: string) {
   return parseLocalDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function HotelMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+function HotelMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
+  onEdit: () => void; onDelete: () => void; onShare: () => void;
+  onLeave: () => void; isOwner: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [dropPos, setDropPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) { setConfirming(false); return; }
     const close = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (
+        dropRef.current && !dropRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) setOpen(false);
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, [open]);
 
+  function handleOpen(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setDropPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
+    }
+    setOpen(v => !v);
+  }
+
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
-        onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+        ref={btnRef}
+        onClick={handleOpen}
         className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 transition-colors flex items-center justify-center"
       >
         <MoreHorizontal size={14} className="text-white" />
       </button>
 
-      {open && (
-        <div className="absolute top-9 right-0 bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-40 z-30">
+      {open && createPortal(
+        <div
+          ref={dropRef}
+          className="fixed bg-white rounded-xl shadow-xl border border-[#E8E6E1] py-1.5 w-40 z-[99999]"
+          style={{ top: dropPos.top, right: dropPos.right }}
+        >
           {!confirming ? (
             <>
               <button
@@ -53,20 +77,37 @@ function HotelMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => v
                 <Pencil size={13} className="text-[#8A8A8A]" /> Edit
               </button>
               <button
-                onClick={e => { e.stopPropagation(); setConfirming(true); }}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                onClick={e => { e.stopPropagation(); onShare(); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Trash2 size={13} /> Delete
+                <Users size={13} className="text-[#8A8A8A]" /> Share
               </button>
+              {isOwner ? (
+                <button
+                  onClick={e => { e.stopPropagation(); setConfirming(true); }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 size={13} /> Delete
+                </button>
+              ) : (
+                <button
+                  onClick={e => { e.stopPropagation(); setConfirming(true); }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={13} /> Leave
+                </button>
+              )}
             </>
           ) : (
             <div className="px-4 py-2">
-              <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this hotel?</p>
+              <p className="text-xs text-[#1A1A1A] font-medium mb-2">
+                {isOwner ? 'Delete this hotel?' : 'Leave this hotel?'}
+              </p>
               <div className="flex gap-2">
                 <button
-                  onClick={e => { e.stopPropagation(); onDelete(); setOpen(false); }}
+                  onClick={e => { e.stopPropagation(); isOwner ? onDelete() : onLeave(); setOpen(false); }}
                   className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
-                >Delete</button>
+                >{isOwner ? 'Delete' : 'Leave'}</button>
                 <button
                   onClick={e => { e.stopPropagation(); setConfirming(false); }}
                   className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
@@ -74,14 +115,15 @@ function HotelMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => v
               </div>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
 export default function HotelsPage() {
-  const { trips, standaloneHotels, updateTrip, updateStandaloneHotel, deleteStandaloneHotel } = useTrips();
+  const { trips, standaloneHotels, updateTrip, updateStandaloneHotel, deleteStandaloneHotel, leaveItemShare, user } = useTrips();
   const allHotels = [
     ...trips.flatMap(trip => trip.hotels.map(hotel => ({ ...hotel, tripTitle: trip.title, tripId: trip.id, isStandalone: false }))),
     ...standaloneHotels.map(hotel => ({ ...hotel, tripTitle: '', tripId: '', isStandalone: true })),
@@ -109,9 +151,10 @@ export default function HotelsPage() {
     return 0;
   });
 
-  const [editTarget, setEditTarget] = useState<{ hotel: HotelLog; tripId: string } | null>(null);
+  const [editTarget, setEditTarget]   = useState<{ hotel: HotelLog; tripId: string } | null>(null);
   const [selectedHotel, setSelectedHotel] = useState<{ hotel: HotelLog; tripId: string; isStandalone: boolean } | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen]   = useState(false);
+  const [shareHotel, setShareHotel]   = useState<HotelLog | null>(null);
 
   function handleDelete(hotel: HotelLog, tripId: string, isStandalone: boolean) {
     deleteStoragePhotos(hotel.photos);
@@ -206,12 +249,21 @@ export default function HotelsPage() {
               </div>
               <div className="absolute top-3 right-3">
                 <HotelMenu
+                  isOwner={hotel.isStandalone
+                    ? (!hotel.ownerId || hotel.ownerId === user?.id)
+                    : (!trips.find(t => t.id === hotel.tripId)?.ownerId || trips.find(t => t.id === hotel.tripId)?.ownerId === user?.id)
+                  }
                   onEdit={() => { setEditTarget({ hotel, tripId: hotel.tripId }); }}
                   onDelete={() => handleDelete(hotel, hotel.tripId, hotel.isStandalone)}
+                  onShare={() => setShareHotel(hotel)}
+                  onLeave={() => leaveItemShare(
+                    hotel.isStandalone ? hotel.id : hotel.tripId,
+                    hotel.isStandalone ? 'hotel' : 'trip'
+                  )}
                 />
               </div>
             </div>
-            <div className="px-2.5 pt-2 pb-1 md:p-4">
+            <div className={`px-2.5 pt-2 md:px-3 md:pt-2.5 ${hotel.tripTitle ? 'pb-1 md:pb-2.5' : 'pb-1 md:pb-3'}`}>
               {/* Mobile row 1: rating */}
               {hotel.rating > 0 && (
                 <div className="md:hidden mb-1">
@@ -219,7 +271,7 @@ export default function HotelsPage() {
                 </div>
               )}
               {/* Row: location + price on mobile / location + rating on desktop */}
-              <div className="flex items-center justify-between mb-1 md:mb-3">
+              <div className="flex items-center justify-between mb-1 md:mb-1.5">
                 <span className="flex items-center gap-1 text-[10.5px] md:text-xs text-[#8A8A8A]">
                   <MapPin size={10} className="md:w-[11px] md:h-[11px]" />{hotel.location.city}, {fmtCountry(hotel.location.country)}
                 </span>
@@ -244,7 +296,9 @@ export default function HotelsPage() {
                   {hotel.currency} {Math.round(hotel.pricePerNight / (nights(hotel.checkIn, hotel.checkOut) || 1)).toLocaleString()} / night
                 </span>
               </div>
-              <p className="text-[10px] text-[#C87A53] font-medium mt-1 md:mt-2 uppercase tracking-wider">{hotel.tripTitle}</p>
+              {hotel.tripTitle && (
+                <p className="text-[10px] text-[#C87A53] font-medium mt-1 md:mt-2 uppercase tracking-wider">{hotel.tripTitle}</p>
+              )}
             </div>
           </motion.div>
         ))}
@@ -265,6 +319,21 @@ export default function HotelsPage() {
           handleDelete(selectedHotel.hotel, selectedHotel.tripId, selectedHotel.isStandalone);
           setDrawerOpen(false);
         }}
+        onShare={() => selectedHotel && setShareHotel(selectedHotel.hotel)}
+        onLeave={() => {
+          if (!selectedHotel) return;
+          leaveItemShare(
+            selectedHotel.isStandalone ? selectedHotel.hotel.id : selectedHotel.tripId,
+            selectedHotel.isStandalone ? 'hotel' : 'trip'
+          );
+          setDrawerOpen(false);
+        }}
+        isOwner={selectedHotel
+          ? selectedHotel.isStandalone
+            ? (!selectedHotel.hotel.ownerId || selectedHotel.hotel.ownerId === user?.id)
+            : (!trips.find(t => t.id === selectedHotel.tripId)?.ownerId || trips.find(t => t.id === selectedHotel.tripId)?.ownerId === user?.id)
+          : true
+        }
         onUpdateHotel={(updated) => {
           if (!selectedHotel) return;
           setSelectedHotel(s => s ? { ...s, hotel: updated } : s);
@@ -282,6 +351,16 @@ export default function HotelsPage() {
         onClose={() => setEditTarget(null)}
         initialHotel={editTarget ?? undefined}
       />
+      {shareHotel && (
+        <ItemCollaboratorModal
+          open={!!shareHotel}
+          onClose={() => setShareHotel(null)}
+          itemId={shareHotel.id}
+          itemType="hotel"
+          itemTitle={shareHotel.hotelName}
+          ownerId={shareHotel.ownerId ?? user?.id ?? ''}
+        />
+      )}
     </main>
   );
 }
