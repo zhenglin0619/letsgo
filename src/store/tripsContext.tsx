@@ -8,6 +8,20 @@ import { mockTrips, mockStandaloneRestaurants, mockStandaloneHotels } from '@/st
 import { setDemoMode as setImageUtilsDemoMode } from '@/lib/imageUtils';
 import { logAuthEvent } from '@/lib/authDebug';
 
+// Supabase calls have no built-in timeout, so a connection left over a stale
+// network (e.g. right after a device wakes from sleep) can hang forever,
+// captured live via authDebug breadcrumbs: applySession would start and then
+// just never finish. Race every such call against this so it always settles.
+function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    promise.then(
+      v => { clearTimeout(id); resolve(v); },
+      e => { clearTimeout(id); reject(e); }
+    );
+  });
+}
+
 export interface ItemInvite {
   id: string;
   itemId: string;
@@ -312,18 +326,21 @@ export function TripsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     logAuthEvent('effect:mount');
+    const NET_TIMEOUT = 10000;
     async function applySession(session: import('@supabase/supabase-js').Session | null) {
       logAuthEvent(`applySession:start user=${!!session?.user}`);
       try {
         const u = session?.user ?? null;
         setUser(u);
         if (u) {
-          await supabase.from('profiles')
-            .upsert({ id: u.id, email: u.email }, { onConflict: 'id' });
-          const [data, invites] = await Promise.all([
-            loadUserData(u.id),
-            loadPendingItemInvites(u.id),
-          ]);
+          await withTimeout(
+            supabase.from('profiles').upsert({ id: u.id, email: u.email }, { onConflict: 'id' }),
+            NET_TIMEOUT, 'profiles upsert'
+          );
+          const [data, invites] = await withTimeout(
+            Promise.all([loadUserData(u.id), loadPendingItemInvites(u.id)]),
+            NET_TIMEOUT, 'loadUserData/invites'
+          );
           setTrips(data.trips);
           setStandalone(data.standalone);
           setStandaloneHotels(data.standaloneHotels);
@@ -339,16 +356,19 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         console.error('[auth] session error:', err);
         logAuthEvent(`applySession:error ${err instanceof Error ? err.message : String(err)}`);
       } finally {
+        clearTimeout(timeout);
         setAuthLoading(false);
       }
     }
 
-    // Hard timeout: if Supabase never responds (e.g. mobile network can't reach it),
-    // unblock the UI after 5s so the user at least sees the login screen.
+    // Hard timeout: the ultimate safety net for the *entire* bootstrap — not
+    // just for waiting on the initial auth event, but for applySession's own
+    // network calls too (those are independently capped at NET_TIMEOUT above,
+    // but this remains armed in case something else unexpected hangs).
     const timeout = setTimeout(() => {
       logAuthEvent('timeout:fired');
       setAuthLoading(false);
-    }, 5000);
+    }, 15000);
 
     // Use onAuthStateChange only — getSession() can return a stale cached session
     // with an already-expired access token, causing RLS to silently return empty
@@ -366,14 +386,12 @@ export function TripsProvider({ children }: { children: ReactNode }) {
             const nowSec = Math.floor(Date.now() / 1000);
             if (session.expires_at && session.expires_at < nowSec) {
               logAuthEvent('refresh:start (expired initial session)');
-              const { data, error } = await supabase.auth.refreshSession();
+              const { data, error } = await withTimeout(supabase.auth.refreshSession(), NET_TIMEOUT, 'refreshSession');
               logAuthEvent(error ? `refresh:error ${error.message}` : 'refresh:ok');
-              clearTimeout(timeout);
               await applySession(error ? null : data.session);
               return;
             }
           }
-          clearTimeout(timeout);
           await applySession(session);
         } catch (err) {
           logAuthEvent(`listener:error ${err instanceof Error ? err.message : String(err)}`);
