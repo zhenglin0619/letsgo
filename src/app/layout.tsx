@@ -21,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full">
         <Script src="/theme-init.js" strategy="beforeInteractive" />
+        <Script src="/boot-watchdog.js" strategy="beforeInteractive" />
         <RootShell>{children}</RootShell>
       </body>
     </html>

@@ -114,6 +114,13 @@ function AppearanceSync() {
 }
 
 export default function RootShell({ children }: { children: React.ReactNode }) {
+  // Tells public/boot-watchdog.js (loaded beforeInteractive) that the app
+  // bundle actually started executing, so it doesn't force-reload thinking
+  // the JS never loaded. Set as early as possible, independent of auth state.
+  useEffect(() => {
+    (window as Window & { __appBooted?: boolean }).__appBooted = true;
+  }, []);
+
   return (
     <TripsProvider>
       <AppearanceSync />
