@@ -382,6 +382,14 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         logAuthEvent(`event:${event} session=${!!session} expires_at=${session?.expires_at ?? 'n/a'}`);
         try {
+          if (event === 'TOKEN_REFRESHED') {
+            // The JWT was silently refreshed — user identity and DB data haven't
+            // changed. Just sync the user object so RLS uses the new token; do
+            // NOT re-run applySession (avoids redundant DB round-trips and the
+            // stale-network hang that TOKEN_REFRESHED was triggering on reload).
+            setUser(session?.user ?? null);
+            return;
+          }
           if (event === 'INITIAL_SESSION' && session) {
             const nowSec = Math.floor(Date.now() / 1000);
             if (session.expires_at && session.expires_at < nowSec) {
