@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
 import FAB from './FAB';
@@ -16,6 +16,29 @@ function Shell({ children }: { children: React.ReactNode }) {
   const [addHotelOpen, setAddHotelOpen]         = useState(false);
   const pathname = usePathname();
   const hideFAB  = /^\/trips\/.+/.test(pathname);
+  const mountedAtRef = useRef(Date.now());
+
+  // A tab left open for hours can get frozen or discarded by the browser; on
+  // resuming, the in-page auth bootstrap (and its own fallback timer) may
+  // never get a chance to run, leaving the splash stuck indefinitely. If the
+  // tab is still stuck here a while after mount AND the user comes back to
+  // it, a hard reload is the only reliable way to recover.
+  useEffect(() => {
+    if (!authLoading) return;
+    function recover() {
+      if (document.visibilityState === 'visible' && Date.now() - mountedAtRef.current > 8000) {
+        window.location.reload();
+      }
+    }
+    document.addEventListener('visibilitychange', recover);
+    window.addEventListener('focus', recover);
+    window.addEventListener('pageshow', recover);
+    return () => {
+      document.removeEventListener('visibilitychange', recover);
+      window.removeEventListener('focus', recover);
+      window.removeEventListener('pageshow', recover);
+    };
+  }, [authLoading]);
 
   if (authLoading) {
     return (
