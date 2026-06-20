@@ -228,7 +228,7 @@ export default function RestaurantsPage() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         {filtered.length === 0 && (
           <div className="col-span-2 md:col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
             style={{ borderColor: '#D4CFC6' }}>
@@ -254,7 +254,7 @@ export default function RestaurantsPage() {
             transition={{ delay: i * 0.1, duration: 0.45 }}
             onClick={() => openDining(dining)}
           >
-            <div className="relative h-32 md:h-50 overflow-hidden">
+            <div className="relative h-50 md:h-50 overflow-hidden">
               {dining.photos[0] ? (
                 <img
                   src={dining.photos[0]}
@@ -269,9 +269,9 @@ export default function RestaurantsPage() {
                 <div className="w-full h-full bg-gradient-to-br from-[#C87A53]/30 via-[#E8E4DC] to-[#4A5343]/20" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-              <div className="absolute bottom-2 left-2 md:left-4 text-white">
-                <h2 className="serif font-semibold text-sm md:text-lg leading-tight">{dining.restaurantName}</h2>
-                <p className="text-[10px] md:text-xs text-white/70 mt-0.5">{dining.cuisine}</p>
+              <div className="absolute bottom-2 left-2.5 right-2.5 md:left-3 md:right-3 text-white">
+                <h2 className="serif font-semibold text-[20px] md:text-lg leading-tight">{dining.restaurantName}</h2>
+                <p className="text-[12px] md:text-xs text-white/70 mt-0.5">{dining.cuisine}</p>
               </div>
               {dining.michelinStars && (
                 <div className="absolute top-3 left-3">
@@ -295,15 +295,13 @@ export default function RestaurantsPage() {
               </div>
             </div>
 
-            <div className={`px-2.5 pt-2 md:px-3 md:pt-2.5 ${dining.tripTitle ? 'pb-1.5 md:pb-2.5' : 'pb-1.5 md:pb-3'}`}>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-1 md:mb-1.5 gap-1 md:gap-0">
-                <div className="order-first md:order-last">
-                  <StarRating value={dining.overallRating} readonly size="sm" />
-                </div>
-                <div className="flex items-center gap-2 md:gap-3 text-xs text-[#8A8A8A] order-last md:order-first">
+            <div className={`px-2.5 pt-2 md:px-3 md:pt-2.5 ${dining.tripTitle ? 'pb-2 md:pb-2.5' : 'pb-2.5 md:pb-3'}`}>
+              <div className="flex items-center justify-between mb-1 md:mb-1.5">
+                <div className="flex items-center gap-2 md:gap-3 text-xs text-[#8A8A8A]">
                   <span className="flex items-center gap-1"><MapPin size={11} />{dining.location.city}, {fmtCountry(dining.location.country)}</span>
-                  {dining.time && <span className="hidden md:flex items-center gap-1"><Clock size={11} />{dining.time}</span>}
+                  {dining.time && <span className="flex items-center gap-1"><Clock size={11} />{dining.time}</span>}
                 </div>
+                <StarRating value={dining.overallRating} readonly size="sm" />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-[#8A8A8A]">{formatDate(dining.date)}</span>

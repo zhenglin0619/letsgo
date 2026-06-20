@@ -8,13 +8,14 @@ A premium personal travel journal for documenting your dining experiences, hotel
 
 - **World Map Dashboard** — Visualize every trip on a 3D interactive globe with location pins
 - **Trip Management** — Create trips with cover photos, country tags, and nested dining/hotel entries
-- **Restaurant Logging** — Track restaurants with dishes, ratings, Michelin stars, and photos
-- **Hotel Logging** — Record hotel stays with room details and check-in/out dates
+- **Restaurant Logging** — Track restaurants with dishes, ratings, Michelin stars, cuisine, and photos
+- **Hotel Logging** — Record hotel stays with room details, price per night, and check-in/out dates
 - **Photo Uploads** — Drag-and-drop upload with HEIC support and EXIF metadata extraction
-- **Collaborators** — Invite others to view and contribute to your trips
+- **Collaborators** — Invite others to view and contribute to your trips and individual logs
 - **Future Plans** — Keep a wishlist of upcoming trips, dining, and hotel ideas
 - **Demo Mode** — Explore the full app with sample data, no sign-in required
 - **Night Mode** — Full dark theme across the entire app
+- **What's New** — In-app changelog modal for feature announcements
 - **Privacy & Terms** — Built-in Privacy Policy and Terms of Service pages
 
 ---
@@ -40,18 +41,17 @@ A premium personal travel journal for documenting your dining experiences, hotel
 
 ```bash
 git clone <repo-url>
-cd foodprint
+cd letsgo
 npm install
 ```
 
 ### 2. Configure environment variables
 
-Copy `.env.local.example` to `.env.local` and fill in your keys:
+Create a `.env.local` file in the project root:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_MAPBOX_TOKEN=
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
 ```
 
@@ -79,16 +79,19 @@ src/
 ├── components/
 │   ├── auth/               # Auth modal (Google + email sign-in)
 │   ├── dashboard/          # World map, stats bento
-│   ├── dining/             # Restaurant cards and detail views
-│   ├── hotel/              # Hotel cards and detail views
+│   ├── dining/             # Restaurant cards and detail drawer
+│   ├── hotel/              # Hotel cards and detail drawer
 │   ├── layout/             # Navbar, FAB, RootShell
 │   ├── trip/               # Trip cards, detail, timeline
-│   ├── ui/                 # Shared modals (Settings, Collaborators, Future Plans)
+│   ├── ui/                 # Shared modals (Settings, Collaborators, Future Plans, What's New)
 │   └── upload/             # Add trip/restaurant/hotel modals
 ├── store/
-│   └── tripsContext.tsx    # Global state, demo mode, collaborator sync
+│   ├── tripsContext.tsx    # Global state, demo mode, collaborator sync
+│   └── data.ts             # Demo data
 └── lib/
-    └── supabase.ts         # Supabase client
+    ├── supabase.ts         # Supabase client
+    ├── formatUtils.ts      # Date and country formatting helpers
+    └── imageUtils.ts       # Photo upload and storage utilities
 ```
 
 ---

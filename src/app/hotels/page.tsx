@@ -203,7 +203,7 @@ export default function HotelsPage() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         {filtered.length === 0 && (
           <div className="col-span-2 md:col-span-3 bento-card border-dashed min-h-64 flex flex-col items-center justify-center text-center p-8"
             style={{ borderColor: '#D4CFC6' }}>
@@ -229,7 +229,7 @@ export default function HotelsPage() {
             transition={{ delay: i * 0.1, duration: 0.45 }}
             onClick={() => { setSelectedHotel({ hotel, tripId: hotel.tripId, isStandalone: hotel.isStandalone }); setDrawerOpen(true); }}
           >
-            <div className="relative h-32 md:h-60 overflow-hidden">
+            <div className="relative h-50 md:h-60 overflow-hidden">
               {hotel.photos[0] ? (
                 <img
                   src={hotel.photos[0]}
@@ -244,8 +244,8 @@ export default function HotelsPage() {
                 <div className="w-full h-full bg-gradient-to-br from-[#4A5343]/30 via-[#E8E4DC] to-[#C87A53]/20" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-              <div className="absolute bottom-2 left-2 md:bottom-3 md:left-4 text-white">
-                <h2 className="serif font-semibold text-sm md:text-lg leading-tight">{hotel.hotelName}</h2>
+              <div className="absolute bottom-2.5 left-2.5 right-2.5 md:bottom-3 md:left-3 md:right-3 text-white">
+                <h2 className="serif font-semibold text-[20px] md:text-lg leading-tight">{hotel.hotelName}</h2>
               </div>
               <div className="absolute top-3 right-3">
                 <HotelMenu
@@ -263,34 +263,18 @@ export default function HotelsPage() {
                 />
               </div>
             </div>
-            <div className={`px-2.5 pt-2 md:px-3 md:pt-2.5 ${hotel.tripTitle ? 'pb-1 md:pb-2.5' : 'pb-1 md:pb-3'}`}>
-              {/* Mobile row 1: rating */}
-              {hotel.rating > 0 && (
-                <div className="md:hidden mb-1">
-                  <StarRating value={hotel.rating} readonly size="sm" />
-                </div>
-              )}
-              {/* Row: location + price on mobile / location + rating on desktop */}
+            <div className={`px-2.5 pt-2 md:px-3 md:pt-2.5 ${hotel.tripTitle ? 'pb-2 md:pb-2.5' : 'pb-2 md:pb-3'}`}>
+              {/* Row 1: location + rating */}
               <div className="flex items-center justify-between mb-1 md:mb-1.5">
-                <span className="flex items-center gap-1 text-[10.5px] md:text-xs text-[#8A8A8A]">
-                  <MapPin size={10} className="md:w-[11px] md:h-[11px]" />{hotel.location.city}, {fmtCountry(hotel.location.country)}
-                </span>
-{hotel.rating > 0 && (
-                  <span className="hidden md:block">
-                    <StarRating value={hotel.rating} readonly size="sm" />
-                  </span>
-                )}
-              </div>
-              {/* Mobile row 3: date */}
-              <div className="md:hidden mb-1">
-                <span className="flex items-center gap-1 text-[10.5px] text-[#8A8A8A]">
-                  <Calendar size={10} />{formatDate(hotel.checkIn)} – {formatDate(hotel.checkOut)}
-                </span>
-              </div>
-              {/* Desktop row 2: combined */}
-              <div className="hidden md:flex items-center justify-between">
                 <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
-                  <Calendar size={11} />{formatDate(hotel.checkIn)} – {formatDate(hotel.checkOut)} · {nights(hotel.checkIn, hotel.checkOut)} night{nights(hotel.checkIn, hotel.checkOut) !== 1 ? 's' : ''}
+                  <MapPin size={11} />{hotel.location.city}, {fmtCountry(hotel.location.country)}
+                </span>
+                {hotel.rating > 0 && <StarRating value={hotel.rating} readonly size="sm" />}
+              </div>
+              {/* Row 2: date + price */}
+              <div className="flex items-center justify-between mb-1 md:mb-0">
+                <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
+                  <Calendar size={11} />{formatDate(hotel.checkIn)} – {formatDate(hotel.checkOut)}<span className="hidden md:inline"> · {nights(hotel.checkIn, hotel.checkOut)} night{nights(hotel.checkIn, hotel.checkOut) !== 1 ? 's' : ''}</span>
                 </span>
                 <span className="text-xs text-[#8A8A8A]">
                   {hotel.currency} {Math.round(hotel.pricePerNight / (nights(hotel.checkIn, hotel.checkOut) || 1)).toLocaleString()} / night

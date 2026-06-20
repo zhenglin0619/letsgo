@@ -269,7 +269,7 @@ export default function SettingsModal({ open, onClose }: Props) {
                   onClick={() => setWhatsNewOpen(true)}
                   className="text-[10px] text-[#4A4A4A] tracking-widest hover:text-[#C87A53] transition-colors"
                 >
-                  version 1.2.1
+                  version 1.2.2
                 </button>
               </div>
             </motion.div>

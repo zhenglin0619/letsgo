@@ -12,6 +12,14 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: '1.2.2',
+    date: 'June 20, 2025',
+    items: [
+      { tag: 'New', text: 'Upgrade Mobile UI: Improved layout more clearly on mobile devices' },
+      { tag: 'Bug', text: 'Fixed bugs and Improved UI' },
+    ],
+  },
+  {
     version: '1.2.1',
     date: 'June 15, 2025',
     items: [
