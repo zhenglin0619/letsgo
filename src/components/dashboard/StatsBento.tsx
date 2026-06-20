@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { Plane, BedDouble, Utensils, Earth, Wallet, ChevronDown } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
 import { useState, useEffect, useRef } from 'react';
 
 function nightsBetween(checkIn: string, checkOut: string) {
@@ -25,6 +26,7 @@ function convertToTarget(amount: number, from: string, to: string) {
 
 export default function StatsBento() {
   const { trips, standaloneRestaurants, standaloneHotels } = useTrips();
+  const { t } = useLanguage();
   const [dark, setDark] = useState(false);
   useEffect(() => {
     const el = document.documentElement;
@@ -80,10 +82,10 @@ export default function StatsBento() {
   const iconColor = dark ? '#D4895E' : '#404040';
 
   const stats = [
-    { label: 'Trips',             value: tripCount,               icon: Plane,     },
-    { label: 'Countries / Cities', value: `${countries} / ${cities}`, icon: Earth, },
-    { label: 'Hotels / Nights',   value: `${hotelCount} / ${nightCount}`, icon: BedDouble, },
-    { label: 'Restaurants',       value: restCount,               icon: Utensils,  },
+    { label: t('stats_trips'),             value: tripCount,               icon: Plane,     },
+    { label: t('stats_countries_cities'),  value: `${countries} / ${cities}`, icon: Earth, },
+    { label: t('stats_hotels_nights'),     value: `${hotelCount} / ${nightCount}`, icon: BedDouble, },
+    { label: t('stats_restaurants'),       value: restCount,               icon: Utensils,  },
   ];
 
   return (
@@ -116,7 +118,7 @@ export default function StatsBento() {
       >
         <div className="flex items-center justify-between h-full">
           <div>
-            <p className="text-[11px] md:text-[12px] text-[#8A8A8A] font-medium uppercase tracking-[0.08em] md:tracking-widest mb-1 whitespace-nowrap">Total Expense</p>
+            <p className="text-[11px] md:text-[12px] text-[#8A8A8A] font-medium uppercase tracking-[0.08em] md:tracking-widest mb-1 whitespace-nowrap">{t('stats_total_expense')}</p>
             <div className="flex items-center gap-4 flex-nowrap">
               <p className="serif text-3xl font-semibold text-[#1A1A1A]">{expenseDisplay}</p>
               <div ref={dropdownRef} className="relative translate-y-1">

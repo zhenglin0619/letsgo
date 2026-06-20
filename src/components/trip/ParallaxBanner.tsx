@@ -3,11 +3,13 @@ import { useEffect, useRef } from 'react';
 import { Trip } from '@/types';
 import { Calendar, Globe } from 'lucide-react';
 import { parseLocalDate } from '@/lib/formatUtils';
+import { useLanguage } from '@/store/languageContext';
 
 interface Props { trip: Trip }
 
 export default function ParallaxBanner({ trip }: Props) {
   const imgRef = useRef<HTMLDivElement>(null);
+  const { lang } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,7 +21,13 @@ export default function ParallaxBanner({ trip }: Props) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const fmt = (d: string) => parseLocalDate(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const fmt = (d: string) => {
+    const date = parseLocalDate(d);
+    if (lang === 'zh') {
+      return `${date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })} ${date.getFullYear()}年`;
+    }
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  };
 
   return (
     <div className="relative h-[50vh] md:h-[70vh] overflow-hidden">

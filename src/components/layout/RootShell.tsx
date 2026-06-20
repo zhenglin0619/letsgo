@@ -8,6 +8,7 @@ import AddRestaurantModal from '@/components/upload/AddRestaurantModal';
 import AddHotelModal from '@/components/upload/AddHotelModal';
 import AuthModal from '@/components/auth/AuthModal';
 import { TripsProvider, useTrips } from '@/store/tripsContext';
+import { LanguageProvider, useLanguage } from '@/store/languageContext';
 import { getAuthDebugLog } from '@/lib/authDebug';
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -52,22 +53,24 @@ function Shell({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(id);
   }, [authLoading]);
 
+  const { t } = useLanguage();
+
   if (authLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center"
         style={{ background: 'var(--canvas)' }}>
         <div className="flex flex-col items-center gap-3 max-w-sm px-6 text-center">
           <img src="/logo.png" alt="Logo" width={72} height={72} className="object-contain animate-pulse" />
-          <span className="text-xs font-medium tracking-[0.2em] uppercase text-[#C87A53]">Loading</span>
+          <span className="text-xs font-medium tracking-[0.2em] uppercase text-[#C87A53]">{t('loading')}</span>
           {stuck && (
             <div className="mt-4 flex flex-col items-center gap-3">
-              <p className="text-xs text-[#8A8A8A]">This is taking longer than expected.</p>
+              <p className="text-xs text-[#8A8A8A]">{t('loading_stuck')}</p>
               <button
                 type="button"
                 onClick={() => window.location.reload()}
                 className="bg-[#1A1A1A] text-white text-xs font-medium px-4 py-2 rounded-full hover:bg-[#333] transition-colors"
               >
-                Reload
+                {t('loading_reload')}
               </button>
               <pre className="mt-2 text-left text-[9px] leading-tight text-[#C0BAB2] bg-[#F5F2EE] rounded-lg p-2 max-h-32 overflow-y-auto w-full whitespace-pre-wrap">
                 {getAuthDebugLog().join('\n') || '(no debug log captured)'}
@@ -122,9 +125,11 @@ export default function RootShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <TripsProvider>
-      <AppearanceSync />
-      <Shell>{children}</Shell>
-    </TripsProvider>
+    <LanguageProvider>
+      <TripsProvider>
+        <AppearanceSync />
+        <Shell>{children}</Shell>
+      </TripsProvider>
+    </LanguageProvider>
   );
 }

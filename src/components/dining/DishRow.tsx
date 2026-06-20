@@ -4,11 +4,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dish } from '@/types';
 import StarRating from '@/components/ui/StarRating';
 import { X, ZoomIn } from 'lucide-react';
+import { useLanguage } from '@/store/languageContext';
+import type { TranslationKey } from '@/lib/i18n';
 
 interface Props { dish: Dish; index: number }
 
+const CATEGORY_LABELS: Record<string, TranslationKey> = {
+  'Appetizer': 'dish_appetizer', 'Mains': 'dish_mains', 'Dessert': 'dish_dessert',
+  'Drinks': 'dish_drinks', 'Snack': 'dish_snack',
+};
+
 export default function DishRow({ dish, index }: Props) {
   const [lightbox, setLightbox] = useState(false);
+  const { t } = useLanguage();
 
   const categoryColors: Record<string, string> = {
     Appetizer: 'bg-blue-50 text-blue-700',
@@ -55,7 +63,7 @@ export default function DishRow({ dish, index }: Props) {
           <div className="flex items-start justify-between gap-2">
             <h4 className="font-semibold text-sm text-[#1A1A1A] leading-tight">{dish.name}</h4>
             <span className={`tag-chip flex-shrink-0 text-[9px] ${categoryColors[dish.category] ?? 'bg-gray-100 text-gray-600'}`}>
-              {dish.category}
+              {CATEGORY_LABELS[dish.category] ? t(CATEGORY_LABELS[dish.category]) : dish.category}
             </span>
           </div>
           <div className="mt-1.5">

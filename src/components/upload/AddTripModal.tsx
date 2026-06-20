@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, ImagePlus } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
 import { Trip } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
 import GeoAutocomplete from '@/components/ui/GeoAutocomplete';
@@ -28,6 +29,7 @@ interface TripDraft {
 
 export default function AddTripModal({ open, onClose, initialTrip }: Props) {
   const { addTrip, updateTrip } = useTrips();
+  const { lang, t } = useLanguage();
   const isEdit = !!initialTrip;
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState<string>('');
@@ -210,7 +212,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
             >
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-[#E8E6E1]">
-                <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{isEdit ? 'Edit Trip' : 'Add a Trip'}</h2>
+                <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{isEdit ? t('trip_modal_edit') : t('trip_modal_add')}</h2>
                 <button
                   onClick={handleClose}
                   className="w-8 h-8 rounded-full bg-[#F0ECE6] flex items-center justify-center hover:bg-[#E8E4DC] transition-colors"
@@ -227,11 +229,11 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                       <div className="flex-1 space-y-3 md:space-y-5 min-w-0 order-last md:order-none">
                         <div>
                           <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
-                            Trip Name <span className="normal-case font-normal text-[#C0BAB2]">(required)</span>
+                            {t('trip_modal_name')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span>
                           </label>
                           <input
                             type="text"
-                            placeholder="e.g. Tokyo, Japan (Summer 2025)"
+                            placeholder={t('trip_modal_name_ph')}
                             value={form.title}
                             onChange={e => set('title', e.target.value)}
                             className="w-full text-sm border border-[#E8E6E1] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors"
@@ -240,16 +242,16 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
 
                         <div className="grid grid-cols-2 gap-3">
                           <GeoAutocomplete
-                            label={<>City <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>}
-                            placeholder="e.g. Tokyo"
+                            label={<>{t('trip_modal_city')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span></>}
+                            placeholder={t('trip_modal_city_ph')}
                             value={form.city}
                             onChange={v => set('city', v)}
                             types="place"
                             onSelectCountry={c => { if (!form.country) set('country', c); }}
                           />
                           <GeoAutocomplete
-                            label={<>Country <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>}
-                            placeholder="e.g. Japan"
+                            label={<>{t('trip_modal_country')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span></>}
+                            placeholder={t('trip_modal_country_ph')}
                             value={form.country}
                             onChange={v => set('country', v)}
                             types="country"
@@ -258,13 +260,13 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
 
                         <div className="grid grid-cols-2 gap-3">
                           <DatePickerInput
-                            label={<>Start Date <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>}
+                            label={<>{t('trip_modal_start_date')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span></>}
                             value={form.startDate}
                             onChange={v => set('startDate', v)}
                             placement="above"
                           />
                           <DatePickerInput
-                            label={<>End Date <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>}
+                            label={<>{t('trip_modal_end_date')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span></>}
                             value={form.endDate}
                             onChange={v => set('endDate', v)}
                             min={form.startDate}
@@ -284,7 +286,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                         />
                         <div>
                           <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
-                            Highlight Photos
+                            {t('trip_modal_highlights')}
                           </label>
                           <button
                             type="button"
@@ -294,7 +296,9 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                           >
                             <ImagePlus size={15} className="text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors" />
                             <span className="text-sm text-[#8A8A8A]">
-                              {highlightPhotos.length > 0 ? `${highlightPhotos.length}/${MAX_HIGHLIGHT} photos added` : 'Click to add photos (0/20)'}
+                              {highlightPhotos.length > 0
+                              ? lang === 'zh' ? `已添加 ${highlightPhotos.length}/${MAX_HIGHLIGHT} 张照片` : `${highlightPhotos.length}/${MAX_HIGHLIGHT} photos added`
+                              : t('trip_modal_add_photos')}
                             </span>
                           </button>
                         </div>
@@ -303,7 +307,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                       {/* Right: cover photo upload */}
                       <div className="w-full md:w-72 md:flex-shrink-0 flex flex-col order-first md:order-none">
                         <label className="text-[11px] font-medium text-[#8A8A8A] uppercase tracking-widest mb-1.5 block pl-1">
-                          Cover Photo
+                          {t('form_cover_photo')}
                         </label>
                         <input
                           ref={fileRef}
@@ -320,7 +324,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                               alt="Cover"
                               onReplace={() => fileRef.current?.click()}
                               initialTransform={coverTransform}
-                              onTransformChange={t => setCoverTransform(t)}
+                              onTransformChange={tx => setCoverTransform(tx)}
                             />
                           </div>
                         ) : (
@@ -331,7 +335,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                           >
                             <div className="flex flex-col items-center justify-center h-full gap-2 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors p-4">
                               <ImagePlus size={24} />
-                              <span className="text-[11px] font-medium text-center leading-tight">Click to upload cover</span>
+                              <span className="text-[11px] font-medium text-center leading-tight">{t('trip_modal_upload_cover')}</span>
                             </div>
                           </button>
                         )}
@@ -350,7 +354,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                     >
                       <CheckCircle size={32} className="text-green-500" />
                     </motion.div>
-                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{isEdit ? 'Changes Saved' : 'Trip Created'}</h3>
+                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{isEdit ? t('form_changes_saved') : t('trip_modal_created')}</h3>
                   </div>
                 )}
 
@@ -364,7 +368,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                     >
                       <CheckCircle size={32} className="text-green-500" />
                     </motion.div>
-                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">Draft Saved</h3>
+                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{t('form_draft_saved')}</h3>
                   </div>
                 )}
               </div>
@@ -378,7 +382,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                       disabled={submitting || savingDraft}
                       className="text-sm font-medium px-6 py-2.5 rounded-full border border-[#E8E6E1] text-[#1A1A1A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      Save Draft
+                      {t('form_save_draft')}
                     </button>
                   )}
                   <button
@@ -386,7 +390,7 @@ export default function AddTripModal({ open, onClose, initialTrip }: Props) {
                     disabled={!isValid || submitting}
                     className="bg-[#1A1A1A] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-[#333] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {isEdit ? 'Save Changes' : 'Create Trip'}
+                    {isEdit ? t('form_save_changes') : t('trip_modal_create')}
                   </button>
                 </div>
               )}

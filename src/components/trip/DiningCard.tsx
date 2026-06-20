@@ -6,6 +6,13 @@ import StarRating from '@/components/ui/StarRating';
 import MichelinBadge from '@/components/ui/MichelinBadge';
 import { MapPin, Clock, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { parseLocalDate } from '@/lib/formatUtils';
+import { useLanguage } from '@/store/languageContext';
+import type { TranslationKey } from '@/lib/i18n';
+
+const MEAL_LABELS: Record<string, TranslationKey> = {
+  'Breakfast': 'meal_breakfast', 'Brunch': 'meal_brunch', 'Lunch': 'meal_lunch',
+  'Afternoon Tea': 'meal_afternoon_tea', 'Dinner': 'meal_dinner', 'Late Night': 'meal_late_night',
+};
 
 interface Props {
   log: DiningLog;
@@ -19,6 +26,7 @@ function CardMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => vo
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!open) { setConfirming(false); return; }
@@ -45,27 +53,27 @@ function CardMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => vo
                 onClick={e => { e.stopPropagation(); onEdit(); setOpen(false); }}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Pencil size={13} className="text-[#8A8A8A]" /> Edit
+                <Pencil size={13} className="text-[#8A8A8A]" /> {t('common_edit')}
               </button>
               <button
                 onClick={e => { e.stopPropagation(); setConfirming(true); }}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
               >
-                <Trash2 size={13} /> Delete
+                <Trash2 size={13} /> {t('common_delete')}
               </button>
             </>
           ) : (
             <div className="px-4 py-2">
-              <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this restaurant?</p>
+              <p className="text-xs text-[#1A1A1A] font-medium mb-2">{t('restaurant_confirm_delete')}</p>
               <div className="flex gap-2">
                 <button
                   onClick={e => { e.stopPropagation(); onDelete(); setOpen(false); }}
                   className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
-                >Delete</button>
+                >{t('common_delete')}</button>
                 <button
                   onClick={e => { e.stopPropagation(); setConfirming(false); }}
                   className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
-                >Cancel</button>
+                >{t('common_cancel')}</button>
               </div>
             </div>
           )}
@@ -76,8 +84,9 @@ function CardMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => vo
 }
 
 export default function DiningCard({ log, index, onClick, onEdit, onDelete }: Props) {
+  const { lang, t } = useLanguage();
   const fmtDate = (d: string) =>
-    parseLocalDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    parseLocalDate(d).toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
     <motion.div
@@ -129,7 +138,7 @@ export default function DiningCard({ log, index, onClick, onEdit, onDelete }: Pr
             <span className="flex items-center gap-1">
               <MapPin size={11} />{[log.location.city, log.location.country].filter(Boolean).join(', ')}
             </span>
-            {log.time && <span className="hidden md:flex items-center gap-1"><Clock size={11} />{log.time}</span>}
+            {log.time && <span className="hidden md:flex items-center gap-1"><Clock size={11} />{MEAL_LABELS[log.time] ? t(MEAL_LABELS[log.time]) : log.time}</span>}
           </div>
         </div>
         <div className="flex items-center justify-between">

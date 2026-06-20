@@ -5,6 +5,7 @@ import { HotelLog } from '@/types';
 import { MapPin, Calendar, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { fmtCountry, parseLocalDate } from '@/lib/formatUtils';
 import StarRating from '@/components/ui/StarRating';
+import { useLanguage } from '@/store/languageContext';
 
 interface Props {
   hotel: HotelLog;
@@ -18,14 +19,15 @@ function nights(checkIn: string, checkOut: string) {
   return Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000);
 }
 
-function formatDate(d: string) {
-  return parseLocalDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function formatDate(d: string, locale: string) {
+  return parseLocalDate(d).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function HotelMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!open) { setConfirming(false); return; }
@@ -53,27 +55,27 @@ function HotelMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => v
                 onClick={e => { e.stopPropagation(); onEdit(); setOpen(false); }}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Pencil size={13} className="text-[#8A8A8A]" /> Edit
+                <Pencil size={13} className="text-[#8A8A8A]" /> {t('common_edit')}
               </button>
               <button
                 onClick={e => { e.stopPropagation(); setConfirming(true); }}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
               >
-                <Trash2 size={13} /> Delete
+                <Trash2 size={13} /> {t('common_delete')}
               </button>
             </>
           ) : (
             <div className="px-4 py-2">
-              <p className="text-xs text-[#1A1A1A] font-medium mb-2">Delete this hotel?</p>
+              <p className="text-xs text-[#1A1A1A] font-medium mb-2">{t('hotel_confirm_delete')}</p>
               <div className="flex gap-2">
                 <button
                   onClick={e => { e.stopPropagation(); onDelete(); setOpen(false); }}
                   className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
-                >Delete</button>
+                >{t('common_delete')}</button>
                 <button
                   onClick={e => { e.stopPropagation(); setConfirming(false); }}
                   className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
-                >Cancel</button>
+                >{t('common_cancel')}</button>
               </div>
             </div>
           )}
@@ -84,6 +86,7 @@ function HotelMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => v
 }
 
 export default function HotelCard({ hotel, index, onClick, onEdit, onDelete }: Props) {
+  const { lang, t } = useLanguage();
   const n = nights(hotel.checkIn, hotel.checkOut);
 
   return (
@@ -135,15 +138,15 @@ export default function HotelCard({ hotel, index, onClick, onEdit, onDelete }: P
         </div>
         <div className="md:hidden mb-1">
           <span className="flex items-center gap-1 text-[10.5px] text-[#8A8A8A]">
-            <Calendar size={10} />{formatDate(hotel.checkIn)} – {formatDate(hotel.checkOut)}
+            <Calendar size={10} />{formatDate(hotel.checkIn, lang === 'zh' ? 'zh-CN' : 'en-US')} – {formatDate(hotel.checkOut, lang === 'zh' ? 'zh-CN' : 'en-US')}
           </span>
         </div>
         <div className="hidden md:flex items-center justify-between">
           <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
-            <Calendar size={11} />{formatDate(hotel.checkIn)} – {formatDate(hotel.checkOut)} · {n} night{n !== 1 ? 's' : ''}
+            <Calendar size={11} />{formatDate(hotel.checkIn, lang === 'zh' ? 'zh-CN' : 'en-US')} – {formatDate(hotel.checkOut, lang === 'zh' ? 'zh-CN' : 'en-US')} · {n} {n !== 1 ? t('hotel_nights_plural') : t('hotel_nights')}
           </span>
           <span className="text-xs text-[#8A8A8A]">
-            {hotel.currency} {Math.round(hotel.pricePerNight / (n || 1)).toLocaleString()} / night
+            {hotel.currency} {Math.round(hotel.pricePerNight / (n || 1)).toLocaleString()} {t('hotel_per_night')}
           </span>
         </div>
       </div>

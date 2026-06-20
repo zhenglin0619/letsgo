@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, NotebookPen, Plus, Pencil, Trash2, Check, Plane, Utensils, BedDouble } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
 import { supabase } from '@/lib/supabase';
 
 type PlanType = 'trip' | 'dining' | 'hotel';
@@ -21,13 +22,19 @@ interface Props {
   onClose: () => void;
 }
 
-const TYPES: { value: PlanType; label: string; Icon: React.ElementType }[] = [
-  { value: 'trip',   label: 'Trip',   Icon: Plane      },
-  { value: 'dining', label: 'Dining', Icon: Utensils   },
-  { value: 'hotel',  label: 'Hotel',  Icon: BedDouble  },
+const TYPE_DEFS: { value: PlanType; Icon: React.ElementType }[] = [
+  { value: 'trip',   Icon: Plane      },
+  { value: 'dining', Icon: Utensils   },
+  { value: 'hotel',  Icon: BedDouble  },
 ];
 
 function TypePicker({ value, onChange }: { value: PlanType; onChange: (v: PlanType) => void }) {
+  const { t } = useLanguage();
+  const TYPES = [
+    { value: 'trip' as PlanType,   label: t('plan_type_trip'),   Icon: Plane     },
+    { value: 'dining' as PlanType, label: t('plan_type_dining'), Icon: Utensils  },
+    { value: 'hotel' as PlanType,  label: t('plan_type_hotel'),  Icon: BedDouble },
+  ];
   return (
     <div className="flex gap-1.5">
       {TYPES.map(({ value: v, label, Icon }) => (
@@ -50,7 +57,7 @@ function TypePicker({ value, onChange }: { value: PlanType; onChange: (v: PlanTy
 }
 
 function PlanTypeIcon({ type, nightMode }: { type: PlanType; nightMode: boolean }) {
-  const match = TYPES.find(t => t.value === type);
+  const match = TYPE_DEFS.find(t => t.value === type);
   if (!match) return null;
   const { Icon } = match;
   return (
@@ -62,6 +69,7 @@ function PlanTypeIcon({ type, nightMode }: { type: PlanType; nightMode: boolean 
 
 export default function FuturePlanModal({ open, onClose }: Props) {
   const { user } = useTrips();
+  const { t } = useLanguage();
   const [plans, setPlans]           = useState<Plan[]>([]);
   const [editingId, setEditingId]   = useState<string | null>(null);
   const [editTitle, setEditTitle]   = useState('');
@@ -153,7 +161,7 @@ export default function FuturePlanModal({ open, onClose }: Props) {
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E1]">
                 <div className="flex items-center gap-2">
                   <NotebookPen size={16} className="text-[#8A8A8A]" />
-                  <h2 className="serif text-lg font-semibold text-[#1A1A1A]">Future Plans</h2>
+                  <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{t('plan_title')}</h2>
                 </div>
                 <button
                   onClick={onClose}
@@ -169,7 +177,7 @@ export default function FuturePlanModal({ open, onClose }: Props) {
                 {/* Plan list */}
                 <div>
                   <p className="text-[10px] font-semibold text-[#C0BAB2] uppercase tracking-widest mb-2 pl-1">
-                    My Plans
+                    {t('plan_my_plans')}
                   </p>
 
                   {loading ? (
@@ -177,7 +185,7 @@ export default function FuturePlanModal({ open, onClose }: Props) {
                       <div className="w-4 h-4 rounded-full border-2 border-[#C0BAB2] border-t-transparent animate-spin" />
                     </div>
                   ) : plans.length === 0 && !adding ? (
-                    <p className="text-sm text-[#8A8A8A] text-center py-2">No plans yet. Add your first one!</p>
+                    <p className="text-sm text-[#8A8A8A] text-center py-2">{t('plan_empty')}</p>
                   ) : (
                     <div className="space-y-1.5">
                       {plans.map(plan => (
@@ -191,19 +199,19 @@ export default function FuturePlanModal({ open, onClose }: Props) {
                                 onChange={e => setEditTitle(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null); }}
                                 className="w-full text-sm text-[#1A1A1A] bg-white border border-[#E8E6E1] rounded-lg px-3 py-1.5 outline-none focus:border-[#C87A53] transition-colors"
-                                placeholder="Plan title"
+                                placeholder={t('plan_title_ph')}
                               />
                               <input
                                 value={editNotes}
                                 onChange={e => setEditNotes(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Escape') setEditingId(null); }}
                                 className="w-full text-sm text-[#8A8A8A] bg-white border border-[#E8E6E1] rounded-lg px-3 py-1.5 outline-none focus:border-[#C87A53] transition-colors"
-                                placeholder="Notes (optional)"
+                                placeholder={t('plan_notes_ph')}
                               />
                               <div className="flex gap-2 justify-end pt-0.5">
-                                <button onClick={() => setEditingId(null)} className="text-[11px] text-[#8A8A8A] hover:text-[#1A1A1A] px-3 py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors">Cancel</button>
+                                <button onClick={() => setEditingId(null)} className="text-[11px] text-[#8A8A8A] hover:text-[#1A1A1A] px-3 py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors">{t('common_cancel')}</button>
                                 <button onClick={commitEdit} className="flex items-center gap-1 text-[11px] font-semibold text-white bg-[#1A1A1A] hover:bg-[#333] rounded-lg px-2.5 py-1.5 transition-colors">
-                                  <Check size={10} />Save
+                                  <Check size={10} />{t('common_save')}
                                 </button>
                               </div>
                             </div>
@@ -243,7 +251,7 @@ export default function FuturePlanModal({ open, onClose }: Props) {
                         onChange={e => setNewTitle(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') addPlan(); if (e.key === 'Escape') { setAdding(false); setNewTitle(''); setNewNotes(''); } }}
                         className="flex-1 text-sm bg-transparent focus:outline-none text-[#1A1A1A] placeholder:text-[#C0BAB2] min-w-0"
-                        placeholder="Plan title..."
+                        placeholder={t('plan_title_input')}
                       />
                     </div>
                     <div className="flex items-center gap-2.5 border border-[#E8E6E1] rounded-xl px-4 py-3 focus-within:border-[#C87A53] transition-colors">
@@ -252,13 +260,13 @@ export default function FuturePlanModal({ open, onClose }: Props) {
                         onChange={e => setNewNotes(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Escape') { setAdding(false); setNewTitle(''); setNewNotes(''); } }}
                         className="flex-1 text-sm bg-transparent focus:outline-none text-[#1A1A1A] placeholder:text-[#C0BAB2] min-w-0"
-                        placeholder="Notes (optional)..."
+                        placeholder={t('plan_notes_input')}
                       />
                     </div>
                     <div className="flex gap-2 justify-end">
-                      <button onClick={() => { setAdding(false); setNewTitle(''); setNewNotes(''); setNewType('trip'); }} className="text-[11px] text-[#8A8A8A] hover:text-[#1A1A1A] px-3 py-1.5 rounded-lg hover:bg-[#F0ECE6] transition-colors">Cancel</button>
+                      <button onClick={() => { setAdding(false); setNewTitle(''); setNewNotes(''); setNewType('trip'); }} className="text-[11px] text-[#8A8A8A] hover:text-[#1A1A1A] px-3 py-1.5 rounded-lg hover:bg-[#F0ECE6] transition-colors">{t('common_cancel')}</button>
                       <button onClick={addPlan} className="flex items-center gap-1 text-[11px] font-semibold text-white bg-[#1A1A1A] hover:bg-[#333] rounded-lg px-2.5 py-1.5 transition-colors">
-                        <Plus size={10} />Add
+                        <Plus size={10} />{t('common_add')}
                       </button>
                     </div>
                   </div>
@@ -268,7 +276,7 @@ export default function FuturePlanModal({ open, onClose }: Props) {
                     className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-[#8A8A8A] hover:text-[#1A1A1A] border border-dashed border-[#D4CFC8] hover:border-[#1A1A1A] rounded-xl py-2.5 transition-colors"
                   >
                     <Plus size={12} />
-                    Add a plan
+                    {t('plan_add')}
                   </button>
                 )}
               </div>

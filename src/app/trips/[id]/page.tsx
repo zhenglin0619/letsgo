@@ -3,6 +3,7 @@ import { useState, use, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
 import ParallaxBanner from '@/components/trip/ParallaxBanner';
 import TripMap from '@/components/trip/TripMap';
 import HotelCard from '@/components/trip/HotelCard';
@@ -28,6 +29,7 @@ function TripMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!open) { setConfirming(false); return; }
@@ -55,44 +57,44 @@ function TripMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
                 onClick={() => { onEdit(); setOpen(false); }}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Pencil size={13} className="text-[#8A8A8A]" /> Edit trip
+                <Pencil size={13} className="text-[#8A8A8A]" /> {t('trip_edit')}
               </button>
               <button
                 onClick={() => { onShare(); setOpen(false); }}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Users size={13} className="text-[#8A8A8A]" /> Share trip
+                <Users size={13} className="text-[#8A8A8A]" /> {t('trip_share')}
               </button>
               {isOwner ? (
                 <button
                   onClick={() => setConfirming(true)}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                 >
-                  <Trash2 size={13} /> Delete trip
+                  <Trash2 size={13} /> {t('trip_delete')}
                 </button>
               ) : (
                 <button
                   onClick={() => setConfirming(true)}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                 >
-                  <LogOut size={13} /> Leave trip
+                  <LogOut size={13} /> {t('trip_leave')}
                 </button>
               )}
             </>
           ) : (
             <div className="px-4 py-2">
               <p className="text-xs text-[#1A1A1A] font-medium mb-2">
-                {isOwner ? 'Delete this trip?' : 'Leave this trip?'}
+                {isOwner ? t('trip_confirm_delete') : t('trip_confirm_leave')}
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={isOwner ? onDelete : onLeave}
                   className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
-                >{isOwner ? 'Delete' : 'Leave'}</button>
+                >{isOwner ? t('common_delete') : t('common_leave')}</button>
                 <button
                   onClick={() => setConfirming(false)}
                   className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
-                >Cancel</button>
+                >{t('common_cancel')}</button>
               </div>
             </div>
           )}
@@ -110,6 +112,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const trip = trips.find(t => t.id === id);
   if (!trip) notFound();
 
+  const { t } = useLanguage();
   const [editTripOpen, setEditTripOpen]   = useState(false);
   const [shareTripOpen, setShareTripOpen] = useState(false);
   const [tab, setTab] = useState<'highlights' | 'restaurants' | 'hotels'>('highlights');
@@ -211,10 +214,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           <div className="col-span-3 md:col-span-2">
             <div className="mx-4 md:mx-0 flex gap-0.5 md:gap-1 mb-5 bg-[#F0ECE6] p-0.5 md:p-1 rounded-xl md:w-fit">
               {([
-                { key: 'highlights',  label: 'Highlights',  icon: <Images size={13} />,   count: photos.length },
-                { key: 'restaurants', label: 'Restaurants', icon: <Utensils size={13} />, count: trip!.diningLogs.length },
-                { key: 'hotels',      label: 'Hotels',      icon: <BedDouble size={13} />, count: trip!.hotels.length },
-              ] as const).map(({ key, label, icon, count }) => (
+                { key: 'highlights' as const,  label: t('detail_highlights'),  icon: <Images size={13} />,   count: photos.length },
+                { key: 'restaurants' as const, label: t('detail_restaurants'), icon: <Utensils size={13} />, count: trip!.diningLogs.length },
+                { key: 'hotels' as const,      label: t('detail_hotels'),      icon: <BedDouble size={13} />, count: trip!.hotels.length },
+              ]).map(({ key, label, icon, count }) => (
                 <button
                   key={key}
                   onClick={() => setTab(key)}
@@ -249,8 +252,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                       className="w-full border-2 border-dashed border-[#D8D4CC] rounded-2xl py-20 flex flex-col items-center gap-3 text-[#8A8A8A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors"
                     >
                       <Images size={32} strokeWidth={1.5} />
-                      <p className="text-sm font-medium">Upload trip photos</p>
-                      <p className="text-xs">Click to select · 20 images supported</p>
+                      <p className="text-sm font-medium">{t('detail_upload_photos')}</p>
+                      <p className="text-xs">{t('detail_upload_hint')}</p>
                     </button>
                   </div>
                 ) : (
@@ -281,7 +284,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                         className="break-inside-avoid w-full aspect-square rounded-xl border-2 border-dashed border-[#D8D4CC] flex flex-col items-center justify-center gap-2 text-[#8A8A8A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors"
                       >
                         <Plus size={20} strokeWidth={1.5} />
-                        <span className="text-xs font-medium">Add photos</span>
+                        <span className="text-xs font-medium">{t('detail_add_photos')}</span>
                         <span className="text-[10px] text-[#C0BAB2]">{photos.length}/{MAX_PHOTOS}</span>
                       </button>
                     )}
@@ -294,7 +297,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               <div className="grid grid-cols-2 gap-3 md:gap-4 mx-4 md:mx-0">
                 {trip!.diningLogs.length === 0 && (
                   <div className="col-span-2 text-center py-16 text-[#8A8A8A] text-sm">
-                    No restaurants logged yet. Click + button to add meals.
+                    {t('detail_no_restaurants')}
                   </div>
                 )}
                 {trip!.diningLogs.slice().sort((a, b) => {
@@ -321,7 +324,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               <div className="grid grid-cols-2 gap-3 md:gap-4 mx-4 md:mx-0">
                 {trip!.hotels.length === 0 && (
                   <div className="col-span-2 text-center py-16 text-[#8A8A8A] text-sm">
-                    No hotels logged yet. Click + button to add stays.
+                    {t('detail_no_hotels')}
                   </div>
                 )}
                 {trip!.hotels.slice().sort((a, b) => b.checkIn.localeCompare(a.checkIn)).map((hotel, i) => (
@@ -419,10 +422,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               transition={{ duration: 0.15 }}
             >
               {([
-                { type: 'trip' as const,       label: 'Trip',       icon: Plane },
-                { type: 'restaurant' as const, label: 'Restaurant', icon: Utensils },
-                { type: 'hotel' as const,      label: 'Hotel',      icon: BedDouble },
-              ] as const).map((opt, i, arr) => {
+                { type: 'trip' as const,       label: t('fab_trip'),        icon: Plane },
+                { type: 'restaurant' as const, label: t('fab_restaurant'),  icon: Utensils },
+                { type: 'hotel' as const,      label: t('fab_hotel'),       icon: BedDouble },
+              ]).map((opt, i, arr) => {
                 const Icon = opt.icon;
                 return (
                   <motion.button

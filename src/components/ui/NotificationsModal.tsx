@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Bell, Check, Ban, Plane, Utensils, BedDouble } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
 import type { ElementType } from 'react';
 
 const ITEM_ICONS: Record<string, ElementType> = {
@@ -16,6 +17,7 @@ interface Props { open: boolean; onClose: () => void; }
 
 export default function NotificationsModal({ open, onClose }: Props) {
   const { pendingItemInvites, acceptItemInvite, rejectItemInvite } = useTrips();
+  const { t } = useLanguage();
   const [acting, setActing] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -54,7 +56,7 @@ export default function NotificationsModal({ open, onClose }: Props) {
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E1]">
                 <div className="flex items-center gap-2">
                   <Bell size={16} className="text-[#8A8A8A]" />
-                  <h2 className="serif text-lg font-semibold text-[#1A1A1A]">Notifications</h2>
+                  <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{t('notif_title')}</h2>
                 </div>
                 <button
                   onClick={onClose}
@@ -68,12 +70,12 @@ export default function NotificationsModal({ open, onClose }: Props) {
                 {pendingItemInvites.length === 0 ? (
                   <div className="text-center py-8">
                     <Bell size={28} className="text-[#C0BAB2] mx-auto mb-3" />
-                    <p className="text-sm text-[#8A8A8A]">No pending invitations.</p>
+                    <p className="text-sm text-[#8A8A8A]">{t('notif_empty')}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     <p className="text-[10px] font-semibold text-[#C87A53] uppercase tracking-widest mb-3 pl-1">
-                      Pending Invitations
+                      {t('notif_pending')}
                     </p>
                     {pendingItemInvites.map(inv => {
                       const Icon = ITEM_ICONS[inv.itemType] ?? Bell;
@@ -85,7 +87,7 @@ export default function NotificationsModal({ open, onClose }: Props) {
                             </div>
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-[#1A1A1A] truncate">{inv.itemTitle}</p>
-                              <p className="text-[11px] text-[#8A8A8A]">{inv.inviterEmail} invited you</p>
+                              <p className="text-[11px] text-[#8A8A8A]">{inv.inviterEmail} {t('notif_invited')}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5 pl-9">
@@ -95,7 +97,7 @@ export default function NotificationsModal({ open, onClose }: Props) {
                               className="flex items-center gap-1 text-[11px] font-semibold text-white bg-[#C87A53] hover:bg-[#B56B45] rounded-lg px-2.5 py-1.5 transition-colors disabled:opacity-50"
                             >
                               <Check size={10} />
-                              {acting === inv.id ? '…' : 'Accept'}
+                              {acting === inv.id ? '…' : t('notif_accept')}
                             </button>
                             <button
                               onClick={() => handleReject(inv.id)}
@@ -103,7 +105,7 @@ export default function NotificationsModal({ open, onClose }: Props) {
                               className="flex items-center gap-1 text-[11px] font-medium text-[#8A8A8A] hover:text-red-400 transition-colors disabled:opacity-50"
                             >
                               <Ban size={10} />
-                              Decline
+                              {t('notif_decline')}
                             </button>
                           </div>
                         </div>

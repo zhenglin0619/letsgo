@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
+import { useLanguage } from '@/store/languageContext';
 
 export interface LocatedPlace {
   lat: number;
@@ -41,6 +42,7 @@ function ensurePlaces(): Promise<google.maps.PlacesLibrary> {
 }
 
 export default function AddressSearchBox({ value, onChange, onLocate, onClear, placeholder }: Props) {
+  const { t } = useLanguage();
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [open, setOpen] = useState(false);
   const [dropdownRect, setDropdownRect] = useState<DropdownRect | null>(null);
@@ -184,7 +186,7 @@ export default function AddressSearchBox({ value, onChange, onLocate, onClear, p
         value={value}
         onChange={e => handleChange(e.target.value)}
         onFocus={openDropdown}
-        placeholder={placeholder ?? 'Search address or place name…'}
+        placeholder={placeholder ?? t('address_search_placeholder')}
         className="w-full text-sm border border-[#E8E6E1] rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors"
       />
       {dropdown}

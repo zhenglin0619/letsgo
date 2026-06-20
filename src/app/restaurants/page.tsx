@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
 import { MapPin, Clock, MoreHorizontal, Pencil, Trash2, Users, LogOut, Search, X } from 'lucide-react';
 import ItemCollaboratorModal from '@/components/ui/ItemCollaboratorModal';
 import StarRating from '@/components/ui/StarRating';
@@ -13,10 +14,16 @@ import DiningDrawer from '@/components/dining/DiningDrawer';
 import { DiningLog } from '@/types';
 import { deleteStoragePhotos } from '@/lib/imageUtils';
 import { fmtCountry, parseLocalDate } from '@/lib/formatUtils';
+import type { TranslationKey } from '@/lib/i18n';
 
-function formatDate(d: string) {
-  return parseLocalDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function formatDate(d: string, locale: string) {
+  return parseLocalDate(d).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
 }
+
+const MEAL_LABELS: Record<string, TranslationKey> = {
+  'Breakfast': 'meal_breakfast', 'Brunch': 'meal_brunch', 'Lunch': 'meal_lunch',
+  'Afternoon Tea': 'meal_afternoon_tea', 'Dinner': 'meal_dinner', 'Late Night': 'meal_late_night',
+};
 
 function DiningMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
   onEdit: () => void; onDelete: () => void; onShare: () => void;
@@ -27,6 +34,7 @@ function DiningMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
   const [dropPos, setDropPos] = useState({ top: 0, right: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!open) { setConfirming(false); return; }
@@ -71,44 +79,44 @@ function DiningMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
                 onClick={e => { e.stopPropagation(); onEdit(); setOpen(false); }}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Pencil size={13} className="text-[#8A8A8A]" /> Edit
+                <Pencil size={13} className="text-[#8A8A8A]" /> {t('common_edit')}
               </button>
               <button
                 onClick={e => { e.stopPropagation(); onShare(); setOpen(false); }}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Users size={13} className="text-[#8A8A8A]" /> Share
+                <Users size={13} className="text-[#8A8A8A]" /> {t('common_share')}
               </button>
               {isOwner ? (
                 <button
                   onClick={e => { e.stopPropagation(); setConfirming(true); }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                 >
-                  <Trash2 size={13} /> Delete
+                  <Trash2 size={13} /> {t('common_delete')}
                 </button>
               ) : (
                 <button
                   onClick={e => { e.stopPropagation(); setConfirming(true); }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                 >
-                  <LogOut size={13} /> Leave
+                  <LogOut size={13} /> {t('common_leave')}
                 </button>
               )}
             </>
           ) : (
             <div className="px-4 py-2">
               <p className="text-xs text-[#1A1A1A] font-medium mb-2">
-                {isOwner ? 'Delete this restaurant?' : 'Leave this restaurant?'}
+                {isOwner ? t('restaurant_confirm_delete') : t('restaurant_confirm_leave')}
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={e => { e.stopPropagation(); isOwner ? onDelete() : onLeave(); setOpen(false); }}
                   className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
-                >{isOwner ? 'Delete' : 'Leave'}</button>
+                >{isOwner ? t('common_delete') : t('common_leave')}</button>
                 <button
                   onClick={e => { e.stopPropagation(); setConfirming(false); }}
                   className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
-                >Cancel</button>
+                >{t('common_cancel')}</button>
               </div>
             </div>
           )}
@@ -121,6 +129,7 @@ function DiningMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
 
 export default function RestaurantsPage() {
   const { trips, standaloneRestaurants, updateTrip, updateStandaloneRestaurant, deleteStandaloneRestaurant, leaveItemShare, user } = useTrips();
+  const { lang, t } = useLanguage();
   const allRestaurants = [
     ...trips.flatMap(trip =>
       trip.diningLogs.map(dining => ({ ...dining, tripTitle: trip.title, tripId: trip.id, isStandalone: false }))
@@ -202,9 +211,11 @@ export default function RestaurantsPage() {
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
           <div>
-            <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Dinings</h1>
+            <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">{t('restaurants_title')}</h1>
             <p className="mt-2 text-[#8A8A8A] text-sm">
-              {allRestaurants.length} restaurant{allRestaurants.length !== 1 ? 's' : ''} · across {new Set(allRestaurants.map(r => r.location.city)).size} cities
+              {lang === 'zh'
+                ? `共 ${allRestaurants.length} 家餐厅 · 遍及 ${new Set(allRestaurants.map(r => r.location.city)).size} 个城市`
+                : `${allRestaurants.length} restaurant${allRestaurants.length !== 1 ? 's' : ''} · across ${new Set(allRestaurants.map(r => r.location.city)).size} cities`}
             </p>
           </div>
           <div className="flex items-center gap-2 justify-end md:mb-0.5">
@@ -215,7 +226,7 @@ export default function RestaurantsPage() {
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search restaurants…"
+                placeholder={t('restaurants_search_placeholder')}
                 className="pl-8 pr-8 py-2 text-sm bg-white border border-[#E8E6E1] rounded-xl focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors w-full md:w-56"
               />
               {query && (
@@ -234,13 +245,13 @@ export default function RestaurantsPage() {
             style={{ borderColor: '#D4CFC6' }}>
             {query ? (
               <>
-                <p className="font-medium text-[#1A1A1A] text-sm">No restaurants match &ldquo;{query}&rdquo;</p>
-                <p className="text-xs text-[#8A8A8A] mt-1">Try a different restaurant name, cuisine, city, or country</p>
+                <p className="font-medium text-[#1A1A1A] text-sm">{lang === 'zh' ? `没有与"${query}"匹配的餐厅` : `No restaurants match "${query}"`}</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">{t('restaurants_no_match_hint')}</p>
               </>
             ) : (
               <>
-                <p className="font-medium text-[#1A1A1A] text-sm">No restaurants logged yet</p>
-                <p className="text-xs text-[#8A8A8A] mt-1">Click + button to add your first dining log</p>
+                <p className="font-medium text-[#1A1A1A] text-sm">{t('restaurants_empty')}</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">{t('restaurants_empty_hint')}</p>
               </>
             )}
           </div>
@@ -299,12 +310,12 @@ export default function RestaurantsPage() {
               <div className="flex items-center justify-between mb-1 md:mb-1.5">
                 <div className="flex items-center gap-2 md:gap-3 text-xs text-[#8A8A8A]">
                   <span className="flex items-center gap-1"><MapPin size={11} />{dining.location.city}, {fmtCountry(dining.location.country)}</span>
-                  {dining.time && <span className="flex items-center gap-1"><Clock size={11} />{dining.time}</span>}
+                  {dining.time && <span className="flex items-center gap-1"><Clock size={11} />{MEAL_LABELS[dining.time] ? t(MEAL_LABELS[dining.time]) : dining.time}</span>}
                 </div>
                 <StarRating value={dining.overallRating} readonly size="sm" />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[#8A8A8A]">{formatDate(dining.date)}</span>
+                <span className="text-xs text-[#8A8A8A]">{formatDate(dining.date, lang === 'zh' ? 'zh-CN' : 'en-US')}</span>
                 <span className="text-xs text-[#8A8A8A]">{dining.currency} {dining.totalExpense.toLocaleString()}</span>
               </div>
               {dining.tripTitle && (

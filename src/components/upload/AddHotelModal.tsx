@@ -4,6 +4,8 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, ImagePlus } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
+import type { TranslationKey } from '@/lib/i18n';
 import { HotelLog } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
 import type { LocatedPlace } from '@/components/ui/AddressSearchBox';
@@ -13,7 +15,7 @@ import type { PhotoTransform } from '@/types';
 
 const AddressSearchBox = dynamic(() => import('@/components/ui/AddressSearchBox'), {
   ssr: false,
-  loading: () => <input className="w-full text-sm border border-[#E8E6E1] rounded-xl px-3 py-2 text-[#C0BAB2]" placeholder="Search address or place name…" disabled />,
+  loading: () => <input className="w-full text-sm border border-[#E8E6E1] rounded-xl px-3 py-2 text-[#C0BAB2]" placeholder="…" disabled />,
 });
 const InlineMapPreview = dynamic(() => import('@/components/ui/InlineMapPreview'), { ssr: false });
 
@@ -26,6 +28,15 @@ interface Props {
 
 const ROOM_TYPES = ['Villa', 'Suite', 'King', 'Queen', 'Twin', 'Studio'] as const;
 const VIEW_TYPES = ['City View', 'Ocean View', 'Lake View', 'River View', 'Mountain View', 'Garden View', 'Park View', 'No View'] as const;
+const ROOM_LABELS: Record<string, TranslationKey> = {
+  'Villa': 'room_villa', 'Suite': 'room_suite', 'King': 'room_king',
+  'Queen': 'room_queen', 'Twin': 'room_twin', 'Studio': 'room_studio',
+};
+const VIEW_LABELS: Record<string, TranslationKey> = {
+  'City View': 'view_city', 'Ocean View': 'view_ocean', 'Lake View': 'view_lake',
+  'River View': 'view_river', 'Mountain View': 'view_mountain', 'Garden View': 'view_garden',
+  'Park View': 'view_park', 'No View': 'view_no_view',
+};
 const CURRENCIES = ['USD', 'CNY', 'HKD', 'JPY', 'EUR', 'GBP', 'SGD', 'MYR', 'AUD', 'CAD'];
 
 const INPUT  = 'w-full text-sm border border-[#E8E6E1] rounded-xl px-3 py-2 focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors';
@@ -55,6 +66,7 @@ interface HotelDraft {
 
 export default function AddHotelModal({ open, onClose, defaultTripId, initialHotel }: Props) {
   const { trips, updateTrip, addStandaloneHotel, updateStandaloneHotel, deleteStandaloneHotel, detachStandaloneHotel } = useTrips();
+  const { t } = useLanguage();
   const isEdit = !!initialHotel;
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState('');
@@ -270,7 +282,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
             >
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-[#E8E6E1]">
-                <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{isEdit ? 'Edit Hotel' : 'Add a Hotel'}</h2>
+                <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{isEdit ? t('hotel_modal_edit') : t('hotel_modal_add')}</h2>
                 <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#F0ECE6] flex items-center justify-center hover:bg-[#E8E4DC] transition-colors">
                   <X size={16} />
                 </button>
@@ -284,32 +296,32 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                     <div className="flex flex-col md:flex-row gap-3 md:gap-5">
                       <div className="flex-1 space-y-3 min-w-0 order-last md:order-none">
                         <div>
-                          <label className={LABEL}>Hotel Name <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></label>
-                          <input type="text" placeholder="e.g. Aman Tokyo" value={form.hotelName}
+                          <label className={LABEL}>{t('hotel_modal_name')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span></label>
+                          <input type="text" placeholder={t('hotel_modal_name_ph')} value={form.hotelName}
                             onChange={e => set('hotelName', e.target.value)} className={INPUT} />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <DatePickerInput label={<>Check-in <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>} value={form.checkIn} onChange={v => set('checkIn', v)} />
-                          <DatePickerInput label={<>Check-out <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>} value={form.checkOut} onChange={v => set('checkOut', v)}
+                          <DatePickerInput label={<>{t('hotel_modal_checkin')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span></>} value={form.checkIn} onChange={v => set('checkIn', v)} />
+                          <DatePickerInput label={<>{t('hotel_modal_checkout')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span></>} value={form.checkOut} onChange={v => set('checkOut', v)}
                             min={form.checkIn} defaultMonth={form.checkIn} />
                         </div>
                         <div className="grid grid-cols-3 md:grid-cols-2 gap-2 md:gap-3">
                           <div>
-                            <label className={LABEL}>Room Type</label>
+                            <label className={LABEL}>{t('hotel_modal_room_type')}</label>
                             <select value={form.roomType} onChange={e => set('roomType', e.target.value)} className={`${SELECT} ${form.roomType === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
-                              <option value="">Select…</option>
-                              {ROOM_TYPES.map(r => <option key={r} value={r} className="text-[#1A1A1A]">{r}</option>)}
+                              <option value="">{t('form_select')}</option>
+                              {ROOM_TYPES.map(r => <option key={r} value={r} className="text-[#1A1A1A]">{t(ROOM_LABELS[r])}</option>)}
                             </select>
                           </div>
                           <div>
-                            <label className={LABEL}>View Type</label>
+                            <label className={LABEL}>{t('hotel_modal_view_type')}</label>
                             <select value={form.viewType} onChange={e => set('viewType', e.target.value)} className={`${SELECT} ${form.viewType === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
-                              <option value="">Select…</option>
-                              {VIEW_TYPES.map(v => <option key={v} value={v} className="text-[#1A1A1A]">{v}</option>)}
+                              <option value="">{t('form_select')}</option>
+                              {VIEW_TYPES.map(v => <option key={v} value={v} className="text-[#1A1A1A]">{t(VIEW_LABELS[v])}</option>)}
                             </select>
                           </div>
                           <div className="md:hidden">
-                            <label className={LABEL}>Rating <span className="normal-case font-normal text-[#C0BAB2]">(0–5)</span></label>
+                            <label className={LABEL}>{t('form_rating')} <span className="normal-case font-normal text-[#C0BAB2]">(0–5)</span></label>
                             <input type="text" inputMode="decimal" placeholder="e.g. 4.5"
                               value={form.rating}
                               onChange={e => { const v = e.target.value; if (/^([0-4](\.\d?)?|5(\.0?)?)?$/.test(v)) set('rating', v); }}
@@ -320,7 +332,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
 
                       {/* Cover photo */}
                       <div className="w-full md:flex-1 flex flex-col order-first md:order-none">
-                        <label className={LABEL}>Cover Photo</label>
+                        <label className={LABEL}>{t('form_cover_photo')}</label>
                         <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleImageChange} />
                         {coverPreview ? (
                           <div className="w-full aspect-[16/9] md:aspect-auto md:flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
@@ -330,7 +342,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                               alt="Cover"
                               onReplace={() => fileRef.current?.click()}
                               initialTransform={coverTransform}
-                              onTransformChange={t => setCoverTransform(t)}
+                              onTransformChange={tx => setCoverTransform(tx)}
                             />
                           </div>
                         ) : (
@@ -341,7 +353,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                           >
                             <div className="flex flex-col items-center justify-center h-full gap-2 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors p-4">
                               <ImagePlus size={22} strokeWidth={1.5} />
-                              <span className="text-[11px] font-medium text-center leading-tight">Click to upload</span>
+                              <span className="text-[11px] font-medium text-center leading-tight">{t('form_click_upload')}</span>
                             </div>
                           </button>
                         )}
@@ -352,14 +364,14 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                     <div className="grid grid-cols-2 gap-3 md:gap-5">
                       <div className="grid grid-cols-2 gap-3">
                         <div className="hidden md:block">
-                          <label className={LABEL}>Rating <span className="normal-case font-normal text-[#C0BAB2]">(0–5)</span></label>
+                          <label className={LABEL}>{t('form_rating')} <span className="normal-case font-normal text-[#C0BAB2]">(0–5)</span></label>
                           <input type="text" inputMode="decimal" placeholder="e.g. 4.5"
                             value={form.rating}
                             onChange={e => { const v = e.target.value; if (/^([0-4](\.\d?)?|5(\.0?)?)?$/.test(v)) set('rating', v); }}
                             className={INPUT} />
                         </div>
                         <div className="col-span-2 md:col-span-1">
-                          <label className={LABEL}>Total Expense</label>
+                          <label className={LABEL}>{t('form_total_expense')}</label>
                           <div className="flex gap-1.5">
                             <input type="text" inputMode="decimal" placeholder="0" value={form.expense}
                               onChange={e => { if (/^\d*\.?\d*$/.test(e.target.value)) set('expense', e.target.value); }}
@@ -372,9 +384,9 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                         </div>
                       </div>
                       <div>
-                        <label className={LABEL}>Add to Trip</label>
+                        <label className={LABEL}>{t('form_add_to_trip')}</label>
                         <select value={form.tripId} onChange={e => set('tripId', e.target.value)} className={`${SELECT} ${form.tripId === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
-                          <option value="">Select a trip…</option>
+                          <option value="">{t('form_select_trip')}</option>
                           {trips.map(t => <option key={t.id} value={t.id} className="text-[#1A1A1A]">{t.title}</option>)}
                         </select>
                       </div>
@@ -382,7 +394,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
 
                     {/* Address */}
                     <div>
-                      <label className={LABEL}>Address <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></label>
+                      <label className={LABEL}>{t('form_address')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span></label>
                       <AddressSearchBox
                         value={form.address}
                         onChange={v => { if (!isSelectingRef.current) setGeocoded(null); set('address', v); }}
@@ -416,7 +428,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                     >
                       <CheckCircle size={32} className="text-green-500" />
                     </motion.div>
-                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{isEdit ? 'Changes Saved' : 'Hotel Added'}</h3>
+                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{isEdit ? t('form_changes_saved') : t('hotel_modal_created')}</h3>
                   </div>
                 )}
 
@@ -430,7 +442,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                     >
                       <CheckCircle size={32} className="text-green-500" />
                     </motion.div>
-                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">Draft Saved</h3>
+                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{t('form_draft_saved')}</h3>
                   </div>
                 )}
               </div>
@@ -444,7 +456,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                       disabled={submitting || savingDraft}
                       className="text-sm font-medium px-6 py-2.5 rounded-full border border-[#E8E6E1] text-[#1A1A1A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      Save Draft
+                      {t('form_save_draft')}
                     </button>
                   )}
                   <button
@@ -452,7 +464,7 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
                     disabled={!isValid || submitting}
                     className="bg-[#1A1A1A] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-[#333] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {isEdit ? 'Save Changes' : 'Add Hotel'}
+                    {isEdit ? t('form_save_changes') : t('hotel_modal_create')}
                   </button>
                 </div>
               )}

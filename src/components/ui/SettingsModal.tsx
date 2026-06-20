@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Settings, Monitor, PlayCircle, Globe, Mail, Share, Shield, FileText, ChevronRight, Heart } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
 import WhatsNewModal from '@/components/ui/WhatsNewModal';
 
 interface Props {
@@ -11,9 +12,9 @@ interface Props {
   onClose: () => void;
 }
 
-const LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'zh', label: 'Chinese' },
+const LANGUAGES: { code: string; key: 'lang_english' | 'lang_chinese' }[] = [
+  { code: 'en', key: 'lang_english' },
+  { code: 'zh', key: 'lang_chinese' },
 ];
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
@@ -81,9 +82,9 @@ type AppearanceMode = 'system' | 'light' | 'dark';
 
 export default function SettingsModal({ open, onClose }: Props) {
   const { demoMode, toggleDemoMode } = useTrips();
+  const { lang, setLang, t } = useLanguage();
   const [appearance, setAppearance] = useState<AppearanceMode>('light');
   const [systemDark, setSystemDark] = useState(false);
-  const [language, setLanguage]     = useState('en');
   const [mounted, setMounted]       = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
@@ -93,7 +94,6 @@ export default function SettingsModal({ open, onClose }: Props) {
   useEffect(() => {
     if (open) {
       setAppearance((localStorage.getItem('appearance') as AppearanceMode | null) ?? 'light');
-      setLanguage(localStorage.getItem('language') ?? 'en');
     }
   }, [open]);
 
@@ -113,8 +113,7 @@ export default function SettingsModal({ open, onClose }: Props) {
   }
 
   function handleLanguageChange(code: string) {
-    setLanguage(code);
-    localStorage.setItem('language', code);
+    setLang(code as 'en' | 'zh');
   }
 
   async function handleShare() {
@@ -154,7 +153,7 @@ export default function SettingsModal({ open, onClose }: Props) {
               <div className="flex items-center justify-between px-6 py-3 border-b border-[#E8E6E1]">
                 <div className="flex items-center gap-2.5">
                   <Settings size={16} className="text-[#8A8A8A]" />
-                  <h2 className="serif text-lg font-semibold text-[#1A1A1A]">Settings</h2>
+                  <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{t('settings_title')}</h2>
                 </div>
                 <button
                   onClick={onClose}
@@ -168,21 +167,21 @@ export default function SettingsModal({ open, onClose }: Props) {
 
                 {/* General */}
                 <div>
-                  <SectionLabel>General</SectionLabel>
+                  <SectionLabel>{t('settings_general')}</SectionLabel>
                   <div className="space-y-1.5">
-                    <SettingRow dark={isDark} icon={<PlayCircle size={16} className={ic} />} label="Demo Mode">
+                    <SettingRow dark={isDark} icon={<PlayCircle size={16} className={ic} />} label={t('settings_demo_mode')}>
                       <Toggle on={demoMode} onToggle={toggleDemoMode} />
                     </SettingRow>
 
-                    <SettingRow dark={isDark} icon={<Monitor size={16} className={ic} />} label="Appearance">
+                    <SettingRow dark={isDark} icon={<Monitor size={16} className={ic} />} label={t('settings_appearance')}>
                       <select
                         value={appearance}
                         onChange={e => applyAppearance(e.target.value as AppearanceMode)}
                         className="w-20 text-sm md:text-[12px] text-[#8A8A8A] bg-[#EDEAE5] border-none rounded-lg px-1 md:px-2.5 py-0.5 md:py-1 focus:outline-none focus:ring-1 focus:ring-[#C87A53] cursor-pointer"
                       >
-                        <option value="system">System</option>
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
+                        <option value="system">{t('settings_appearance_system')}</option>
+                        <option value="light">{t('settings_appearance_light')}</option>
+                        <option value="dark">{t('settings_appearance_dark')}</option>
                       </select>
                     </SettingRow>
 
@@ -191,15 +190,15 @@ export default function SettingsModal({ open, onClose }: Props) {
                         <div className={`w-7 h-7 rounded-full ${iconBg(isDark)} flex items-center justify-center shrink-0 transition-colors`}>
                           <Globe size={16} className={ic} />
                         </div>
-                        <span className="text-sm text-[#1A1A1A]">Language</span>
+                        <span className="text-sm text-[#1A1A1A]">{t('settings_language')}</span>
                       </div>
                       <select
-                        value={language}
+                        value={lang}
                         onChange={e => handleLanguageChange(e.target.value)}
                         className="w-20 text-sm md:text-[12px] text-[#8A8A8A] bg-[#EDEAE5] border-none rounded-lg px-1 md:px-2.5 py-0.5 md:py-1 focus:outline-none focus:ring-1 focus:ring-[#C87A53] cursor-pointer"
                       >
                         {LANGUAGES.map(l => (
-                          <option key={l.code} value={l.code}>{l.label}</option>
+                          <option key={l.code} value={l.code}>{t(l.key)}</option>
                         ))}
                       </select>
                     </div>
@@ -208,12 +207,12 @@ export default function SettingsModal({ open, onClose }: Props) {
 
                 {/* Help */}
                 <div>
-                  <SectionLabel>Help</SectionLabel>
+                  <SectionLabel>{t('settings_help')}</SectionLabel>
                   <div className="space-y-1.5">
                     <ActionRow
                       dark={isDark}
                       icon={<Mail size={16} className={ic} />}
-                      label="Contact Support"
+                      label={t('settings_contact_support')}
                       onClick={() => window.open('mailto:zhenglin0619@gmail.com', '_blank')}
                     />
                   </div>
@@ -221,7 +220,7 @@ export default function SettingsModal({ open, onClose }: Props) {
 
                 {/* About */}
                 <div>
-                  <SectionLabel>About</SectionLabel>
+                  <SectionLabel>{t('settings_about')}</SectionLabel>
                   <div className="space-y-1.5">
                     <button
                       type="button"
@@ -232,10 +231,10 @@ export default function SettingsModal({ open, onClose }: Props) {
                         <div className={`w-7 h-7 rounded-full ${iconBg(isDark)} flex items-center justify-center shrink-0 transition-colors`}>
                           <Share size={16} className={ic} />
                         </div>
-                        <span className="text-sm text-[#1A1A1A]">Share LET&rsquo;S GO</span>
+                        <span className="text-sm text-[#1A1A1A]">{t('settings_share_app')}</span>
                       </div>
                       {shareCopied ? (
-                        <span className="text-[11px] font-medium text-[#C87A53]">Copied!</span>
+                        <span className="text-[11px] font-medium text-[#C87A53]">{t('settings_copied')}</span>
                       ) : (
                         <ChevronRight size={16} className="text-[#C0BAB2] group-hover:text-[#8A8A8A] transition-colors" />
                       )}
@@ -244,14 +243,14 @@ export default function SettingsModal({ open, onClose }: Props) {
                     <ActionRow
                       dark={isDark}
                       icon={<Shield size={16} className={ic} />}
-                      label="Privacy Policy"
+                      label={t('settings_privacy')}
                       onClick={() => window.open('/privacy', '_blank')}
                     />
 
                     <ActionRow
                       dark={isDark}
                       icon={<FileText size={16} className={ic} />}
-                      label="Terms of Service"
+                      label={t('settings_terms')}
                       onClick={() => window.open('/terms', '_blank')}
                     />
                   </div>
@@ -269,7 +268,7 @@ export default function SettingsModal({ open, onClose }: Props) {
                   onClick={() => setWhatsNewOpen(true)}
                   className="text-[10px] text-[#4A4A4A] tracking-widest hover:text-[#C87A53] transition-colors"
                 >
-                  version 1.2.2
+                  version 1.3.0
                 </button>
               </div>
             </motion.div>

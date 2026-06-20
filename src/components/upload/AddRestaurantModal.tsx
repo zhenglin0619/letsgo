@@ -4,6 +4,8 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, ImagePlus } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
+import type { TranslationKey } from '@/lib/i18n';
 import { DiningLog } from '@/types';
 import DatePickerInput from '@/components/ui/DatePickerInput';
 import type { LocatedPlace } from '@/components/ui/AddressSearchBox';
@@ -13,7 +15,7 @@ import type { PhotoTransform } from '@/types';
 
 const AddressSearchBox = dynamic(() => import('@/components/ui/AddressSearchBox'), {
   ssr: false,
-  loading: () => <input className="w-full text-sm border border-[#E8E6E1] rounded-xl px-3 py-2 text-[#C0BAB2]" placeholder="Search address or place name…" disabled />,
+  loading: () => <input className="w-full text-sm border border-[#E8E6E1] rounded-xl px-3 py-2 text-[#C0BAB2]" placeholder="…" disabled />,
 });
 const InlineMapPreview = dynamic(() => import('@/components/ui/InlineMapPreview'), { ssr: false });
 
@@ -25,6 +27,10 @@ interface Props {
 }
 
 const MEAL_OPTIONS = ['Breakfast', 'Brunch', 'Lunch', 'Afternoon Tea', 'Dinner', 'Late Night'] as const;
+const MEAL_LABELS: Record<string, TranslationKey> = {
+  'Breakfast': 'meal_breakfast', 'Brunch': 'meal_brunch', 'Lunch': 'meal_lunch',
+  'Afternoon Tea': 'meal_afternoon_tea', 'Dinner': 'meal_dinner', 'Late Night': 'meal_late_night',
+};
 const CURRENCIES = ['USD', 'CNY', 'HKD', 'JPY', 'EUR', 'GBP', 'SGD', 'MYR', 'AUD', 'CAD'];
 const MICHELIN = [0, 1, 2, 3] as const;
 
@@ -58,6 +64,7 @@ interface RestaurantDraft {
 
 export default function AddRestaurantModal({ open, onClose, initialDining, defaultTripId }: Props) {
   const { trips, updateTrip, addStandaloneRestaurant, updateStandaloneRestaurant, deleteStandaloneRestaurant, detachStandaloneRestaurant } = useTrips();
+  const { t } = useLanguage();
   const isEdit = !!initialDining;
   const [form, setForm] = useState(emptyForm);
   const [coverPreview, setCoverPreview] = useState('');
@@ -283,7 +290,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
             >
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-[#E8E6E1]">
-                <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{isEdit ? 'Edit Restaurant' : 'Add a Restaurant'}</h2>
+                <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{isEdit ? t('rest_modal_edit') : t('rest_modal_add')}</h2>
                 <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#F0ECE6] flex items-center justify-center hover:bg-[#E8E4DC] transition-colors">
                   <X size={16} />
                 </button>
@@ -298,23 +305,23 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                       <div className="flex-1 space-y-3 min-w-0 order-last md:order-none">
                         <div>
                           <label className={LABEL}>
-                            Restaurant Name <span className="normal-case font-normal text-[#C0BAB2]">(required)</span>
+                            {t('rest_modal_name')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span>
                           </label>
-                          <input type="text" placeholder="e.g. Izumo Ikebukuro" value={form.restaurantName}
+                          <input type="text" placeholder={t('rest_modal_name_ph')} value={form.restaurantName}
                             onChange={e => set('restaurantName', e.target.value)} className={INPUT} />
                         </div>
-                        <DatePickerInput label={<>Date <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></>} value={form.date} onChange={v => set('date', v)} />
+                        <DatePickerInput label={<>{t('form_date')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span></>} value={form.date} onChange={v => set('date', v)} />
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className={LABEL}>Cuisine</label>
-                            <input type="text" placeholder="e.g. Japanese" value={form.cuisine}
+                            <label className={LABEL}>{t('rest_modal_cuisine')}</label>
+                            <input type="text" placeholder={t('rest_modal_cuisine_ph')} value={form.cuisine}
                               onChange={e => set('cuisine', e.target.value)} className={INPUT} />
                           </div>
                           <div>
-                            <label className={LABEL}>Meal Type</label>
+                            <label className={LABEL}>{t('rest_modal_meal')}</label>
                             <select value={form.meal} onChange={e => set('meal', e.target.value as typeof MEAL_OPTIONS[number] | '')} className={`${SELECT} ${form.meal === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
-                              <option value="">Select…</option>
-                              {MEAL_OPTIONS.map(m => <option key={m} value={m} className="text-[#1A1A1A]">{m}</option>)}
+                              <option value="">{t('form_select')}</option>
+                              {MEAL_OPTIONS.map(m => <option key={m} value={m} className="text-[#1A1A1A]">{t(MEAL_LABELS[m])}</option>)}
                             </select>
                           </div>
                         </div>
@@ -322,7 +329,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
 
                       {/* Cover photo — aligned with the top block only */}
                       <div className="w-full md:flex-1 flex flex-col order-first md:order-none">
-                        <label className={LABEL}>Cover Photo</label>
+                        <label className={LABEL}>{t('form_cover_photo')}</label>
                         <input ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleImageChange} />
                         {coverPreview ? (
                           <div className="w-full aspect-[16/9] md:aspect-auto md:flex-1 rounded-xl border-2 border-dashed border-[#E8E6E1] overflow-hidden hover:border-[#C87A53] transition-colors relative">
@@ -332,7 +339,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                               alt="Cover"
                               onReplace={() => fileRef.current?.click()}
                               initialTransform={coverTransform}
-                              onTransformChange={t => setCoverTransform(t)}
+                              onTransformChange={tx => setCoverTransform(tx)}
                             />
                           </div>
                         ) : (
@@ -343,7 +350,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                           >
                             <div className="flex flex-col items-center justify-center h-full gap-2 text-[#C0BAB2] group-hover:text-[#C87A53] transition-colors p-4">
                               <ImagePlus size={22} strokeWidth={1.5} />
-                              <span className="text-[11px] font-medium text-center leading-tight">Click to upload</span>
+                              <span className="text-[11px] font-medium text-center leading-tight">{t('form_click_upload')}</span>
                             </div>
                           </button>
                         )}
@@ -353,14 +360,14 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                     {/* Row 2: Rating | Expense | Michelin Stars | Add to Trip */}
                     <div className="grid grid-cols-2 md:grid-cols-11 gap-3 items-end">
                       <div className="col-span-1 md:col-span-2">
-                        <label className={LABEL}>Rating <span className="normal-case font-normal text-[#C0BAB2]">(0–5)</span></label>
+                        <label className={LABEL}>{t('form_rating')} <span className="normal-case font-normal text-[#C0BAB2]">(0–5)</span></label>
                         <input type="text" inputMode="decimal" placeholder="e.g. 4.5"
                           value={form.rating}
                           onChange={e => { const v = e.target.value; if (/^([0-4](\.\d?)?|5(\.0?)?)?$/.test(v)) set('rating', v); }}
                           className={INPUT} />
                       </div>
                       <div className="col-span-1 md:col-span-3">
-                        <label className={LABEL}>Total Expense</label>
+                        <label className={LABEL}>{t('form_total_expense')}</label>
                         <div className="flex gap-1.5">
                           <input type="text" inputMode="decimal" placeholder="0" value={form.expense}
                             onChange={e => { if (/^\d*\.?\d*$/.test(e.target.value)) set('expense', e.target.value); }} className={`${INPUT} flex-1`} />
@@ -371,7 +378,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                         </div>
                       </div>
                       <div className="col-span-1 md:col-span-3">
-                        <label className={LABEL}>Michelin Stars</label>
+                        <label className={LABEL}>{t('rest_modal_michelin')}</label>
                         <div className="flex gap-1.5">
                           {MICHELIN.map(n => (
                             <button
@@ -383,15 +390,15 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                                   : 'border-[#E8E6E1] text-[#8A8A8A] hover:border-[#C87A53] hover:text-[#C87A53]'
                               }`}
                             >
-                              {n === 0 ? 'None' : '★'.repeat(n)}
+                              {n === 0 ? t('rest_modal_michelin_none') : '★'.repeat(n)}
                             </button>
                           ))}
                         </div>
                       </div>
                       <div className="col-span-1 md:col-span-3">
-                        <label className={LABEL}>Add to Trip</label>
+                        <label className={LABEL}>{t('form_add_to_trip')}</label>
                         <select value={form.tripId} onChange={e => set('tripId', e.target.value)} className={`${SELECT} ${form.tripId === '' ? 'text-[#C0BAB2]' : 'text-[#1A1A1A]'}`}>
-                          <option value="">Select a trip…</option>
+                          <option value="">{t('form_select_trip')}</option>
                           {trips.map(t => <option key={t.id} value={t.id} className="text-[#1A1A1A]">{t.title}</option>)}
                         </select>
                       </div>
@@ -399,7 +406,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
 
                     {/* Row 3: Address */}
                     <div>
-                      <label className={LABEL}>Address <span className="normal-case font-normal text-[#C0BAB2]">(required)</span></label>
+                      <label className={LABEL}>{t('form_address')} <span className="normal-case font-normal text-[#C0BAB2]">{t('form_required')}</span></label>
                       <AddressSearchBox
                         value={form.address}
                         onChange={v => { if (!isSelectingRef.current) setGeocoded(null); set('address', v); }}
@@ -434,7 +441,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                     >
                       <CheckCircle size={32} className="text-green-500" />
                     </motion.div>
-                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{isEdit ? 'Changes Saved' : 'Restaurant Added'}</h3>
+                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{isEdit ? t('form_changes_saved') : t('rest_modal_created')}</h3>
                   </div>
                 )}
 
@@ -448,7 +455,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                     >
                       <CheckCircle size={32} className="text-green-500" />
                     </motion.div>
-                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">Draft Saved</h3>
+                    <h3 className="serif text-xl font-semibold text-[#1A1A1A] mb-1">{t('form_draft_saved')}</h3>
                   </div>
                 )}
               </div>
@@ -462,7 +469,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                       disabled={submitting || savingDraft}
                       className="text-sm font-medium px-6 py-2.5 rounded-full border border-[#E8E6E1] text-[#1A1A1A] hover:border-[#C87A53] hover:text-[#C87A53] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      Save Draft
+                      {t('form_save_draft')}
                     </button>
                   )}
                   <button
@@ -470,7 +477,7 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
                     disabled={!isValid || submitting}
                     className="bg-[#1A1A1A] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-[#333] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {isEdit ? 'Save Changes' : 'Add Restaurant'}
+                    {isEdit ? t('form_save_changes') : t('rest_modal_create')}
                   </button>
                 </div>
               )}

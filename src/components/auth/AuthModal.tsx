@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useLanguage } from '@/store/languageContext';
 
 type Tab = 'signin' | 'signup';
 
 export default function AuthModal() {
+  const { t } = useLanguage();
   const [tab, setTab]         = useState<Tab>('signin');
   const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
@@ -75,9 +77,9 @@ export default function AuthModal() {
                 <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-3">
                   <Mail size={20} className="text-green-500" />
                 </div>
-                <h2 className="font-semibold text-[#1A1A1A] text-base mb-1">Check your email</h2>
+                <h2 className="font-semibold text-[#1A1A1A] text-base mb-1">{t('auth_check_email')}</h2>
                 <p className="text-sm text-[#8A8A8A] leading-relaxed">
-                  We sent a confirmation link to<br/>
+                  {t('auth_sent_link')}<br/>
                   <span className="text-[#1A1A1A] font-medium">{email}</span>
                 </p>
               </motion.div>
@@ -85,17 +87,17 @@ export default function AuthModal() {
               <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {/* Tabs */}
                 <div className="flex rounded-xl bg-[#F5F2EE] p-1 mb-6">
-                  {(['signin', 'signup'] as Tab[]).map(t => (
+                  {(['signin', 'signup'] as Tab[]).map(tabKey => (
                     <button
-                      key={t}
-                      onClick={() => { setTab(t); setError(''); }}
+                      key={tabKey}
+                      onClick={() => { setTab(tabKey); setError(''); }}
                       className={`flex-1 text-xs font-semibold py-2 rounded-lg transition-all ${
-                        tab === t
+                        tab === tabKey
                           ? 'bg-white text-[#1A1A1A] shadow-sm'
                           : 'text-[#8A8A8A] hover:text-[#1A1A1A]'
                       }`}
                     >
-                      {t === 'signin' ? 'Sign in' : 'Create account'}
+                      {tabKey === 'signin' ? t('auth_sign_in') : t('auth_create_account')}
                     </button>
                   ))}
                 </div>
@@ -116,7 +118,7 @@ export default function AuthModal() {
                       <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.31z"/>
                     </svg>
                   )}
-                  Continue with Google
+                  {t('auth_continue_google')}
                 </button>
 
                 <div className="flex items-center gap-3 mb-4">
@@ -131,7 +133,7 @@ export default function AuthModal() {
                     <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#B0AAA2]" />
                     <input
                       type="email"
-                      placeholder="Email address"
+                      placeholder={t('auth_email_placeholder')}
                       value={email}
                       onChange={e => setEmail(e.target.value)}
                       required
@@ -142,7 +144,7 @@ export default function AuthModal() {
                     <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#B0AAA2]" />
                     <input
                       type="password"
-                      placeholder="Password"
+                      placeholder={t('auth_password_placeholder')}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       required
@@ -164,7 +166,7 @@ export default function AuthModal() {
                     className="w-full bg-[#1A1A1A] text-white text-sm font-semibold py-3 rounded-xl hover:bg-[#333] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 mt-1"
                   >
                     {loading && <Loader2 size={14} className="animate-spin" />}
-                    {tab === 'signin' ? 'Sign in' : 'Create account'}
+                    {tab === 'signin' ? t('auth_sign_in') : t('auth_create_account')}
                   </button>
                 </form>
               </motion.div>

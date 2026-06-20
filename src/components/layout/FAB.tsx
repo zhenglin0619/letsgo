@@ -2,19 +2,21 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Plane, Utensils, BedDouble } from 'lucide-react';
+import { useLanguage } from '@/store/languageContext';
 
 interface FABProps {
   onSelect: (type: 'trip' | 'hotel' | 'restaurant') => void;
 }
 
-const options = [
-  { type: 'trip' as const,       label: 'Trip',       icon: Plane },
-  { type: 'restaurant' as const, label: 'Restaurant', icon: Utensils },
-  { type: 'hotel' as const,      label: 'Hotel',      icon: BedDouble },
-];
-
 export default function FAB({ onSelect }: FABProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useLanguage();
+
+  const options = [
+    { type: 'trip' as const,       label: t('fab_trip'),        icon: Plane },
+    { type: 'restaurant' as const, label: t('fab_restaurant'),  icon: Utensils },
+    { type: 'hotel' as const,      label: t('fab_hotel'),       icon: BedDouble },
+  ];
 
   return (
     <>

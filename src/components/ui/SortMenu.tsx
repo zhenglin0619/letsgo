@@ -1,27 +1,37 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { ArrowUpDown, Check } from 'lucide-react';
+import { useLanguage } from '@/store/languageContext';
 
 export const DATE_OPTIONS = [
-  { value: 'date-desc', label: 'Newest Date' },
-  { value: 'date-asc',  label: 'Oldest Date' },
+  { value: 'date-desc' },
+  { value: 'date-asc'  },
 ];
 
 const ALL_OPTIONS = [
-  ...DATE_OPTIONS,
-  { value: 'rate-desc', label: 'Highest Rating' },
-  { value: 'rate-asc',  label: 'Lowest Rating' },
+  { value: 'date-desc' },
+  { value: 'date-asc'  },
+  { value: 'rate-desc' },
+  { value: 'rate-asc'  },
 ];
+
+const LABELS: Record<string, 'sort_newest' | 'sort_oldest' | 'sort_highest_rating' | 'sort_lowest_rating'> = {
+  'date-desc': 'sort_newest',
+  'date-asc':  'sort_oldest',
+  'rate-desc': 'sort_highest_rating',
+  'rate-asc':  'sort_lowest_rating',
+};
 
 interface Props {
   value: string;
   onChange: (v: string) => void;
-  options?: { value: string; label: string }[];
+  options?: { value: string }[];
 }
 
 export default function SortMenu({ value, onChange, options = ALL_OPTIONS }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!open) return;
@@ -43,7 +53,7 @@ export default function SortMenu({ value, onChange, options = ALL_OPTIONS }: Pro
           }`}
       >
         <ArrowUpDown size={13} />
-        <span>Sort by</span>
+        <span>{t('sort_by')}</span>
       </button>
 
       {open && (
@@ -51,7 +61,7 @@ export default function SortMenu({ value, onChange, options = ALL_OPTIONS }: Pro
           className="absolute top-11 left-0 md:left-auto md:right-0 bg-white rounded-2xl border border-[#E8E6E1] py-1.5 w-41 z-30"
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}
         >
-          <p className="px-4 pt-1.5 pb-2 text-[10px] font-semibold text-[#C0BAB2] uppercase tracking-widest">Sort by</p>
+          <p className="px-4 pt-1.5 pb-2 text-[10px] font-semibold text-[#C0BAB2] uppercase tracking-widest">{t('sort_by')}</p>
           {options.map(opt => (
             <button
               key={opt.value}
@@ -62,7 +72,7 @@ export default function SortMenu({ value, onChange, options = ALL_OPTIONS }: Pro
                   : 'text-[#1A1A1A] hover:bg-[#F5F2EE]'
                 }`}
             >
-              {opt.label}
+              {t(LABELS[opt.value] ?? 'sort_newest')}
               {value === opt.value && <Check size={12} className="text-[#C87A53] flex-shrink-0" />}
             </button>
           ))}

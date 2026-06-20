@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { MapPin, Plane, BedDouble, Utensils, LogOut, User, Bell, Settings, NotebookPen, Menu, X } from 'lucide-react';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
 import NotificationsModal from '@/components/ui/NotificationsModal';
 import FuturePlanModal from '@/components/ui/FuturePlanModal';
 import SettingsModal from '@/components/ui/SettingsModal';
@@ -48,6 +49,7 @@ function LetsGoLogoTextOnly() {
 
 function UserMenu() {
   const { user, signOut, pendingItemInvites } = useTrips();
+  const { t } = useLanguage();
   const [open, setOpen]                       = useState(false);
   const [notifOpen, setNotifOpen]             = useState(false);
   const [settingsOpen, setSettingsOpen]       = useState(false);
@@ -107,7 +109,7 @@ function UserMenu() {
             <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#C87A53]" />
           )}
         </div>
-        Notifications
+        {t('nav_notifications')}
         {pendingItemInvites.length > 0 && (
           <span className="ml-auto text-[10px] font-semibold text-white bg-[#C87A53] rounded-full px-1.5 py-0.5 leading-none">
             {pendingItemInvites.length}
@@ -120,7 +122,7 @@ function UserMenu() {
         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
       >
         <NotebookPen size={14} />
-        Future Plan
+        {t('nav_future_plan')}
       </button>
 
       <button
@@ -128,7 +130,7 @@ function UserMenu() {
         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
       >
         <Settings size={14} />
-        Settings
+        {t('nav_settings')}
       </button>
 
       <div className="mx-4 my-1 h-px bg-[#F0ECE6]" />
@@ -137,7 +139,7 @@ function UserMenu() {
         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#8A8A8A] hover:text-[#1A1A1A] hover:bg-[#F9F7F4] transition-colors"
       >
         <LogOut size={14} />
-        Sign out
+        {t('nav_sign_out')}
       </button>
     </div>
   );
@@ -177,12 +179,13 @@ function UserMenu() {
 export default function Navbar() {
   const path = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { t } = useLanguage();
 
   const links = [
-    { href: '/', label: 'World', icon: MapPin },
-    { href: '/trips', label: 'Trips', icon: Plane },
-    { href: '/restaurants', label: 'Restaurants', icon: Utensils },
-    { href: '/hotels', label: 'Hotels', icon: BedDouble },
+    { href: '/', label: t('nav_world'), icon: MapPin },
+    { href: '/trips', label: t('nav_trips'), icon: Plane },
+    { href: '/restaurants', label: t('nav_restaurants'), icon: Utensils },
+    { href: '/hotels', label: t('nav_hotels'), icon: BedDouble },
   ];
 
   return (

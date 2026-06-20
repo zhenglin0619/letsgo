@@ -2,7 +2,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { format, parse, parseISO, isValid } from 'date-fns';
+import { zhCN } from 'date-fns/locale/zh-CN';
 import { CalendarDays } from 'lucide-react';
+import { useLanguage } from '@/store/languageContext';
 import './DatePickerInput.css';
 
 interface Props {
@@ -101,6 +103,7 @@ function CustomDropdown({ options = [], value, onChange }: DropdownProps) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function DatePickerInput({ label, value, onChange, min, defaultMonth, placement = 'right' }: Props) {
+  const { lang, t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(() => toDisplay(value));
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
@@ -190,7 +193,7 @@ export default function DatePickerInput({ label, value, onChange, min, defaultMo
       }`}>
         <input
           type="text"
-          placeholder="MM/DD/YYYY"
+          placeholder={t('calendar_placeholder')}
           value={text}
           onChange={handleType}
           onBlur={handleBlur}
@@ -217,6 +220,7 @@ export default function DatePickerInput({ label, value, onChange, min, defaultMo
             startMonth={new Date(2005, 0)}
             endMonth={new Date(2035, 11)}
             className="tt-cal"
+            locale={lang === 'zh' ? zhCN : undefined}
             components={{ Dropdown: CustomDropdown as never }}
           />
         </div>

@@ -5,6 +5,18 @@ import { HotelLog } from '@/types';
 import StarRating from '@/components/ui/StarRating';
 import { X, MapPin, BedDouble, Eye, Pencil, Trash2, Check, MoreHorizontal, Users, LogOut } from 'lucide-react';
 import { fmtCountry, parseLocalDate } from '@/lib/formatUtils';
+import { useLanguage } from '@/store/languageContext';
+import type { TranslationKey } from '@/lib/i18n';
+
+const ROOM_LABELS: Record<string, TranslationKey> = {
+  'Villa': 'room_villa', 'Suite': 'room_suite', 'King': 'room_king',
+  'Queen': 'room_queen', 'Twin': 'room_twin', 'Studio': 'room_studio',
+};
+const VIEW_LABELS: Record<string, TranslationKey> = {
+  'City View': 'view_city', 'Ocean View': 'view_ocean', 'Lake View': 'view_lake',
+  'River View': 'view_river', 'Mountain View': 'view_mountain',
+  'Garden View': 'view_garden', 'Park View': 'view_park', 'No View': 'view_no_view',
+};
 
 interface Props {
   hotel: HotelLog | null;
@@ -22,11 +34,12 @@ function nights(checkIn: string, checkOut: string) {
   return Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000);
 }
 
-function formatDate(d: string) {
-  return parseLocalDate(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+function formatDate(d: string, locale: string) {
+  return parseLocalDate(d).toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, onShare, onLeave, isOwner = true, onUpdateHotel }: Props) {
+  const { lang, t } = useLanguage();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editingNote, setEditingNote] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -70,6 +83,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
 
   if (!hotel) return null;
 
+  const locale = lang === 'zh' ? 'zh-CN' : 'en-US';
   const n = nights(hotel.checkIn, hotel.checkOut);
   const perNight = Math.round(hotel.pricePerNight / (n || 1));
 
@@ -144,7 +158,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                                 onClick={() => { onEdit(); onClose(); }}
                                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
                               >
-                                <Pencil size={13} className="text-[#8A8A8A]" /> Edit
+                                <Pencil size={13} className="text-[#8A8A8A]" /> {t('common_edit')}
                               </button>
                             )}
                             {onShare && (
@@ -152,7 +166,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                                 onClick={() => { onShare(); setMenuOpen(false); }}
                                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
                               >
-                                <Users size={13} className="text-[#8A8A8A]" /> Share
+                                <Users size={13} className="text-[#8A8A8A]" /> {t('common_share')}
                               </button>
                             )}
                             {isOwner ? (
@@ -161,7 +175,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                                   onClick={() => setConfirmDelete(true)}
                                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                                 >
-                                  <Trash2 size={13} /> Delete
+                                  <Trash2 size={13} /> {t('common_delete')}
                                 </button>
                               )
                             ) : (
@@ -170,7 +184,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                                   onClick={() => setConfirmDelete(true)}
                                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                                 >
-                                  <LogOut size={13} /> Leave
+                                  <LogOut size={13} /> {t('common_leave')}
                                 </button>
                               )
                             )}
@@ -178,17 +192,17 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                         ) : (
                           <div className="px-4 py-2">
                             <p className="text-xs text-[#1A1A1A] font-medium mb-2">
-                              {isOwner ? 'Delete this hotel?' : 'Leave this hotel?'}
+                              {isOwner ? t('hotel_confirm_delete') : t('hotel_confirm_leave')}
                             </p>
                             <div className="flex gap-2">
                               <button
                                 onClick={() => { isOwner ? onDelete!() : onLeave!(); onClose(); }}
                                 className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
-                              >{isOwner ? 'Delete' : 'Leave'}</button>
+                              >{isOwner ? t('common_delete') : t('common_leave')}</button>
                               <button
                                 onClick={() => setConfirmDelete(false)}
                                 className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
-                              >Cancel</button>
+                              >{t('common_cancel')}</button>
                             </div>
                           </div>
                         )}
@@ -213,37 +227,37 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
 
                 <div className="grid grid-cols-2 gap-2 md:gap-3">
                   <div className="bg-[#FBFBFA] rounded-lg p-3">
-                    <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">Check-in</p>
-                    <p className="text-xs font-medium text-[#1A1A1A]">{formatDate(hotel.checkIn)}</p>
+                    <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">{t('hotel_modal_checkin')}</p>
+                    <p className="text-xs font-medium text-[#1A1A1A]">{formatDate(hotel.checkIn, locale)}</p>
                   </div>
                   <div className="bg-[#FBFBFA] rounded-lg p-3">
-                    <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">Check-out</p>
-                    <p className="text-xs font-medium text-[#1A1A1A]">{formatDate(hotel.checkOut)}</p>
+                    <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">{t('hotel_modal_checkout')}</p>
+                    <p className="text-xs font-medium text-[#1A1A1A]">{formatDate(hotel.checkOut, locale)}</p>
                   </div>
                   <div className="bg-[#FBFBFA] rounded-lg p-3">
-                    <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">Duration</p>
-                    <p className="text-xs font-medium text-[#1A1A1A]">{n} night{n !== 1 ? 's' : ''}</p>
+                    <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">{t('hotel_drawer_duration')}</p>
+                    <p className="text-xs font-medium text-[#1A1A1A]">{n} {n !== 1 ? t('hotel_nights_plural') : t('hotel_nights')}</p>
                   </div>
                   <div className="bg-[#FBFBFA] rounded-lg p-3">
-                    <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">Total Expense</p>
+                    <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">{t('form_total_expense')}</p>
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-0.5 md:gap-0">
                       <p className="text-xs font-medium text-[#1A1A1A]">{hotel.currency} {hotel.pricePerNight.toLocaleString()}</p>
-                      <p className="text-xs text-[#8A8A8A]">{hotel.currency} {perNight.toLocaleString()} / night</p>
+                      <p className="text-xs text-[#8A8A8A]">{hotel.currency} {perNight.toLocaleString()} {t('hotel_per_night')}</p>
                     </div>
                   </div>
                   {hotel.roomType && (
                     <div className="bg-[#FBFBFA] rounded-lg p-3">
-                      <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">Room Type</p>
+                      <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">{t('hotel_modal_room_type')}</p>
                       <p className="text-xs font-medium text-[#1A1A1A] flex items-center gap-1">
-                        <BedDouble size={11} className="text-[#8A8A8A]" />{hotel.roomType}
+                        <BedDouble size={11} className="text-[#8A8A8A]" />{ROOM_LABELS[hotel.roomType] ? t(ROOM_LABELS[hotel.roomType]) : hotel.roomType}
                       </p>
                     </div>
                   )}
                   {hotel.viewType && (
                     <div className="bg-[#FBFBFA] rounded-lg p-3">
-                      <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">View Type</p>
+                      <p className="text-[10px] text-[#8A8A8A] uppercase tracking-wider mb-1">{t('hotel_modal_view_type')}</p>
                       <p className="text-xs font-medium text-[#1A1A1A] flex items-center gap-1">
-                        <Eye size={11} className="text-[#8A8A8A]" />{hotel.viewType}
+                        <Eye size={11} className="text-[#8A8A8A]" />{VIEW_LABELS[hotel.viewType] ? t(VIEW_LABELS[hotel.viewType]) : hotel.viewType}
                       </p>
                     </div>
                   )}
@@ -253,7 +267,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
               {/* Notes */}
               <div className="px-4 py-3 md:px-6 md:py-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="serif text-base font-semibold text-[#1A1A1A]">Notes</h3>
+                  <h3 className="serif text-base font-semibold text-[#1A1A1A]">{t('hotel_drawer_notes')}</h3>
                   {onUpdateHotel && !editingNote && (
                     <button
                       onClick={() => { setNoteValue(hotel.notes ?? ''); setEditingNote(true); }}
@@ -267,12 +281,12 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                       <button
                         onClick={() => setEditingNote(false)}
                         className="text-xs text-[#8A8A8A] hover:text-[#1A1A1A] transition-colors"
-                      >Cancel</button>
+                      >{t('common_cancel')}</button>
                       <button
                         onClick={handleNoteSave}
                         className="flex items-center gap-1 text-xs font-medium bg-[#1A1A1A] text-white px-3 py-1.5 rounded-full hover:bg-[#333] transition-colors"
                       >
-                        <Check size={11} /> Done
+                        <Check size={11} /> {t('common_done')}
                       </button>
                     </div>
                   )}
@@ -285,7 +299,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                       maxLength={1000}
                       value={noteValue}
                       onChange={e => setNoteValue(e.target.value)}
-                      placeholder="Add a note…"
+                      placeholder={t('hotel_drawer_note_ph')}
                       className="w-full text-sm border border-[#E8E6E1] rounded-xl px-3 py-2.5 pb-6 focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] resize-none transition-colors"
                     />
                     <span className="absolute bottom-2 right-3 text-[10px] text-[#C0BAB2]">
@@ -295,7 +309,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                 ) : hotel.notes ? (
                   <p className="text-sm text-[#8A8A8A] leading-relaxed whitespace-pre-wrap">{hotel.notes}</p>
                 ) : (
-                  <p className="text-sm text-[#C0BAB2] italic">No notes yet.</p>
+                  <p className="text-sm text-[#C0BAB2] italic">{t('hotel_drawer_no_notes')}</p>
                 )}
               </div>
             </div>
@@ -309,7 +323,7 @@ export default function HotelDrawer({ hotel, open, onClose, onEdit, onDelete, on
                   transition={{ duration: 0.2 }}
                 >
                   <Check size={12} className="text-[#C87A53]" />
-                  Changes Saved
+                  {t('form_changes_saved')}
                 </motion.div>
               )}
             </AnimatePresence>

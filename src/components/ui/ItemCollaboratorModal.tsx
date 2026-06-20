@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, UserPlus, UserMinus, Users, Crown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
 
 export type ItemType = 'trip' | 'restaurant' | 'hotel';
 
@@ -40,6 +41,7 @@ export default function ItemCollaboratorModal({ open, onClose, itemId, itemType,
   const [mounted, setMounted]         = useState(false);
 
   const isOwner = user?.id === ownerId;
+  const { t } = useLanguage();
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -141,7 +143,7 @@ export default function ItemCollaboratorModal({ open, onClose, itemId, itemType,
                 <div className="flex items-center gap-2 min-w-0">
                   <Users size={16} className="text-[#8A8A8A] shrink-0" />
                   <div className="min-w-0">
-                    <h2 className="serif text-lg font-semibold text-[#1A1A1A]">Share</h2>
+                    <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{t('common_share')}</h2>
                     <p className="text-[11px] text-[#8A8A8A] truncate">{itemTitle}</p>
                   </div>
                 </div>
@@ -161,7 +163,7 @@ export default function ItemCollaboratorModal({ open, onClose, itemId, itemType,
                     <Search size={14} className="text-[#C0BAB2] shrink-0" />
                     <input
                       type="email"
-                      placeholder="Invite by email…"
+                      placeholder={t('collab_invite_ph')}
                       value={query}
                       onChange={e => { setQuery(e.target.value); setError(''); }}
                       className="flex-1 text-sm bg-transparent focus:outline-none text-[#1A1A1A] placeholder:text-[#C0BAB2] min-w-0"
@@ -177,7 +179,7 @@ export default function ItemCollaboratorModal({ open, onClose, itemId, itemType,
                 {/* Search results */}
                 {results.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold text-[#C0BAB2] uppercase tracking-widest mb-2 pl-1">Results</p>
+                    <p className="text-[10px] font-semibold text-[#C0BAB2] uppercase tracking-widest mb-2 pl-1">{t('collab_results')}</p>
                     <div className="space-y-1.5">
                       {results.map(profile => {
                         const already = existingIds.has(profile.id);
@@ -190,7 +192,7 @@ export default function ItemCollaboratorModal({ open, onClose, itemId, itemType,
                               <span className="text-sm text-[#1A1A1A] truncate">{profile.email}</span>
                             </div>
                             {already ? (
-                              <span className="text-[11px] text-[#C87A53] font-medium shrink-0 ml-2">Already added</span>
+                              <span className="text-[11px] text-[#C87A53] font-medium shrink-0 ml-2">{t('collab_already_added')}</span>
                             ) : (
                               <button
                                 onClick={() => handleInvite(profile)}
@@ -198,7 +200,7 @@ export default function ItemCollaboratorModal({ open, onClose, itemId, itemType,
                                 className="flex items-center gap-1 text-[11px] font-semibold text-white bg-[#1A1A1A] hover:bg-[#333] rounded-lg px-2.5 py-1.5 transition-colors disabled:opacity-50 shrink-0 ml-2"
                               >
                                 <UserPlus size={10} />
-                                {inviting === profile.id ? '…' : 'Invite'}
+                                {inviting === profile.id ? '…' : t('collab_invite')}
                               </button>
                             )}
                           </div>
@@ -209,14 +211,14 @@ export default function ItemCollaboratorModal({ open, onClose, itemId, itemType,
                 )}
 
                 {query.length >= 2 && !searching && results.length === 0 && (
-                  <p className="text-sm text-[#8A8A8A] text-center py-1">No account found with that email.</p>
+                  <p className="text-sm text-[#8A8A8A] text-center py-1">{t('collab_not_found')}</p>
                 )}
 
                 {/* Has Access */}
                 <div>
-                  <p className="text-[10px] font-semibold text-[#C0BAB2] uppercase tracking-widest mb-2 pl-1">Has Access</p>
+                  <p className="text-[10px] font-semibold text-[#C0BAB2] uppercase tracking-widest mb-2 pl-1">{t('collab_has_access')}</p>
                   {loading ? (
-                    <p className="text-sm text-[#8A8A8A] text-center py-2">Loading…</p>
+                    <p className="text-sm text-[#8A8A8A] text-center py-2">{t('collab_loading')}</p>
                   ) : (
                     <div className="space-y-1.5">
                       {/* Owner row — always shown first */}
@@ -227,12 +229,12 @@ export default function ItemCollaboratorModal({ open, onClose, itemId, itemType,
                               <span className="text-[11px] font-semibold text-[#8A8A8A] uppercase">{ownerEmail[0]}</span>
                             </div>
                             <span className="text-sm text-[#1A1A1A] truncate">
-                              {ownerEmail}{ownerId === user?.id ? ' (you)' : ''}
+                              {ownerEmail}{ownerId === user?.id ? t('collab_you') : ''}
                             </span>
                           </div>
                           <div className="flex items-center gap-1 shrink-0 ml-2">
                             <Crown size={11} className="text-[#C87A53]" />
-                            <span className="text-[11px] font-medium text-[#C87A53]">Owner</span>
+                            <span className="text-[11px] font-medium text-[#C87A53]">{t('collab_owner')}</span>
                           </div>
                         </div>
                       )}
@@ -253,14 +255,14 @@ export default function ItemCollaboratorModal({ open, onClose, itemId, itemType,
                               className="flex items-center gap-1 text-[11px] font-medium text-[#8A8A8A] hover:text-red-400 transition-colors shrink-0 ml-2 disabled:opacity-50"
                             >
                               <UserMinus size={12} />
-                              {acting === c.userId ? '…' : 'Remove'}
+                              {acting === c.userId ? '…' : t('collab_remove')}
                             </button>
                           )}
                         </div>
                       ))}
 
                       {accepted.length === 0 && !loading && (
-                        <p className="text-sm text-[#8A8A8A] text-center py-1">No collaborators yet.</p>
+                        <p className="text-sm text-[#8A8A8A] text-center py-1">{t('collab_no_collab')}</p>
                       )}
                     </div>
                   )}
@@ -269,7 +271,7 @@ export default function ItemCollaboratorModal({ open, onClose, itemId, itemType,
                 {/* Awaiting response */}
                 {pending.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold text-[#C0BAB2] uppercase tracking-widest mb-2 pl-1">Awaiting Response</p>
+                    <p className="text-[10px] font-semibold text-[#C0BAB2] uppercase tracking-widest mb-2 pl-1">{t('collab_awaiting')}</p>
                     <div className="space-y-1.5">
                       {pending.map(c => (
                         <div key={c.rowId} className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#F9F7F4]">
@@ -280,14 +282,14 @@ export default function ItemCollaboratorModal({ open, onClose, itemId, itemType,
                             <span className="text-sm text-[#1A1A1A] truncate">{c.email}</span>
                           </div>
                           <div className="flex items-center gap-2 shrink-0 ml-2">
-                            <span className="text-[11px] text-[#C0BAB2] italic">Pending</span>
+                            <span className="text-[11px] text-[#C0BAB2] italic">{t('collab_pending')}</span>
                             {isOwner && (
                               <button
                                 onClick={() => handleRemove(c.rowId, c.userId)}
                                 disabled={acting === c.userId}
                                 className="text-[11px] font-medium text-[#8A8A8A] hover:text-red-400 transition-colors disabled:opacity-50"
                               >
-                                Cancel
+                                {t('common_cancel')}
                               </button>
                             )}
                           </div>

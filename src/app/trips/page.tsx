@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTrips } from '@/store/tripsContext';
+import { useLanguage } from '@/store/languageContext';
 import { Trip } from '@/types';
 import { deleteStoragePhotos } from '@/lib/imageUtils';
 import { supabase } from '@/lib/supabase';
@@ -12,11 +13,15 @@ import SortMenu, { DATE_OPTIONS } from '@/components/ui/SortMenu';
 import ItemCollaboratorModal from '@/components/ui/ItemCollaboratorModal';
 import { fmtCountries, parseLocalDate } from '@/lib/formatUtils';
 
-function formatRange(start: string, end: string) {
+function formatRange(start: string, end: string, locale: string) {
   const s = parseLocalDate(start);
   const e = parseLocalDate(end);
-  const sStr = s.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const eStr = e.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const sStr = s.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+  if (locale === 'zh-CN') {
+    const eStr = e.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+    return `${sStr} – ${eStr} ${e.getFullYear()}年`;
+  }
+  const eStr = e.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
   return `${sStr} – ${eStr}`;
 }
 
@@ -27,6 +32,7 @@ function TripMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!open) { setConfirming(false); return; }
@@ -56,47 +62,47 @@ function TripMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
                 onClick={e => { e.stopPropagation(); onEdit(); setOpen(false); }}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Pencil size={13} className="text-[#8A8A8A]" /> Edit trip
+                <Pencil size={13} className="text-[#8A8A8A]" /> {t('trip_edit')}
               </button>
               <button
                 onClick={e => { e.stopPropagation(); onShare(); setOpen(false); }}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#1A1A1A] hover:bg-[#F5F2EE] transition-colors"
               >
-                <Users size={13} className="text-[#8A8A8A]" /> Share trip
+                <Users size={13} className="text-[#8A8A8A]" /> {t('trip_share')}
               </button>
               {isOwner ? (
                 <button
                   onClick={e => { e.stopPropagation(); setConfirming(true); }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                 >
-                  <Trash2 size={13} /> Delete trip
+                  <Trash2 size={13} /> {t('trip_delete')}
                 </button>
               ) : (
                 <button
                   onClick={e => { e.stopPropagation(); setConfirming(true); }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                 >
-                  <LogOut size={13} /> Leave trip
+                  <LogOut size={13} /> {t('trip_leave')}
                 </button>
               )}
             </>
           ) : (
             <div className="px-4 py-2">
               <p className="text-xs text-[#1A1A1A] font-medium mb-2">
-                {isOwner ? 'Delete this trip?' : 'Leave this trip?'}
+                {isOwner ? t('trip_confirm_delete') : t('trip_confirm_leave')}
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={e => { e.stopPropagation(); isOwner ? onDelete() : onLeave(); setOpen(false); }}
                   className="flex-1 bg-red-500 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-red-600 transition-colors"
                 >
-                  {isOwner ? 'Delete' : 'Leave'}
+                  {isOwner ? t('common_delete') : t('common_leave')}
                 </button>
                 <button
                   onClick={e => { e.stopPropagation(); setConfirming(false); }}
                   className="flex-1 bg-[#F0ECE6] text-[#1A1A1A] text-xs font-medium py-1.5 rounded-lg hover:bg-[#E8E4DC] transition-colors"
                 >
-                  Cancel
+                  {t('common_cancel')}
                 </button>
               </div>
             </div>
@@ -109,6 +115,7 @@ function TripMenu({ onEdit, onDelete, onShare, onLeave, isOwner }: {
 
 export default function TripsPage() {
   const { trips: rawTrips, deleteTrip, leaveItemShare, user } = useTrips();
+  const { lang, t } = useLanguage();
 
   async function handleDeleteTrip(trip: Trip) {
     const { data } = await supabase.from('trips').select('photos').eq('id', trip.id).single();
@@ -158,9 +165,11 @@ export default function TripsPage() {
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
           <div>
-            <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">Our Trips</h1>
+            <h1 className="serif text-4xl font-semibold text-[#1A1A1A]">{t('trips_title')}</h1>
             <p className="mt-2 text-[#8A8A8A] text-sm">
-              {rawTrips.length} trips · across {[...new Set(rawTrips.flatMap(t => t.countries))].length} countries
+              {lang === 'zh'
+                ? `共 ${rawTrips.length} 次旅行 · 跨越 ${[...new Set(rawTrips.flatMap(trip => trip.countries))].length} 个国家`
+                : `${rawTrips.length} trip${rawTrips.length !== 1 ? 's' : ''} · across ${[...new Set(rawTrips.flatMap(trip => trip.countries))].length} countries`}
             </p>
           </div>
           <div className="flex items-center gap-2 justify-end md:mb-0.5">
@@ -171,7 +180,7 @@ export default function TripsPage() {
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search trips, cities…"
+                placeholder={t('trips_search_placeholder')}
                 className="pl-8 pr-8 py-2 text-sm bg-white border border-[#E8E6E1] rounded-xl focus:outline-none focus:border-[#C87A53] text-[#1A1A1A] placeholder:text-[#C0BAB2] transition-colors w-full md:w-56"
               />
               {query && (
@@ -190,13 +199,13 @@ export default function TripsPage() {
             style={{ borderColor: '#D4CFC6' }}>
             {query ? (
               <>
-                <p className="font-medium text-[#1A1A1A] text-sm">No trips match &ldquo;{query}&rdquo;</p>
-                <p className="text-xs text-[#8A8A8A] mt-1">Try a different destination or trip name</p>
+                <p className="font-medium text-[#1A1A1A] text-sm">{lang === 'zh' ? `没有与"${query}"匹配的旅行` : `No trips match “${query}”`}</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">{t('trips_no_match_hint')}</p>
               </>
             ) : (
               <>
-                <p className="font-medium text-[#1A1A1A] text-sm">No trips logged yet</p>
-                <p className="text-xs text-[#8A8A8A] mt-1">Click + button to add your first trip</p>
+                <p className="font-medium text-[#1A1A1A] text-sm">{t('trips_empty')}</p>
+                <p className="text-xs text-[#8A8A8A] mt-1">{t('trips_empty_hint')}</p>
               </>
             )}
           </div>
@@ -234,13 +243,13 @@ export default function TripsPage() {
                 {/* Meta */}
                 <div className="p-3 md:p-4">
                   <div className="flex items-center gap-2 md:gap-4 text-xs md:text-xs text-[#8A8A8A] mb-2 md:mb-3">
-                    <span className="flex items-center gap-1"><Calendar size={12} />{formatRange(trip.startDate, trip.endDate)}</span>
+                    <span className="flex items-center gap-1"><Calendar size={12} />{formatRange(trip.startDate, trip.endDate, lang === 'zh' ? 'zh-CN' : 'en-US')}</span>
                     <span className="flex items-center gap-1"><MapPin size={12} />{fmtCountries(trip.countries)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex gap-2 md:gap-4 text-xs md:text-xs text-[#4A5343]">
-                      <span className="flex items-center gap-1"><BedDouble size={12} />{trip.hotels.length} hotel{trip.hotels.length !== 1 ? 's' : ''}</span>
-                      <span className="flex items-center gap-1"><Utensils size={12} />{trip.diningLogs.length} restaurant{trip.diningLogs.length !== 1 ? 's' : ''}</span>
+                      <span className="flex items-center gap-1"><BedDouble size={12} />{lang === 'zh' ? `${trip.hotels.length} 家酒店` : `${trip.hotels.length} hotel${trip.hotels.length !== 1 ? 's' : ''}`}</span>
+                      <span className="flex items-center gap-1"><Utensils size={12} />{lang === 'zh' ? `${trip.diningLogs.length} 家餐厅` : `${trip.diningLogs.length} restaurant${trip.diningLogs.length !== 1 ? 's' : ''}`}</span>
                     </div>
                     <ArrowRight size={14} className="text-[#C87A53] opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>

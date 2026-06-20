@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles } from 'lucide-react';
+import { useLanguage } from '@/store/languageContext';
 
 interface Release {
   version: string;
@@ -84,6 +85,7 @@ interface Props {
 
 export default function WhatsNewModal({ open, onClose }: Props) {
   const [mounted, setMounted] = useState(false);
+  const { t } = useLanguage();
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
@@ -116,7 +118,7 @@ export default function WhatsNewModal({ open, onClose }: Props) {
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E6E1] shrink-0">
                 <div className="flex items-center gap-2.5">
                   <Sparkles size={16} className="text-[#C87A53]" />
-                  <h2 className="serif text-lg font-semibold text-[#1A1A1A]">What&rsquo;s New</h2>
+                  <h2 className="serif text-lg font-semibold text-[#1A1A1A]">{t('new_title')}</h2>
                 </div>
                 <button
                   onClick={onClose}
@@ -133,11 +135,11 @@ export default function WhatsNewModal({ open, onClose }: Props) {
                     <div className="flex items-center gap-5 mb-3">
                       <div className="flex items-center gap-2">
                         <span className="serif font-semibold text-[#1A1A1A]">
-                          <span className="text-base">Version </span><span className="text-xl">{release.version}</span>
+                          <span className="text-base">{t('new_version')} </span><span className="text-xl">{release.version}</span>
                         </span>
                         {i === 0 && (
                           <span className="text-[10px] font-semibold bg-[#C87A53] text-white px-1.5 py-0.5 rounded-full uppercase tracking-wide self-end mb-0.5 ml-1">
-                            Latest
+                            {t('new_latest')}
                           </span>
                         )}
                         <span className="text-xs text-[#C0BAB2] self-end mb-0.5 ml-1">{release.date}</span>
