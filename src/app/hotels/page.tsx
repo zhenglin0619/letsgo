@@ -250,7 +250,7 @@ export default function HotelsPage() {
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
               <div className="absolute bottom-2.5 left-2.5 right-2.5 md:bottom-3 md:left-3 md:right-3 text-white">
-                <h2 className="serif font-semibold text-[20px] md:text-lg leading-tight">{hotel.hotelName}</h2>
+                <h2 className="serif font-semibold text-[20px] md:text-[19px] leading-tight">{hotel.hotelName}</h2>
               </div>
               <div className="absolute top-3 right-3">
                 <HotelMenu

@@ -13,6 +13,14 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: '1.3.0',
+    date: 'June 20, 2025',
+    items: [
+      { tag: 'New', text: 'New Chinese Version' },
+      { tag: 'Bug', text: 'Fixed bugs and Improved UI' },
+    ],
+  },
+  {
     version: '1.2.2',
     date: 'June 20, 2025',
     items: [

@@ -302,7 +302,7 @@ export const translations = {
     stats_total_expense: '总消费',
 
     // Trips page
-    trips_title: '我们的旅行',
+    trips_title: '旅行',
     trips_search_placeholder: '搜索旅行、城市…',
     trips_no_match_hint: '试试其他目的地或旅行名称',
     trips_empty: '还没有记录旅行',
@@ -315,7 +315,7 @@ export const translations = {
     trip_confirm_leave: '退出这次旅行？',
 
     // Restaurants page
-    restaurants_title: '我们去过的餐厅',
+    restaurants_title: '去过的餐厅',
     restaurants_search_placeholder: '搜索餐厅…',
     restaurants_no_match_hint: '试试其他餐厅名称、菜系、城市或国家',
     restaurants_empty: '还没有记录餐厅',
@@ -324,7 +324,7 @@ export const translations = {
     restaurant_confirm_leave: '退出这家餐厅？',
 
     // Hotels page
-    hotels_title: '我们去过的酒店',
+    hotels_title: '去过的酒店',
     hotels_search_placeholder: '搜索酒店…',
     hotels_no_match_hint: '试试其他酒店名称、城市或国家',
     hotels_empty: '还没有记录酒店',

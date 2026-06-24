@@ -281,7 +281,7 @@ export default function RestaurantsPage() {
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
               <div className="absolute bottom-2 left-2.5 right-2.5 md:left-3 md:right-3 text-white">
-                <h2 className="serif font-semibold text-[20px] md:text-lg leading-tight">{dining.restaurantName}</h2>
+                <h2 className="serif font-semibold text-[20px] md:text-[19px] leading-tight">{dining.restaurantName}</h2>
                 <p className="text-[12px] md:text-xs text-white/70 mt-0.5">{dining.cuisine}</p>
               </div>
               {dining.michelinStars && (
