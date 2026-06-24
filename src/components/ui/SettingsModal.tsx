@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Settings, Monitor, PlayCircle, Globe, Mail, Share, Shield, FileText, ChevronRight, Heart } from 'lucide-react';
@@ -88,6 +88,7 @@ export default function SettingsModal({ open, onClose }: Props) {
   const [mounted, setMounted]       = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+  const sharingRef = useRef(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -117,13 +118,21 @@ export default function SettingsModal({ open, onClose }: Props) {
   }
 
   async function handleShare() {
-    const url = window.location.origin;
-    if (navigator.share) {
-      await navigator.share({ title: "Let's Go – Travel Journal", url });
-    } else {
-      await navigator.clipboard.writeText(url);
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
+    if (sharingRef.current) return;
+    sharingRef.current = true;
+    try {
+      const url = window.location.origin;
+      if (navigator.share) {
+        await navigator.share({ title: "Let's Go – Travel Journal", url }).catch((e: unknown) => {
+          if (e instanceof Error && e.name !== 'AbortError') throw e;
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      }
+    } finally {
+      sharingRef.current = false;
     }
   }
 
@@ -268,7 +277,7 @@ export default function SettingsModal({ open, onClose }: Props) {
                   onClick={() => setWhatsNewOpen(true)}
                   className="text-[10px] text-[#4A4A4A] tracking-widest hover:text-[#C87A53] transition-colors"
                 >
-                  version 1.3.0
+                  {t('new_version')} 1.3.0
                 </button>
               </div>
             </motion.div>

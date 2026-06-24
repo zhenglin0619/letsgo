@@ -138,6 +138,9 @@ export const translations = {
     new_title: "What's New",
     new_version: 'Version',
     new_latest: 'Latest',
+    whats_new_tag_new: 'New',
+    whats_new_tag_improved: 'Improved',
+    whats_new_tag_bug: 'Bug',
 
     // Calendar / address search
     calendar_placeholder: 'MM/DD/YYYY',
@@ -411,6 +414,9 @@ export const translations = {
     new_title: '最新动态',
     new_version: '版本',
     new_latest: '最新',
+    whats_new_tag_new: '新功能',
+    whats_new_tag_improved: '优化',
+    whats_new_tag_bug: '修复',
 
     // Trip detail
     detail_highlights: '精彩集锦',
