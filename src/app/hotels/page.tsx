@@ -234,7 +234,7 @@ export default function HotelsPage() {
             transition={{ delay: i * 0.1, duration: 0.45 }}
             onClick={() => { setSelectedHotel({ hotel, tripId: hotel.tripId, isStandalone: hotel.isStandalone }); setDrawerOpen(true); }}
           >
-            <div className="relative h-50 md:h-60 overflow-hidden">
+            <div className="relative h-55 md:h-60 overflow-hidden">
               {hotel.photos[0] ? (
                 <img
                   src={hotel.photos[0]}

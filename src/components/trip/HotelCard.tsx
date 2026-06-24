@@ -97,7 +97,7 @@ export default function HotelCard({ hotel, index, onClick, onEdit, onDelete }: P
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08 }}
     >
-      <div className="relative h-32 md:h-60 overflow-hidden">
+      <div className="relative h-55 md:h-60 overflow-hidden">
         {hotel.photos[0] ? (
           <img
             src={hotel.photos[0]}
@@ -112,38 +112,24 @@ export default function HotelCard({ hotel, index, onClick, onEdit, onDelete }: P
           <div className="w-full h-full bg-gradient-to-br from-[#4A5343]/30 via-[#E8E4DC] to-[#C87A53]/20" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-        <div className="absolute bottom-2 left-2 md:bottom-3 md:left-4 text-white">
-          <h2 className="serif font-semibold text-sm md:text-lg leading-tight">{hotel.hotelName}</h2>
+        <div className="absolute bottom-2.5 left-2.5 right-2.5 md:bottom-3 md:left-3 md:right-3 text-white">
+          <h2 className="serif font-semibold text-[20px] md:text-[19px] leading-tight">{hotel.hotelName}</h2>
         </div>
         <div className="absolute top-3 right-3">
           <HotelMenu onEdit={onEdit} onDelete={onDelete} />
         </div>
       </div>
 
-      <div className="px-2.5 pt-2 pb-3 md:px-3 md:pt-2.5 md:pb-3">
-        {hotel.rating > 0 && (
-          <div className="md:hidden mb-1">
-            <StarRating value={hotel.rating} readonly size="sm" />
-          </div>
-        )}
+      <div className="px-2.5 pt-2 pb-2 md:px-3 md:pt-2.5 md:pb-3">
         <div className="flex items-center justify-between mb-1 md:mb-1.5">
-          <span className="flex items-center gap-1 text-[10.5px] md:text-xs text-[#8A8A8A]">
-            <MapPin size={10} className="md:w-[11px] md:h-[11px]" />{hotel.location.city}, {fmtCountry(hotel.location.country)}
-          </span>
-          {hotel.rating > 0 && (
-            <span className="hidden md:block">
-              <StarRating value={hotel.rating} readonly size="sm" />
-            </span>
-          )}
-        </div>
-        <div className="md:hidden mb-1">
-          <span className="flex items-center gap-1 text-[10.5px] text-[#8A8A8A]">
-            <Calendar size={10} />{formatDate(hotel.checkIn, lang === 'zh' ? 'zh-CN' : 'en-US')} – {formatDate(hotel.checkOut, lang === 'zh' ? 'zh-CN' : 'en-US')}
-          </span>
-        </div>
-        <div className="hidden md:flex items-center justify-between">
           <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
-            <Calendar size={11} />{formatDate(hotel.checkIn, lang === 'zh' ? 'zh-CN' : 'en-US')} – {formatDate(hotel.checkOut, lang === 'zh' ? 'zh-CN' : 'en-US')} · {n} {n !== 1 ? t('hotel_nights_plural') : t('hotel_nights')}
+            <MapPin size={11} />{hotel.location.city}, {fmtCountry(hotel.location.country)}
+          </span>
+          {hotel.rating > 0 && <StarRating value={hotel.rating} readonly size="sm" />}
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1 text-xs text-[#8A8A8A]">
+            <Calendar size={11} />{formatDate(hotel.checkIn, lang === 'zh' ? 'zh-CN' : 'en-US')} – {formatDate(hotel.checkOut, lang === 'zh' ? 'zh-CN' : 'en-US')}<span className="hidden md:inline"> · {n} {n !== 1 ? t('hotel_nights_plural') : t('hotel_nights')}</span>
           </span>
           <span className="text-xs text-[#8A8A8A]">
             {hotel.currency} {Math.round(hotel.pricePerNight / (n || 1)).toLocaleString()} {t('hotel_per_night')}

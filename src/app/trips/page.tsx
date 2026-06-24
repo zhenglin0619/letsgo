@@ -221,7 +221,7 @@ export default function TripsPage() {
             <Link href={`/trips/${trip.id}`} className="block group">
               <div className="bento-card overflow-hidden">
                 {/* Cover */}
-                <div className="relative aspect-video md:aspect-auto md:h-100 overflow-hidden">
+                <div className="relative h-85 md:aspect-auto md:h-100 overflow-hidden">
                   {trip.coverPhoto
                     ? <img
                         src={trip.coverPhoto}

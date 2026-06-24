@@ -294,7 +294,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {tab === 'restaurants' && (
-              <div className="grid grid-cols-2 gap-3 md:gap-4 mx-4 md:mx-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mx-4 md:mx-0">
                 {trip!.diningLogs.length === 0 && (
                   <div className="col-span-2 text-center py-16 text-[#8A8A8A] text-sm">
                     {t('detail_no_restaurants')}
@@ -321,7 +321,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {tab === 'hotels' && (
-              <div className="grid grid-cols-2 gap-3 md:gap-4 mx-4 md:mx-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mx-4 md:mx-0">
                 {trip!.hotels.length === 0 && (
                   <div className="col-span-2 text-center py-16 text-[#8A8A8A] text-sm">
                     {t('detail_no_hotels')}

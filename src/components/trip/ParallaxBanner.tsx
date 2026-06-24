@@ -30,7 +30,7 @@ export default function ParallaxBanner({ trip }: Props) {
   };
 
   return (
-    <div className="relative h-[50vh] md:h-[70vh] overflow-hidden">
+    <div className="relative h-[40vh] md:h-[70vh] overflow-hidden">
       {/* Parallax image layer */}
       <div ref={imgRef} className="absolute inset-0 scale-110" style={{ willChange: 'transform' }}>
         {trip.coverPhoto
