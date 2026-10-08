@@ -53,7 +53,13 @@ Create a `.env.local` file in the project root:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
+NEXT_PUBLIC_CARTO_API_KEY=
 ```
+
+Set `NEXT_PUBLIC_CARTO_API_KEY` to your CARTO Basemaps key for the dashboard,
+trip map, and inline map previews. Restart the development server after changing
+it. For a deployed site, set the variable in your hosting environment and rebuild
+and redeploy; Next.js embeds public environment variables at build time.
 
 ### 3. Start the dev server
 

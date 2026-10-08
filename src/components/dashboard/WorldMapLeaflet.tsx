@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { CARTO_TILE_URL } from '@/lib/mapTiles';
 
 export interface MapPin {
   id: string;
@@ -126,7 +127,7 @@ export default function WorldMapLeaflet({ pins }: Props) {
       doubleClickZoom: false,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer(CARTO_TILE_URL, {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
       subdomains: 'abcd',

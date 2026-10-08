@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { CARTO_TILE_URL } from '@/lib/mapTiles';
 
 export interface TripPin {
   lat: number;
@@ -45,7 +46,7 @@ export default function TripMapLeaflet({ pins }: { pins: TripPin[] }) {
       doubleClickZoom: false,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer(CARTO_TILE_URL, {
       subdomains: 'abcd',
       maxZoom: 19,
     }).addTo(map);
