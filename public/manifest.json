@@ -1,7 +1,7 @@
 {
   "name": "LET'S GO",
   "short_name": "LET'S GO",
-  "description": "A premium journal for your dining and hotel footprint across the world.",
+  "description": "A personal travel journal for your trips, restaurants and hotel stays.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FBF9F6",

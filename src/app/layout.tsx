@@ -5,7 +5,7 @@ import RootShell from '@/components/layout/RootShell';
 
 export const metadata: Metadata = {
   title: "LET'S GO",
-  description: 'A premium journal for your dining and hotel footprint across the world.',
+  description: 'A personal travel journal for your trips, restaurants and hotel stays.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
