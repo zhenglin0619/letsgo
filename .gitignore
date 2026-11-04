@@ -48,3 +48,7 @@ next-env.d.ts
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# local AI-assistant instructions
+AGENTS.md
+CLAUDE.md
