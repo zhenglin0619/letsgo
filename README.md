@@ -1,6 +1,6 @@
 # Let's Go — Travel Journal
 
-[![CI](https://github.com/zhenglin0619/foodprint/actions/workflows/ci.yml/badge.svg)](https://github.com/zhenglin0619/foodprint/actions/workflows/ci.yml)
+[![CI](https://github.com/zhenglin0619/letsgo/actions/workflows/ci.yml/badge.svg)](https://github.com/zhenglin0619/letsgo/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A personal travel journal for your trips, restaurants and hotel stays. Log your memories, see where you've been on an interactive world map, and share trips with friends.
@@ -34,8 +34,8 @@ A personal travel journal for your trips, restaurants and hotel stays. Log your 
 Requirements: Node.js 20.9 or newer, and a [Supabase](https://supabase.com) project.
 
 ```bash
-git clone https://github.com/zhenglin0619/foodprint.git
-cd foodprint
+git clone https://github.com/zhenglin0619/letsgo.git
+cd letsgo
 npm install
 cp .env.example .env.local   # then fill in your keys
 npm run dev
