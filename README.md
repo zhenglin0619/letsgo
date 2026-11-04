@@ -1,116 +1,101 @@
 # Let's Go — Travel Journal
 
-A premium personal travel journal for documenting your dining experiences, hotel stays, and trips across the world. Log memories, visualize your footprint on an interactive globe, and share journeys with collaborators.
+[![CI](https://github.com/zhenglin0619/foodprint/actions/workflows/ci.yml/badge.svg)](https://github.com/zhenglin0619/foodprint/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
----
+A personal travel journal for your trips, restaurants and hotel stays. Log your memories, see where you've been on an interactive world map, and share trips with friends.
+
+<!-- Add a screenshot here, e.g. ![Dashboard](docs/screenshot.png) -->
 
 ## Features
 
-- **World Map Dashboard** — Visualize every trip on a 3D interactive globe with location pins
-- **Trip Management** — Create trips with cover photos, country tags, and nested dining/hotel entries
-- **Restaurant Logging** — Track restaurants with dishes, ratings, Michelin stars, cuisine, and photos
-- **Hotel Logging** — Record hotel stays with room details, price per night, and check-in/out dates
-- **Photo Uploads** — Drag-and-drop upload with HEIC support and EXIF metadata extraction
-- **Collaborators** — Invite others to view and contribute to your trips and individual logs
-- **Future Plans** — Keep a wishlist of upcoming trips, dining, and hotel ideas
-- **Demo Mode** — Explore the full app with sample data, no sign-in required
-- **Night Mode** — Full dark theme across the entire app
-- **What's New** — In-app changelog modal for feature announcements
-- **Privacy & Terms** — Built-in Privacy Policy and Terms of Service pages
+- **World map dashboard**: every trip pinned on an interactive globe or map, plus stats
+- **Trips**: cover photos, country tags, and the restaurants and hotels from each trip
+- **Restaurants**: dishes, ratings, Michelin stars, cuisine and photos
+- **Hotels**: room details, price per night, and check-in/check-out dates
+- **Photo uploads**: drag-and-drop, HEIC support, and dates and places read from photo EXIF data
+- **Collaborators**: invite others to view and contribute to a trip or a single entry
+- **Future plans**: a wishlist of trips, restaurants and hotels you want to try
+- **Demo mode**: try the whole app with sample data, no sign-in needed
+- **English / 中文** interface, plus light and dark themes
 
----
-
-## Tech Stack
+## Tech stack
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 16 (App Router, Turbopack) |
-| Language | TypeScript, React 19 |
-| Backend | Supabase (PostgreSQL + Auth + Storage) |
-| Styling | Tailwind CSS v4, Framer Motion |
-| Maps | Leaflet, Mapbox GL, Google Maps API, react-globe.gl |
-| Icons | Lucide React |
-| Image handling | react-dropzone, heic2any, exif-js |
-| UI Primitives | Radix UI |
+| Framework | Next.js 16 (App Router), React 19, TypeScript |
+| Backend | Supabase (Postgres, Auth, Storage) |
+| Styling | Tailwind CSS v4, Framer Motion, Radix UI |
+| Maps | Leaflet + CARTO tiles, Google Maps / Places, Mapbox Search, react-globe.gl |
+| Images | react-dropzone, heic2any, exif-js |
 
----
+## Getting started
 
-## Getting Started
-
-### 1. Clone and install
+Requirements: Node.js 20.9 or newer, and a [Supabase](https://supabase.com) project.
 
 ```bash
-git clone <repo-url>
-cd letsgo
+git clone https://github.com/zhenglin0619/foodprint.git
+cd foodprint
 npm install
-```
-
-### 2. Configure environment variables
-
-Create a `.env.local` file in the project root:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
-NEXT_PUBLIC_CARTO_API_KEY=
-```
-
-Set `NEXT_PUBLIC_CARTO_API_KEY` to your CARTO Basemaps key for the dashboard,
-trip map, and inline map previews. Restart the development server after changing
-it. For a deployed site, set the variable in your hosting environment and rebuild
-and redeploy; Next.js embeds public environment variables at build time.
-
-### 3. Start the dev server
-
-```bash
+cp .env.example .env.local   # then fill in your keys
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open http://localhost:3000. Demo mode works without signing in.
 
----
+### Environment variables
 
-## Project Structure
+| Variable | Required | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | Supabase anon (public) key |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | yes | Google Maps JavaScript / Places API key, for address search |
+| `NEXT_PUBLIC_CARTO_API_KEY` | no | CARTO Basemaps key for map tiles |
+
+All of these are `NEXT_PUBLIC_*` variables, so they are built into the client bundle. When you deploy, set them in your hosting environment and rebuild. Restrict the Google Maps key to your own domains with HTTP referrer restrictions.
+
+### Supabase setup
+
+The app expects the following in your Supabase project:
+
+- **Tables**: `trips`, `restaurants`, `hotels`, `future_plans`, `profiles`, `item_collaborators`
+- **Storage bucket**: `photos` (public read)
+- **Auth providers**: Email/password and Google
+
+Turn on **Row Level Security** for every table. The anon key is public, so RLS policies are the only thing protecting user data.
+
+## Project structure
 
 ```
 src/
-├── app/                    # Next.js routes
-│   ├── page.tsx            # World map dashboard
-│   ├── trips/              # Trip list + trip detail ([id])
-│   ├── restaurants/        # Restaurant log
-│   ├── hotels/             # Hotel log
-│   ├── privacy/            # Privacy Policy page
-│   └── terms/              # Terms of Service page
+├── app/                 # Routes: dashboard, trips/[id], restaurants, hotels, privacy, terms
 ├── components/
-│   ├── auth/               # Auth modal (Google + email sign-in)
-│   ├── dashboard/          # World map, stats bento
-│   ├── dining/             # Restaurant cards and detail drawer
-│   ├── hotel/              # Hotel cards and detail drawer
-│   ├── layout/             # Navbar, FAB, RootShell
-│   ├── trip/               # Trip cards, detail, timeline
-│   ├── ui/                 # Shared modals (Settings, Collaborators, Future Plans, What's New)
-│   └── upload/             # Add trip/restaurant/hotel modals
-├── store/
-│   ├── tripsContext.tsx    # Global state, demo mode, collaborator sync
-│   └── data.ts             # Demo data
-└── lib/
-    ├── supabase.ts         # Supabase client
-    ├── formatUtils.ts      # Date and country formatting helpers
-    └── imageUtils.ts       # Photo upload and storage utilities
+│   ├── auth/            # Sign-in modal
+│   ├── dashboard/       # World map and stats
+│   ├── dining/          # Restaurant drawer and dish rows
+│   ├── hotel/           # Hotel drawer
+│   ├── layout/          # Navbar, FAB, root shell
+│   ├── trip/            # Trip detail: banner, map, cards
+│   ├── ui/              # Shared modals and inputs
+│   └── upload/          # Add trip/restaurant/hotel modals
+├── lib/                 # Supabase client, i18n, map tiles, image and format utils
+├── store/               # Trips and language contexts, demo data
+└── types/               # Shared TypeScript types
+public/                  # Icons, PWA manifest, boot scripts
 ```
-
----
 
 ## Scripts
 
-```bash
-npm run dev      # Start development server
-npm run build    # Production build
-npm run start    # Start production server
-npm run lint     # Run ESLint
-```
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the dev server |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | Type-check with `tsc` |
 
----
+## License
 
-## Built with love by CX & ZW — Version 1.0.1
+[MIT](LICENSE) © Zhenglin Wang
+
+Built with love by CX & ZW.
