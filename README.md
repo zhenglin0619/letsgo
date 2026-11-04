@@ -5,6 +5,10 @@
 
 A personal travel journal for your trips, restaurants and hotel stays. Log your memories, see where you've been on an interactive world map, and share trips with friends.
 
+**👉 Use it now: [letsgo-journal.vercel.app](https://letsgo-journal.vercel.app)**
+
+No download needed. It runs in your browser, and you can add it to your phone's home screen to use it like an app. Sign in with Google or email, then turn on **Demo Mode** in Settings to look around with sample data.
+
 <!-- Add a screenshot here, e.g. ![Dashboard](docs/screenshot.png) -->
 
 ## Features
@@ -16,7 +20,7 @@ A personal travel journal for your trips, restaurants and hotel stays. Log your 
 - **Photo uploads**: drag-and-drop, HEIC support, and dates and places read from photo EXIF data
 - **Collaborators**: invite others to view and contribute to a trip or a single entry
 - **Future plans**: a wishlist of trips, restaurants and hotels you want to try
-- **Demo mode**: try the whole app with sample data, no sign-in needed
+- **Demo mode**: explore the whole app with sample data, without touching your own entries
 - **English / 中文** interface, plus light and dark themes
 
 ## Tech stack
@@ -29,7 +33,9 @@ A personal travel journal for your trips, restaurants and hotel stays. Log your 
 | Maps | Leaflet + CARTO tiles, Google Maps / Places, Mapbox Search, react-globe.gl |
 | Images | react-dropzone, heic2any, exif-js |
 
-## Getting started
+## Run it yourself
+
+You only need this section if you want to change the code or host your own copy. To just use the app, open the link above.
 
 Requirements: Node.js 20.9 or newer, and a [Supabase](https://supabase.com) project.
 
@@ -41,7 +47,7 @@ cp .env.example .env.local   # then fill in your keys
 npm run dev
 ```
 
-Open http://localhost:3000. Demo mode works without signing in.
+Open http://localhost:3000.
 
 ### Environment variables
 
