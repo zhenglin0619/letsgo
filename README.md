@@ -1,15 +1,30 @@
+<div align="center">
+
+<img src="public/logo.png" alt="Let's Go logo" width="140">
+
 # Let's Go — Travel Journal
+
+**👉 Use it now: [letsgo-journal.vercel.app](https://letsgo-journal.vercel.app)**
 
 [![CI](https://github.com/zhenglin0619/letsgo/actions/workflows/ci.yml/badge.svg)](https://github.com/zhenglin0619/letsgo/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A personal travel journal for your trips, restaurants and hotel stays. Log your memories, see where you've been on an interactive world map, and share trips with friends.
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
-**👉 Use it now: [letsgo-journal.vercel.app](https://letsgo-journal.vercel.app)**
+### Every trip, every meal, every stay, on one map.
+
+A personal travel journal for your trips, restaurants and hotel stays.<br>
+Log your memories, see where you've been, and share trips with friends.
+
+<img src=".github/homescreen.png" alt="Let's Go dashboard: world map of trips with stats for trips, countries, hotels, restaurants and total expense" width="100%">
+
+</div>
 
 No download needed. It runs in your browser, and you can add it to your phone's home screen to use it like an app. Sign in with Google or email, then turn on **Demo Mode** in Settings to look around with sample data.
-
-![Let's Go dashboard: world map of trips with stats for trips, countries, hotels, restaurants and total expense](docs/screenshot.png)
 
 ## Features
 
