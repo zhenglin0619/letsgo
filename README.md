@@ -9,7 +9,7 @@ A personal travel journal for your trips, restaurants and hotel stays. Log your 
 
 No download needed. It runs in your browser, and you can add it to your phone's home screen to use it like an app. Sign in with Google or email, then turn on **Demo Mode** in Settings to look around with sample data.
 
-<!-- Add a screenshot here, e.g. ![Dashboard](docs/screenshot.png) -->
+![Let's Go dashboard: world map of trips with stats for trips, countries, hotels, restaurants and total expense](docs/screenshot.png)
 
 ## Features
 
