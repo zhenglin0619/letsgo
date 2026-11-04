@@ -137,7 +137,7 @@ export default function DatePickerInput({ label, value, onChange, min, defaultMo
         // Mobile: position below (or above if no room), clamped to viewport
         const spaceBelow = vh - rect.bottom - 8;
         const spaceAbove = rect.top - 8;
-        let left = Math.max(8, Math.min(rect.left, vw - popupW - 8));
+        const left = Math.max(8, Math.min(rect.left, vw - popupW - 8));
 
         const maxH = Math.max(spaceBelow, spaceAbove) - 8;
         if (spaceBelow >= spaceAbove) {

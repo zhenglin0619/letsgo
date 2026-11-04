@@ -79,9 +79,12 @@ export default function AddRestaurantModal({ open, onClose, initialDining, defau
   const isSelectingRef = useRef(false);
 
   const initialDiningRef = useRef(initialDining);
-  initialDiningRef.current = initialDining;
   const defaultTripIdRef = useRef(defaultTripId);
-  defaultTripIdRef.current = defaultTripId;
+  // Keep the latest props in refs; declared before the effect below so it runs first.
+  useEffect(() => {
+    initialDiningRef.current = initialDining;
+    defaultTripIdRef.current = defaultTripId;
+  });
 
   useEffect(() => {
     if (!open) { setForm(emptyForm); setCoverPreview(''); setCoverTransform(undefined); coverFileRef.current = null; setStep('form'); setSubmitting(false); setGeocoded(null); return; }

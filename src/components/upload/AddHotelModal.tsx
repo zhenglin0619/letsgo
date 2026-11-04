@@ -81,9 +81,12 @@ export default function AddHotelModal({ open, onClose, defaultTripId, initialHot
   const isSelectingRef = useRef(false);
 
   const initialHotelRef = useRef(initialHotel);
-  initialHotelRef.current = initialHotel;
   const defaultTripIdRef = useRef(defaultTripId);
-  defaultTripIdRef.current = defaultTripId;
+  // Keep the latest props in refs; declared before the effect below so it runs first.
+  useEffect(() => {
+    initialHotelRef.current = initialHotel;
+    defaultTripIdRef.current = defaultTripId;
+  });
 
   useEffect(() => {
     if (!open) { setForm(emptyForm); setCoverPreview(''); setCoverTransform(undefined); coverFileRef.current = null; setStep('form'); setSubmitting(false); setGeocoded(null); return; }

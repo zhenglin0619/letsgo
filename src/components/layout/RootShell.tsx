@@ -19,7 +19,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   const [stuck, setStuck]                       = useState(false);
   const pathname = usePathname();
   const hideFAB  = /^\/trips\/.+/.test(pathname);
-  const mountedAtRef = useRef(Date.now());
+  const mountedAtRef = useRef(0);
+  useEffect(() => { mountedAtRef.current = Date.now(); }, []);
 
   // A tab left open for hours can get frozen or discarded by the browser; on
   // resuming, the in-page auth bootstrap (and its own fallback timer) may
